@@ -23,25 +23,6 @@ void usage(char *name) {
   // printf("\t-l:\t\tPrints the list of lexemes\n");
 }
 
-//alloc_stack_t global;
-
-//void init_compiler_stack(void) {
-//  init_stack(&global);
-//}
-
-//void kill_compiler_stack(void) {
-//  kill_stack(global);
-//}
-
-//void new_compiler_scope(void) {
-//  new_scope(&global);
-//}
-
-//void end_compiler_scope(void) {
-//  end_scope(&global);
-//}
-
-
 int main(int argc, char *argv[]) {
   init_compiler_stack();
   if (argc < 2) {
@@ -117,54 +98,52 @@ int main(int argc, char *argv[]) {
   // }
   // if (print_tree)
   //   print_ast(p.prog);
-  if (0)
-    ;
-  else {
-    char *cout = allocate_compiler_persistent(strlen(output) + 3);
-    sprintf(cout, "%s.c", output);
-    generator_t g = new_generator(cout);
-    transpile(&g, p.prog);
-    kill_generator(g);
 
-    // If there were any compilation errors, exit without running C compiler
-    if (get_error_count() > 0) {
-      kill_compiler_stack();
-      return 1;
-    }
+  char *cout = allocate_compiler_persistent(strlen(output) + 3);
+  sprintf(cout, "%s.c", output);
+  generator_t g = new_generator(cout);
+  transpile(&g, p.prog);
+  kill_generator(g);
 
-    // compile C file
-    char command[1024];
-    fclose(fopen(output, "w"));
-
-    if (target_zxn) {
-      // ZX Spectrum Next: use z88dk's zcc
-      // Note: fundefs_internal.c has struct returns which crash sccz80.
-      // For now, compile without it. Future: create ZXN-specific minimal runtime.
-      sprintf(command,
-              "zcc +zxn -subtype=nex -startup=0 -clib=sdcc_iy "
-              "-pragma-include:lib/zxn/zpragma_zxn.inc -create-app "
-              "-I lib/cpu_agnostic -I lib/z80 "
-              "-o %s %s "
-              "lib/cpu_agnostic/alloc.c "
-              "lib/cpu_agnostic/fundefs.c "
-              "lib/z80/asm_interop.c",
-              output, cout);
-    } else {
-      // Default target: host machine with gcc
-      sprintf(command,
-              "clang-format %s -i && "
-              "gcc -Wall -g -I lib/cpu_agnostic -I lib/z80 -o %s %s "
-              "lib/cpu_agnostic/alloc.c "
-              "lib/cpu_agnostic/fundefs.c "
-              "lib/cpu_agnostic/fundefs_internal.c "
-              "lib/z80/asm_interop.c",
-              cout, output, cout);
-    }
-    printf("[CMD] %s\n", command);
-    system(command);
+  // If there were any compilation errors, exit without running C compiler
+  if (get_error_count() > 0) {
+    kill_compiler_stack();
+    return 1;
   }
-  // printf("Program length is %d tokens\n", p.tokens.length);
 
+  // compile C file
+  char command[1024];
+  fclose(fopen(output, "w"));
+
+
+  if (target_zxn) {
+    // target: zx next.  For ZX Spectrum Next we use z88dk's zcc
+    sprintf(command,
+            "zcc +zxn -subtype=nex -startup=0 -clib=sdcc_iy "
+            "-pragma-include:lib/zxn/zpragma_zxn.inc -create-app "
+            "-I lib/cpu_agnostic -I lib/z80 "
+            "-o %s %s "
+            "lib/cpu_agnostic/alloc.c "
+            "lib/cpu_agnostic/fundefs.c "
+            "lib/z80/asm_interop.c",
+            output, cout);
+  } else {
+    // target: host machine with gcc
+    sprintf(command,
+            "clang-format %s -i && "
+            "gcc -Wall -g -I lib/cpu_agnostic -I lib/z80 -o %s %s "
+            "lib/cpu_agnostic/alloc.c "
+            "lib/cpu_agnostic/fundefs.c "
+            "lib/cpu_agnostic/fundefs_internal.c "
+            "lib/z80/asm_interop.c",
+            cout, output, cout);
+  }
+
+  // compile the generated C
+  printf("[COMPILATION CMD] %s\n", command);
+  system(command);
+
+  // clean up
   kill_compiler_stack();
   return 0;
 }
