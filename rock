@@ -1,0 +1,44 @@
+#! /bin/bash
+ROCK_HOME=/Users/blater/src/rock
+ROCKC=$ROCK_HOME/rockc
+
+get_abs_filename() {
+  # $1 : relative filename
+  echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+}
+
+
+set -e
+rkrFile="$1"
+if [ ! -f $rkrFile ]; then
+  echo "file $rkrFile not found" >&2; 
+  exit 1
+fi
+
+name="$(basename $rkrFile | cut -f1 -d'.')"
+rkrAbsPath=$( get_abs_filename ${rkrFile} )
+rkrDir=$( dirname ${rkrAbsPath} )
+EXE=${rkrDir}/${name}.exe
+rm -f $EXE
+
+cd $ROCK_HOME
+ $ROCKC $rkrAbsPath ${EXE}
+ if [ $? -ne 0 ]; then
+   echo "Compilation error building ${rkrFile}"
+   exit 1
+ fi
+cd -
+
+if [ -f ${EXE} ]; then
+  echo "created ${name}.exe"
+else
+  echo "error"; exit 1
+fi
+
+if [ -d "${EXE}.dSYM" ]; then
+  rm -rf "${EXE}.dSYM" 
+fi
+rm -f ${EXE}.c
+
+${EXE}
+
