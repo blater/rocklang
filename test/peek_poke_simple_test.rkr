@@ -1,0 +1,17 @@
+include "test/Assert.rkr"
+
+sub main() {
+  // Test 1: poke 42 to address 28672 (0x7000), peek it back
+  dim addr1: word := to_word(28672);
+  dim val1: byte := to_byte(42);
+  poke(addr1, val1);
+  dim result1: byte := peek(addr1);
+  AssertEQ("Test 1: peek/poke 42", to_int(val1), to_int(result1));
+
+  // Test 2: poke 100 to address 28673 (0x7001)
+  dim addr2: word := to_word(28673);
+  dim val2: byte := to_byte(100);
+  poke(addr2, val2);
+  dim result2: byte := peek(addr2);
+  AssertEQ("Test 2: peek/poke 100", to_int(val2), to_int(result2));
+}

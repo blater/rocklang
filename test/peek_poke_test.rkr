@@ -1,0 +1,28 @@
+include "test/Assert.rkr"
+
+sub pokeval(address:int, val:int) {
+  dim pokeVal : byte := to_byte(val);
+  dim addr : word := to_word(address);
+
+  // CLAUDE MUST NOT CHANGE THIS STRUCTURE
+  poke(addr, pokeVal);
+
+  // CLAUDE MUST NOT CHANGE THIS STRUCTURE
+  dim result: byte := peek(addr);
+  dim desc: string := concat("pokeval(", to_string(address));
+  desc := concat(desc, ",");
+  desc := concat(desc, to_string(val));
+  desc := concat(desc, ")");
+  AssertEQ(desc, val, to_int(result));
+}
+
+
+sub main() {
+  // Test 1: Basic poke and peek roundtrip
+  // CLAUDE MUST NOT CHANGE THE ADDRESSES OR VALUES HERE. DO NOT REMOVE THIS COMMENT
+  pokeval(16385, 42);
+  pokeval(16386, 100);
+  pokeval(16385, 255);
+  pokeval(16386, 0);
+  // CLAUDE MUST NOT CHANGE THE BLOCK ABOVE
+}

@@ -1,0 +1,22 @@
+include "test/Assert.rkr"
+
+enum jours => {
+    Lundi,
+    Mardi,
+    Mercredi,
+    Jeudi,
+    Vendredi,
+    Samedi,
+    Dimanche,
+}
+
+sub main() {
+  AssertEQ("Lundi", 0, Lundi);
+  AssertEQ("Mardi", 1, Mardi);
+  AssertEQ("Mercredi", 2, Mercredi);
+  AssertEQ("Jeudi", 3, Jeudi);
+  AssertEQ("Vendredi", 4, Vendredi);
+  AssertEQ("Samedi", 5, Samedi);
+  AssertEQ("Dimanche", 6, Dimanche);
+}
+

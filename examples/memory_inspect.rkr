@@ -1,0 +1,48 @@
+// Memory Inspector Example
+// Demonstrates how to use peek() to inspect memory regions
+// Useful for debugging and understanding memory layout
+
+sub display_byte_at(addr: word, label: string): void => {
+  print(label);
+  print(" at ");
+  print(to_string(addr));
+  print(": ");
+  dim val: byte := peek(addr);
+  print(to_string(to_int(val)));
+  print("\n");
+}
+
+sub main(): void => {
+  print("=== Memory Inspector ===\n\n");
+
+  // Example 1: Read from various memory addresses
+  print("Reading from various memory addresses:\n");
+
+  display_byte_at(to_word(16384), "Address 16384");
+  display_byte_at(to_word(16385), "Address 16385");
+  display_byte_at(to_word(16386), "Address 16386");
+
+  print("\n");
+
+  // Example 2: System area reads
+  print("System area reads:\n");
+
+  display_byte_at(to_word(23552), "Address 23552");
+  display_byte_at(to_word(23553), "Address 23553");
+
+  print("\n");
+
+  // Example 3: Direct peek calls
+  print("Direct peek calls:\n");
+  dim val1: byte := peek(to_word(1000));
+  print("peek(1000) = ");
+  print(to_string(to_int(val1)));
+  print("\n");
+
+  dim val2: byte := peek(to_word(2000));
+  print("peek(2000) = ");
+  print(to_string(to_int(val2)));
+  print("\n");
+
+  print("\nMemory inspection complete\n");
+}

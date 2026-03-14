@@ -1,0 +1,26 @@
+include "test/Assert.rkr"
+
+sub main() {
+  // Basic range loop without =>
+  dim sum: int := 0;
+  loop i := 0 to 4 {
+    sum := sum + i;
+  }
+  AssertEQ("sum 0..4", 10, sum);
+
+  // Single-iteration loop (start == end, runs once)
+  dim count: int := 0;
+  loop i := 0 to 0 {
+    count := count + 1;
+  }
+  AssertEQ("single iteration", 1, count);
+
+  // Nested loops without =>
+  dim pairs: int := 0;
+  loop i := 0 to 2 {
+    loop j := 0 to 2 {
+      pairs := pairs + 1;
+    }
+  }
+  AssertEQ("nested loops 3x3", 9, pairs);
+}

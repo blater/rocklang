@@ -1,0 +1,10 @@
+include "test/Assert.rkr"
+
+@embed c
+  int add(int a, int b) { return a + b; }
+@end c
+
+sub main() {
+  dim result: int := add(3, 4);
+  AssertEQ("add(3, 4)", 7, result);
+}

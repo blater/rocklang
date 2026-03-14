@@ -1,0 +1,6 @@
+include "test/Assert.rkr"
+
+sub main(): void {
+  let x: string := "hello";
+  AssertEquals("test_simple", "hello", x);
+}

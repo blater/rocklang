@@ -1,0 +1,24 @@
+include "test/Assert.rkr"
+
+sub main() {
+  dim n: int;
+  AssertEQ("int defaults to 0", 0, n);
+
+  dim b: byte;
+  AssertEQ("byte defaults to 0", 0, b);
+
+  dim w: word;
+  AssertEQ("word defaults to 0", 0, w);
+
+  dim dw: dword;
+  AssertEQ("dword defaults to 0", 0, dw);
+
+  dim s: string;
+  AssertEquals("string defaults to empty", "", s);
+
+  dim arr: int[];
+  AssertEQ("int[] defaults to length 0", 0, length(arr));
+
+  dim sarr: string[];
+  AssertEQ("string[] defaults to length 0", 0, length(sarr));
+}

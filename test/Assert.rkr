@@ -1,0 +1,81 @@
+
+dim TRUE:int := 1;
+dim FALSE:int := 0;
+
+sub printPass(desc:string) {
+    printf("PASS: ");
+    printf(desc);
+    printf("\n");
+}
+
+sub printFail(desc: string, expected: string, actual: string) {
+    printf("FAIL: ");
+    printf(desc);
+    printf(" (expected:");
+    printf(expected);
+    printf(" actual:");
+    printf(actual);
+    printf(")\n");
+}
+
+sub printResult(res: int, desc: string, expected: string, actual: string): int {
+  if (res = 1) {
+    printPass(desc);
+  } else {
+    printFail(desc, expected, actual);
+  }
+  return res;
+}
+
+sub printIntResult(res: int, desc: string, expected: int, actual: int): int {
+  return printResult(res, desc, to_string(expected), to_string(actual));
+}
+
+
+sub AssertFalse(desc: string, value: int) : int {
+  if (value = 1) {
+    printFail(desc, "False(0)", toString(value));
+    return 0;
+  } else {
+    printPass(desc);
+    return 1;
+  }
+}
+
+sub AssertTrue(desc: string, value: int) : int {
+  if (value = 0) {
+    printFail(desc, "TRUE(1)", toString(value));
+    return 0;
+  } else {
+    printPass(desc);
+    return 1;
+  }
+}
+
+sub AssertEQ(desc: string, expected: int, actual: int): int {
+  return printIntResult((expected = actual), desc, expected, actual);
+}
+sub AssertNEQ(desc: string, expected: int, actual: int): int {
+  return printIntResult((expected != actual), desc, expected, actual);
+}
+
+sub AssertEquals(desc: string, expected: string, actual: string): int {
+  return printResult(str_eq(expected, actual)!=0, desc, expected, actual);
+}
+sub AssertNotEquals(desc: string, expected: string, actual: string): int {
+  return printResult(str_eq(expected, actual)=0, desc, expected, actual);
+}
+
+
+sub testRkrUnit() {
+  AssertEQ("should fail", 1, 2);
+  AssertEQ("should pass", 2, 2);
+
+  AssertEquals("should pass", "some-string", "some-string");
+  AssertEquals("should fail", "some-string", "some-other-string");
+  AssertNotEquals("should pass", "some-string", "some-other-string");
+}
+//sub main() {
+//  testRkrUnit();
+//}
+
