@@ -1,0 +1,18 @@
+include "test/Assert.rkr"
+
+record t => {
+  a:int, 
+  b:string,
+}
+
+sub modify_t(arg: t) {
+  arg.b := "hooo\n";
+}
+
+sub main() {
+  let var: t => {a => 3, b => "hey !\n"};
+  AssertEquals("record assignment", "hey !\n", var.b);
+
+  modify_t(var);
+  AssertEquals("mutation by reference", "hooo\n", var.b);
+}

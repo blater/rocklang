@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Werror -Wall -Wextra -g -pedantic -I lib/cpu_agnostic
+CFLAGS=-Werror -Wall -Wextra -g -pedantic -I .
 SRC=src/
 BUILD=build/
 LIB=lib/cpu_agnostic/

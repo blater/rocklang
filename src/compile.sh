@@ -63,14 +63,6 @@ if [[ "$TARGET" == "zxn" ]]; then
 
   cd "$ROCK_ROOT"
 
-  # Copy header files to ROCK_ROOT so zcc can find them
-  # zcc's include path resolution has issues with -I flags in some versions
-  cp "$LIB_CPU_AGNOSTIC"/alloc.h .
-  cp "$LIB_CPU_AGNOSTIC"/fundefs.h .
-  cp "$LIB_CPU_AGNOSTIC"/fundefs_internal.h .
-  cp "$LIB_CPU_AGNOSTIC"/typedefs.h .
-  cp "$LIB_Z80"/asm_interop.h .
-
   # Get basename for output
   OUTPUT_BASE="$(basename "$OUTPUT_ABS")"
 
@@ -91,9 +83,6 @@ if [[ "$TARGET" == "zxn" ]]; then
     rm -f "$ROCK_ROOT/$OUTPUT_BASE".* 2>/dev/null || true
   fi
 
-  # Clean up temporary header files
-  rm -f alloc.h fundefs.h fundefs_internal.h typedefs.h asm_interop.h
-
 elif [[ "$TARGET" == "host" ]]; then
   # Host machine target using gcc
   echo "Compiling for host machine..."
@@ -104,8 +93,7 @@ elif [[ "$TARGET" == "host" ]]; then
   fi
 
   gcc -Wall -g \
-    -I "$LIB_CPU_AGNOSTIC" \
-    -I "$LIB_Z80" \
+    -I "$ROCK_ROOT" \
     -o "$OUTPUT_ABS" \
     "$GENERATED_C_ABS" \
     "$LIB_CPU_AGNOSTIC/alloc.c" \

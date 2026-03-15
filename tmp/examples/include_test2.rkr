@@ -1,0 +1,5 @@
+include "examples/include_test1.rkr"
+
+let main(): void => {
+    a();
+}

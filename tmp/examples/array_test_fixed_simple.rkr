@@ -1,0 +1,6 @@
+sub main() {
+  dim fixed: string [3] := [];
+  fixed[0] := "hello";
+  print("Assigned\n");
+  print("Done\n");
+}

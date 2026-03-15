@@ -1,0 +1,257 @@
+//-----------------------------------------------------------------------------
+//  ROCKER TOKEN
+//  MIT License
+//  Copyright (c) 2024 Paul Passeron
+//-----------------------------------------------------------------------------
+
+include "lib/stdlib.rkr"
+include "lib/term.rkr"
+//-----------------------------------------------------------------------------
+// TOKEN FUNCTIONS
+//-----------------------------------------------------------------------------
+
+enum token_type => {
+    TOK_IDENTIFIER,
+    TOK_CHR_LIT,
+    TOK_STR_LIT,
+    TOK_NUM_LIT,
+    TOK_LET,
+    TOK_COLON,
+    TOK_COMMA,
+    TOK_SMALL_ARROW,
+    TOK_BIG_ARROW,
+    TOK_OPEN_BRACE,
+    TOK_CLOSE_BRACE,
+    TOK_OPEN_PAREN,
+    TOK_CLOSE_PAREN,
+    TOK_IF,
+    TOK_THEN,
+    TOK_ELSE,
+    TOK_REC,
+    TOK_PRO,
+    TOK_MATCH,
+    TOK_RETURN,
+    TOK_STAR,
+    TOK_MINUS,
+    TOK_PLUS,
+    TOK_DIV,
+    TOK_MODULO,
+    TOK_LOG_OR,
+    TOK_LOG_AND,
+    TOK_BIT_OR,
+    TOK_BIT_XOR,
+    TOK_BIT_AND,
+    TOK_LSSR,
+    TOK_LSSR_EQ,
+    TOK_GRTR,
+    TOK_GRTR_EQ,
+    TOK_EQUAL,
+    TOK_DIFF,
+    TOK_WILDCARD,
+    TOK_SUB,
+    TOK_SEMICOL,
+    TOK_LOOP,
+    TOK_WHILE,
+    TOK_DO,
+    TOK_INCLUDE,
+    TOK_ENUM,
+    TOK_ARR_DECL,
+    TOK_ITERATE,
+    TOK_COUNT,
+}
+
+
+rec token => {
+    Type: token_type,
+    Lexeme: string,
+    Col: int,
+    Line: int,
+    Filename: string
+}
+
+
+let lexeme_of_type(type: token_type): string {
+    if type = TOK_IDENTIFIER  then return "TOK_IDENTIFIER";
+    if type = TOK_CHR_LIT     then return "TOK_CHR_LIT";
+    if type = TOK_STR_LIT     then return "TOK_STR_LIT";
+    if type = TOK_NUM_LIT     then return "TOK_NUM_LIT";
+    if type = TOK_LET         then return "TOK_LET";
+    if type = TOK_COLON       then return "TOK_COLON";
+    if type = TOK_COMMA       then return "TOK_COMMA";
+    if type = TOK_SMALL_ARROW then return "TOK_SMALL_ARROW";
+    if type = TOK_BIG_ARROW   then return "TOK_BIG_ARROW";
+    if type = TOK_OPEN_BRACE  then return "TOK_OPEN_BRACE";
+    if type = TOK_CLOSE_BRACE then return "TOK_CLOSE_BRACE";
+    if type = TOK_OPEN_PAREN  then return "TOK_OPEN_PAREN";
+    if type = TOK_CLOSE_PAREN then return "TOK_CLOSE_PAREN";
+    if type = TOK_IF          then return "TOK_IF";
+    if type = TOK_THEN        then return "TOK_THEN";
+    if type = TOK_ELSE        then return "TOK_ELSE";
+    if type = TOK_REC         then return "TOK_REC";
+    if type = TOK_PRO         then return "TOK_PRO";
+    if type = TOK_MATCH       then return "TOK_MATCH";
+    if type = TOK_RETURN      then return "TOK_RETURN";
+    if type = TOK_STAR        then return "*";
+    if type = TOK_MINUS       then return "-";
+    if type = TOK_PLUS        then return "+";
+    if type = TOK_DIV         then return "/";
+    if type = TOK_MODULO      then return "%";
+    if type = TOK_LOG_OR      then return "||";
+    if type = TOK_LOG_AND     then return "&&";
+    if type = TOK_BIT_OR      then return "|";
+    if type = TOK_BIT_XOR     then return "^";
+    if type = TOK_BIT_AND     then return "&";
+    if type = TOK_LSSR        then return "<";
+    if type = TOK_LSSR_EQ     then return "<=";
+    if type = TOK_GRTR        then return ">";
+    if type = TOK_GRTR_EQ     then return ">=";
+    if type = TOK_EQUAL       then return "=";
+    if type = TOK_DIFF        then return "!=";
+    if type = TOK_WILDCARD    then return "_";
+    if type = TOK_SUB         then return "TOK_SUB";
+    if type = TOK_SEMICOL     then return "TOK_SEMICOL";
+    if type = TOK_LOOP        then return "TOK_LOOP";
+    if type = TOK_DO          then return "TOK_DO";
+    if type = TOK_INCLUDE     then return "TOK_INCLUDE";
+    if type = TOK_ENUM        then return "TOK_ENUM";
+    if type = TOK_ARR_DECL    then return "TOK_ARR_DECL";
+    if type = TOK_ITERATE     then return "TOK_ITERATE";
+    return "ERROR";
+}
+
+
+let type_of_lexeme(lexeme: string): token_type {
+    if str_eq(lexeme, "let")                 then return TOK_LET;
+    if str_eq(lexeme, ":")                   then return TOK_COLON;
+    if str_eq(lexeme, ",")                   then return TOK_COMMA;
+    if str_eq(lexeme, "->")                  then return TOK_SMALL_ARROW;
+    if str_eq(lexeme, "=>")                  then return TOK_BIG_ARROW;
+    if str_eq(lexeme, "{")                   then return TOK_OPEN_BRACE;
+    if str_eq(lexeme, "}")                   then return TOK_CLOSE_BRACE;
+    if str_eq(lexeme, "(")                   then return TOK_OPEN_PAREN;
+    if str_eq(lexeme, ")")                   then return TOK_CLOSE_PAREN;
+    if str_eq(lexeme, "if")                  then return TOK_IF;
+    if str_eq(lexeme, "then")                then return TOK_THEN;
+    if str_eq(lexeme, "else")                then return TOK_ELSE;
+    if str_eq(lexeme, "rec")                 then return TOK_REC;
+    if str_eq(lexeme, "pro")                 then return TOK_PRO;
+    if str_eq(lexeme, "match")               then return TOK_MATCH;
+    if str_eq(lexeme, "return")              then return TOK_RETURN;
+    if str_eq(lexeme, "*")                   then return TOK_STAR;
+    if str_eq(lexeme, "-")                   then return TOK_MINUS;
+    if str_eq(lexeme, "+")                   then return TOK_PLUS;
+    if str_eq(lexeme, "/")                   then return TOK_DIV;
+    if str_eq(lexeme, "%")                   then return TOK_MODULO;
+    if str_eq(lexeme, "||")                  then return TOK_LOG_OR;
+    if str_eq(lexeme, "&&")                  then return TOK_LOG_AND;
+    if str_eq(lexeme, "|")                   then return TOK_BIT_OR;
+    if str_eq(lexeme, "^")                   then return TOK_BIT_XOR;
+    if str_eq(lexeme, "&")                   then return TOK_BIT_AND;
+    if str_eq(lexeme, "<")                   then return TOK_LSSR;
+    if str_eq(lexeme, "<=")                  then return TOK_LSSR_EQ;
+    if str_eq(lexeme, ">")                   then return TOK_GRTR;
+    if str_eq(lexeme, ">=")                  then return TOK_GRTR_EQ;
+    if str_eq(lexeme, "=")                   then return TOK_EQUAL;
+    if str_eq(lexeme, "!=")                  then return TOK_DIFF;
+    if str_eq(lexeme, "_")                   then return TOK_WILDCARD;
+    if str_eq(lexeme, "::")                  then return TOK_SUB;
+    if str_eq(lexeme, ";")                   then return TOK_SEMICOL;
+    if str_eq(lexeme, "loop")                then return TOK_LOOP;
+    if str_eq(lexeme, "iter")                then return TOK_ITERATE;
+    if str_eq(lexeme, "while")               then return TOK_WHILE;
+    if str_eq(lexeme, "do")                  then return TOK_DO;
+    if str_eq(lexeme, "include")             then return TOK_INCLUDE;
+    if str_eq(lexeme, "enum")                then return TOK_ENUM;
+    if str_eq(lexeme, "[]")                  then return TOK_ARR_DECL;
+    return TOK_COUNT;
+}
+
+let is_type_keyword(type: int): int {
+    if type = TOK_MATCH then return true; 
+    if type = TOK_PRO then return true; 
+    if type = TOK_REC then return true; 
+    if type = TOK_WILDCARD then return true; 
+    if type = TOK_RETURN then return true; 
+    if type = TOK_SUB then return true; 
+    if type = TOK_LET then return true; 
+    if type = TOK_IF then return true; 
+    if type = TOK_THEN then return true; 
+    if type = TOK_ELSE then return true; 
+    if type = TOK_LOOP then return true; 
+    if type = TOK_ITERATE then return true; 
+    if type = TOK_WHILE then return true; 
+    if type = TOK_DO then return true; 
+    if type = TOK_INCLUDE then return true; 
+    if type = TOK_ENUM then return true; 
+    return false;
+}
+
+let is_type_operator(type: int): int {
+    if type = TOK_STAR then return true;
+    if type = TOK_MINUS then return true;
+    if type = TOK_PLUS then return true;
+    if type = TOK_DIV then return true;
+    if type = TOK_MODULO then return true;
+    if type = TOK_LOG_OR then return true;
+    if type = TOK_LOG_AND then return true;
+    if type = TOK_BIT_OR then return true;
+    if type = TOK_BIT_XOR then return true;
+    if type = TOK_BIT_AND then return true;
+    if type = TOK_LSSR then return true;
+    if type = TOK_LSSR_EQ then return true;
+    if type = TOK_GRTR then return true;
+    if type = TOK_GRTR_EQ then return true;
+    if type = TOK_EQUAL then return true;
+    if type = TOK_DIFF then return true;
+    return false;
+
+}
+
+let is_lexeme_keyword(s: string): int {
+    return is_type_keyword(type_of_lexeme(s));
+}
+
+let get_precedence(t: token_type): int {
+    if t = TOK_STAR then return 11;
+    if t = TOK_DIV then return 11;
+    if t = TOK_MODULO then return 11;
+    if t = TOK_PLUS then return 9;
+    if t = TOK_MINUS then return 10;
+    if t = TOK_GRTR then return 7;
+    if t = TOK_LSSR then return 7;
+    if t = TOK_GRTR_EQ then return 7;
+    if t = TOK_LSSR_EQ then return 7;
+    if t = TOK_EQUAL then return 6;
+    if t = TOK_DIFF then return 6;
+    if t = TOK_BIT_AND then return 5;
+    if t = TOK_BIT_XOR then return 4;
+    if t = TOK_BIT_OR then return 3;
+    if t = TOK_LOG_AND then return 2;
+    if t = TOK_LOG_OR then return 1;
+    return 0;
+}
+
+
+
+let print_list_types(_l: token []): void {
+    let l: token [] => _l; 
+  loop i : 0 -> get_length(l) => {
+        let t: token => get(l, i);
+        let typ: token_type => t::Type;
+        let s: string => lexeme_of_type(typ);
+        print(s);
+        print("\n");
+    }
+}
+
+let print_error_prefix_tok(t: token): void {
+    print_error();
+    print("\e[1;4m");
+    print(t::Filename);
+    print(":");
+    print(string_of_int(t::Line));
+    print(":");
+    print(string_of_int(t::Col));
+    print("\e[0m");
+}
+//-----------------------------------------------------------------------------

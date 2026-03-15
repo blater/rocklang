@@ -1,0 +1,13 @@
+@embed c
+  int fast_add(int a, int b) { return a + b; }
+@end c
+
+sub main(): void => {
+  dim result: int := fast_add(3, 4);
+  @embed c
+    printf("Before multiply: result = %d\n", result);
+    result = result * 2;
+    printf("After multiply: result = %d\n", result);
+  @end c
+  print("Mixed embed test complete\n");
+}

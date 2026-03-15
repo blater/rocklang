@@ -1,0 +1,18 @@
+include "lib/stdlib.rkr"
+
+// main
+sub main() {
+  dim a: int [] := [];
+  append(a, 1);
+  append(a, 2);
+  append(a, 3);
+  append(a, 4);
+  append(a, 5);
+  append(a, 6);
+  append(a, 7);
+
+  iter elem: a {
+    print_int(elem);
+    print("\n");
+  }
+}

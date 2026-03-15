@@ -1,0 +1,13 @@
+include "test/Assert.rkr"
+
+let main() {
+  let s1: string := "Hello";
+  let s2: string := " World";
+  let result1: string := concat(s1, s2);
+  AssertEquals("String concatination", "Hello World", result1);
+
+  let s3: string := "ABC";
+  let c: char := 'D';
+  let result2: string := concat(s3, c);
+  AssertEquals("Test string + char (via intermediate result)", "ABCD", result2);
+}

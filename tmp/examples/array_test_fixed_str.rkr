@@ -1,0 +1,19 @@
+let print_int(n: int): void => {
+  let a: int => n / 10;
+  if a then print_int(a);
+  putchar(n%10 + '0');
+}
+
+sub main() {
+  dim fixed: string [3] := [];
+  fixed[0] := "hello";
+  fixed[1] := "world";
+  print("\n-----\n");
+  print(fixed[0]);
+  print("\n");
+  print(fixed[1]);
+  print("\n");
+  print(concat(fixed[0], fixed[1]));
+  print("\n-----\n");
+  print("Done\n");
+}

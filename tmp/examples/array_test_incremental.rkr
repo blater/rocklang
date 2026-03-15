@@ -1,0 +1,41 @@
+record array_wrapper => {
+  Items: int [],
+  Names: string [],
+}
+
+sub func(): array_wrapper => {
+  dim a: array_wrapper => {
+    Items => NULL,
+    Names => NULL,
+  };
+  dim items: int [] => [];
+  a.Items := items;
+  dim names: string [] := [];
+  a.Names := names;
+  append(a.Items, 1);
+  append(names, "First\n");
+  append(a.Items, 2);
+  append(names, "Second\n");
+  append(a.Items, 3);
+  append(names, "Third\n");
+
+  return a;
+}
+
+sub main() {
+  dim a: array_wrapper := func();
+
+  // For the moment, you must bind them by name to use them
+  dim names: string [] := a.Names;
+
+  print("\n");
+  for name: names {
+    print(name);
+  }
+
+  dim new_arr: array_wrapper := {
+    Items => [],
+    Names => []
+  };
+  print("Done\n");
+}

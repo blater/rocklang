@@ -1,0 +1,30 @@
+// Minimal peek/poke test for ZXN - avoids struct operations
+// Uses direct printf instead of Rock's print() to avoid sccz80 crashes
+
+sub main() {
+  printf("Testing peek/poke on ZXN\n");
+
+  // Test 1: poke value 42 to address 0xE000 (57344), peek it back
+  dim addr1: word := to_word(57344);
+  dim val1: byte := to_byte(42);
+  poke(addr1, val1);
+  dim result1: byte := peek(addr1);
+
+  if (result1 = val1) then
+    printf("Test 1: PASS\n");
+  else
+    printf("Test 1: FAIL\n");
+
+  // Test 2: poke value 100 to address 0xE001 (57345), peek it back
+  dim addr2: word := to_word(57345);
+  dim val2: byte := to_byte(100);
+  poke(addr2, val2);
+  dim result2: byte := peek(addr2);
+
+  if (result2 = val2) then
+    printf("Test 2: PASS\n");
+  else
+    printf("Test 2: FAIL\n");
+
+  printf("peek/poke test complete\n");
+}

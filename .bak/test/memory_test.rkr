@@ -1,0 +1,134 @@
+// Memory allocation test for 24KB microcontroller
+// Tests: records with strings, arrays of strings, nested scopes, NULL handling
+
+record Person {
+  name: string,
+  age: int
+}
+
+record Team {
+  leader: string,
+  members: string[]
+}
+
+sub main() {
+  print("=== Test 1: Simple string concat ===\n");
+  {
+    dim s1: string := "hello";
+    dim s2: string := concat(s1, " world");
+    print(s2);
+    print("\n");
+  }
+
+  print("=== Test 2: Dynamic string arrays ===\n");
+  {
+    dim names: string[] := [];
+    append(names, "Alice");
+    append(names, "Bob");
+    append(names, "Charlie");
+    print(get(names, 0));
+    print(", ");
+    print(get(names, 1));
+    print(", ");
+    print(get(names, 2));
+    print("\n");
+  }
+
+  print("=== Test 3: String concatenation in loop ===\n");
+  {
+    loop i: 0 -> 2 {
+      dim s: string => concat("Index ", toString(i));
+      print(s);
+      print("\n");
+    }
+  }
+
+  print("=== Test 4: Records with strings ===\n");
+  {
+    dim p1: Person := {name => "Alice", age => 30};
+    dim p2: Person := {name => "Bob", age => 25};
+    print(p1.name);
+    print(" is ");
+    print(toString(p1.age));
+    print("\n");
+    print(p2.name);
+    print(" is ");
+    print(toString(p2.age));
+    print("\n");
+  }
+
+  print("=== Test 5: Records with dynamic string arrays ===\n");
+  {
+    dim team: Team := {leader => "Alice", members => []};
+    append(team.members, "Alice");
+    append(team.members, "Bob");
+    append(team.members, "Charlie");
+
+    print("Leader: ");
+    print(team.leader);
+    print("\n");
+    print("Members: ");
+    print(get(team.members, 0));
+    print(", ");
+    print(get(team.members, 1));
+    print(", ");
+    print(get(team.members, 2));
+    print("\n");
+  }
+
+  print("=== Test 6: Nested scopes with concat ===\n");
+  {
+    loop i: 0 -> 2 {
+      dim prefix: string => concat("Item ", toString(i));
+      print(prefix);
+      print("\n");
+    }
+  }
+
+  print("=== Test 7: Dynamic array append and reassign ===\n");
+  {
+    dim items: string[] => [];
+    append(items, "first");
+    print("Initial: ");
+    print(get(items, 0));
+    print("\n");
+
+    items[0] := "second";
+    print("After reassign: ");
+    print(get(items, 0));
+    print("\n");
+  }
+
+  print("=== Test 8: String concatenation chain ===\n");
+  {
+    dim result: string => concat("Hello", " ");
+    result := concat(result, "World");
+    result := concat(result, "!");
+    print(result);
+    print("\n");
+  }
+
+  print("=== Test 9: Deep nesting with concat ===\n");
+  {
+    loop i: 0 -> 1 {
+      loop j: 0 -> 1 {
+        dim msg: string => concat("i=", toString(i));
+        msg := concat(msg, ", j=");
+        msg := concat(msg, toString(j));
+        print(msg);
+        print("\n");
+      }
+    }
+  }
+
+  print("=== Test 10: Many iterations (loop allocation reuse) ===\n");
+  {
+    loop i: 0 -> 9 {
+      dim s: string => concat("Count: ", toString(i));
+      print(s);
+      print("\n");
+    }
+  }
+
+  print("=== All memory tests complete ===\n");
+}

@@ -1,0 +1,74 @@
+include "test/Assert.rkr"
+
+sub dynamicIntTest(){
+    dim arr : int [] := [];
+    loop i: 0 -> 10 => {
+      append(arr, i);
+    }
+    loop i: 0 -> length(arr) -1 => {
+      dim n: int := get(arr, i); 
+      AssertEQ("dynamic int test", i, n);
+    }
+}
+
+record array_wrapper => {
+  Items: int [],
+  Names: string [],
+}
+
+
+sub wrapFn(): array_wrapper => {
+  dim a: array_wrapper => {
+    Items => NULL,
+    Names => NULL,
+  };
+  dim items: int [] := [];
+  a.Items := items;
+  dim names: string [] := [];
+  a.Names := names;
+  append(a.Items, 1);
+  append(names, "First");
+  append(a.Items, 2);
+  append(names, "Second");
+  append(a.Items, 3);
+  append(names, "Third");
+
+  return a;
+}
+
+sub main() {
+  dynamicIntTest();
+
+  dim pople: int [2] := [];
+  pople[0] := 99;
+  AssertEQ("int fixed size array assignment", 99, get(pople,0));
+
+  dim fixed: string [3] := [];
+  fixed[0] := "hello";
+  fixed[1] := "world";
+  AssertEquals("string fixed size array assignment", "world", get(fixed,1));
+
+  dim strings: string[] := [];
+  append(strings, "A");
+  append(strings, "B B");
+  append(strings, "C C C");
+
+  AssertEquals("string dynamic assign A", "A", get(strings,0));
+  AssertEquals("string dynamic assign B", "B B", get(strings,1));
+  AssertEquals("string dynamic assign C", "C C C", get(strings,2));
+
+  dim a: array_wrapper := wrapFn();
+  // For the moment, you must bind them by name to use them
+  dim names: string [] := a.Names;
+
+  AssertEquals("wrapped assign 1", "First", get(names,0));
+  AssertEquals("wrapped assign 2", "Second", get(names,1));
+  AssertEquals("wrapped assign 3", "Third", get(names,2));
+
+  dim new_arr: array_wrapper := {
+    Items => [],
+    Names => []
+  };
+  AssertEQ("empty array size", 0, length(new_arr.Items));
+}
+

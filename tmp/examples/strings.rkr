@@ -1,0 +1,13 @@
+
+sub main() {
+  print ("hello");
+  dim a : int := 0;
+  dim s : string := "wurld ";
+  concat(s, "hello");
+
+  print (s);
+}
+
+//sub main() {
+//  print "hi"
+//}

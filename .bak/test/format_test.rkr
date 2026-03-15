@@ -1,0 +1,19 @@
+include "test/Assert.rkr"
+
+sub fun_with_args(a1: int, names: string[]): string => {
+  dim result:string :="arg count:";
+  result := concat(result, (to_string(length(names))));
+  result := concat(result, " value:");
+  result := concat(result,to_string(a1));
+  return result;
+}
+
+sub main() {
+  dim args: string[] := [];
+  append(args, "test1");
+  append(args, "test2");
+
+  dim result : string := fun_with_args(42, args);
+
+  AssertEquals("Testing function with args", "arg count:2 value:42", result);
+}

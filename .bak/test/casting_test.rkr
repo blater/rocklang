@@ -1,0 +1,38 @@
+include "test/Assert.rkr"
+
+sub main() {
+  // Basic word variable and to_string
+  dim w: word := to_word(1000);
+  AssertEQ("word is 1000", 1000, to_int(w));
+
+  // to_int
+  dim n: int := to_int(w);
+  AssertEQ("int n is 1000", 1000, n);
+
+  // Silent truncation: 70000 mod 65536 = 4464
+  dim w1: word := to_word(70000);
+  AssertEQ("word bigger than 65535 is truncated", to_int(w1), 4464);
+
+  // Arithmetic via int promotion (1000 + 4464)
+  dim sum: int := to_int(w) + to_int(w1);
+  AssertEQ("addition via int promotion", sum, 5464);
+
+  // word arrays
+  dim arr: word[] := [];
+  append(arr, to_word(100));
+  append(arr, to_word(200));
+  append(arr, to_word(300));
+
+  AssertEQ("word arrays assigned ok", length(arr), 3);
+  AssertEQ("word arrays element[1]", 200, to_int(get(arr,1)));
+
+  // to_string on int (default branch still works)
+  dim i: int := 42;
+  AssertEquals("to_string on an int", to_string(i), "42");
+
+  // to_string on byte still works (regression)
+  dim b: byte := to_byte(99);
+  AssertEquals("to_string on a byte", to_string(b), "99");
+
+  print("Done\n");
+}

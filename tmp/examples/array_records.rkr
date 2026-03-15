@@ -1,0 +1,44 @@
+include "lib/stdlib.rkr"
+
+record Person {
+  id : int,
+  name : string
+}
+
+// main
+sub main() {
+  dim people: Person [2] := [];
+  dim fred : Person := {id => 1, name => "Frederick"};
+  dim charles : Person := {id => 2, name => "Chuck"};
+  people[0] := fred;
+  people[1] := charles;
+
+
+//  iter p : people {
+//    print(p.name);
+//    print("\n");
+//  }
+
+//  for p:people {
+//    print(p.name);
+//    print("\n");
+//  }
+
+//  loop i: 0 -> length(people)-1 => {
+//    dim p:Person := get(people,i);
+//    print(p.name);
+//    print("\n");
+//  }
+
+  for i:= 0 to length(people)-1 {
+    dim p:Person := get(people,i);
+    print(p.name);
+    print("\n");
+  }
+  print("\n----------------------\n");
+
+  for i: 0 to length(people)-1 {
+    print(people[i].name);
+    print("\n");
+  }
+}

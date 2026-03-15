@@ -1,0 +1,58 @@
+//
+// Implementation of stack as a linked list
+//
+record Stack {
+  top: int,
+  next: Stack
+}
+
+sub push(s: Stack, e: int): Stack {
+  dim res: Stack := {
+    top => e,
+    next => s
+  };
+  return res;
+}
+
+sub pop(s: Stack): int {
+  if s != NULL {
+    let res: int := s.top;
+    s => s.next;
+    return res;
+  }
+  print("Cannot pop an empty stack !\n");
+  exit(1);
+}
+
+sub print_int(n: int) {
+  dim a: int := n / 10;
+  if a then 
+    print_int(a);
+  putchar(n%10 + '0');
+}
+
+sub print_stack(stk: Stack) {
+  if stk != NULL then {
+      print_int(stk.top);
+      print(" ");
+      print_stack(stk.next);
+  }
+}
+
+sub new_stack(): Stack {
+  return NULL;
+}
+
+
+sub main() {
+  dim stk : Stack := new_stack();
+  dim st : string := "hello ";
+  print(st);
+  
+  loop i: 0 -> 10 => {
+    stk := push(stk, i);
+  }
+  
+  print_stack(stk);
+  print("\n");
+}

@@ -1,0 +1,7 @@
+sub main() {
+  dim s: string := "Hello";
+
+  // This should trigger an out-of-bounds error
+  print(substring(s, 10));
+  print("Should not reach here\n");
+}

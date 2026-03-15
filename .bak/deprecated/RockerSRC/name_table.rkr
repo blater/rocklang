@@ -1,0 +1,586 @@
+//-----------------------------------------------------------------------------
+//  ROCKER NAME TABLE
+//  MIT License
+//  Copyright (c) 2024 Paul Passeron
+//-----------------------------------------------------------------------------
+
+include "RockerSRC/reporter.rkr"
+
+enum nt_kind => {
+    tdef,
+    fdef,
+    vdef,
+}
+
+rec constructor_spec => {
+    name: string,
+    type: type_spec,
+}
+
+rec type_spec => {
+    base_type: string,
+    arrays: int,
+    is_builtin: boolean,
+    tdef_kind: tdef_type,
+    constructors: constructor_spec [],
+}
+
+
+rec nt_fun => {
+    ret_type: type_spec,
+    args: type_spec [],
+}
+
+rec nt_var => {
+    type: type_spec,
+}
+
+rec nt_elem => {
+    Tag: nt_kind,
+    name: string,
+    scope: int,
+    tdef: type_spec,
+    fun: nt_fun,
+    var: nt_var,
+}
+
+rec nt => {
+    elems: nt_elem [],
+    scope: int,
+    r: reporter,
+}
+
+let get_ref(name: string, table: nt): nt_elem {
+    let elems: nt_elem [] => table::elems;
+    let max_scope: int => 0-1;
+    let res: nt_elem => NULL;
+    loop i: 0 -> get_length(elems) => {
+        let elem: nt_elem => get(elems, i);
+        if str_eq(elem::name, name) {
+            if elem::Tag = tdef then return elem;
+            max_scope => elem::scope;
+            res => elem;
+        }
+    }
+    if res = NULL then {
+        let msg: string => "Identifier \'";
+        msg => concat_string(msg, name);
+        msg => concat_string(msg, "\' not declared in current scope.");
+        report(table::r, msg);
+    }
+    return res;
+}
+
+let get_tdef_ref(name: string, table: nt): type_spec {
+    let ref: nt_elem => get_ref(name, table);
+    if ref::Tag = tdef then
+        return ref::tdef;
+    else return NULL;
+}
+
+let new_nt(r: reporter): nt {
+    let elems: nt_elem [] => [];
+    let res: nt => {
+        elems => elems,
+        scope => 0,
+        r => r,
+    };
+    return res;
+}
+
+let new_nt_scope(table: nt): void {
+    table::scope => table::scope + 1;
+}
+
+let end_nt_scope(table: nt): void {
+    let elems: nt_elem [] => table::elems;
+    let i: int => get_length(elems) - 1;
+    let break_cond: boolean => false;
+    while i >= 0 && break_cond = false do {
+        let elem: nt_elem => get(elems, i);
+        if elem::scope < table::scope then
+            break_cond => true;
+        else 
+            pop(elems);
+        i => i - 1;
+    }
+}
+
+let push_nt(table: nt, name: string, elem: nt_elem): void {
+    let elems: nt_elem [] => table::elems;
+    let res: nt_elem => {
+        Tag => elem::Tag,
+        name => elem::name,
+        tdef => elem::tdef,
+        fun => elem::fun,
+        var => elem::var,
+    };
+    res::scope => table::scope;
+    append(elems, res);
+}
+
+let get_builtin_type(name: string): type_spec {
+    let res: type_spec => {
+        base_type => name,
+        arrays => 0,
+        is_builtin => true,
+        tdef_kind => TDEF_BUILTIN, 
+        constructors => NULL,
+    };
+    return res;
+}
+
+let get_nt_fun(fundef: ast_fundef): nt_elem {
+    let nt_args: type_spec [] => [];
+    let types: ast [] => fundef::types;
+    loop i: 0 -> get_length(types) - 1 =>
+        append(nt_args, nt_type_of_ast(get(types, i)));
+    let fundef_elem: nt_fun => {
+        ret_type => nt_type_of_ast(fundef::ret_type),
+        args => nt_args
+    };
+    let elem: nt_elem => {
+        Tag => fdef,
+        name => fundef::name::Lexeme,
+        fun => fundef_elem
+    };
+    return elem;
+}
+
+let nt_builtin_vardef(name: string, type: string): nt_elem {
+     let elem_var: nt_var => {
+        type => get_builtin_type(type)
+    };
+    let elem: nt_elem => {
+        Tag => vdef,
+        name => name,
+        var => elem_var
+    };
+    return elem;
+}
+
+let vardef_from_type_spec(t: type_spec, name: string): nt_elem {
+    let elem_var: nt_var => { type => t};
+    let elem: nt_elem => {
+        Tag => vdef,
+        name => name,
+        var => elem_var
+    };
+    return elem;
+}
+
+let get_nt_var(vardef: ast_vardef): nt_elem {
+    let elem_var: nt_var => {
+        type => nt_type_of_ast(vardef::type)
+    };
+    let elem: nt_elem => {
+        Tag => vdef,
+        name => vardef::name::Lexeme,
+        var => elem_var
+    };
+    return elem;
+}
+
+let get_nt_tdef(a: ast_tdef): nt_elem {
+    let constructors: constructor_spec [] => [];
+    let t_spec: type_spec => {
+        tdef_kind => a::t,
+        base_type => a::name::Lexeme,
+        arrays => 0,
+        is_builtin => false,
+        constructors => NULL
+    };
+    let ast_conss: ast [] => a::constructors;
+    loop i: 0 -> get_length(ast_conss) => {
+        let cons_ast: ast => get(ast_conss, i);
+        let cons: ast_cons => cons_ast::Data::data_cons;
+        let cons_elem: constructor_spec => {
+            name => cons::name::Lexeme,
+            type => nt_type_of_ast(cons::type),
+        };
+        append(constructors, cons_elem);
+    }
+    t_spec::constructors => constructors;
+    let res: nt_elem => {
+        Tag => tdef,
+        tdef => t_spec,
+        name => a::name::Lexeme,
+    };
+    return res;
+}
+
+
+let get_nt_enum_tdef(a: ast_enum_tdef): nt_elem {
+    let constructors: constructor_spec [] => [];
+    let t_spec: type_spec => {
+        tdef_kind => TDEF_ENUM,
+        base_type => a::name::Lexeme,
+        arrays => 0,
+        is_builtin => false,
+        constructors => constructors
+    };
+    let items: token [] => a::items;
+    loop i: 0 -> get_length(items) => {
+        let tok: token => get(items, i);
+        let cons_elem: constructor_spec => {
+            name => tok::Lexeme,
+            type => NULL
+        };
+        append(constructors, cons_elem);
+    }
+    let res: nt_elem => {
+        Tag => tdef,
+        tdef => t_spec,
+        name => a::name::Lexeme,
+    };
+    return res;
+}
+
+let add_enum_cons_to_nt(table: nt, a: ast_enum_tdef): void {
+    let items: token [] => a::items;
+    loop i: 0 -> get_length(items) => {
+        let tok: token => get(items, i);
+       
+        push_nt(table, tok::Lexeme, nt_builtin_vardef(tok::Lexeme, a::name::Lexeme));
+    }
+}
+
+let nt_type_of_ast(a: ast): type_spec {
+    let type: ast_type => a::Data::data_type;
+    let res: type_spec => {
+        base_type => type::name::Lexeme,
+        arrays => 0,
+        is_builtin => is_builtin_typename(type::name::Lexeme),
+        tdef_kind => TDEF_ANY,
+        constructors => NULL
+    };
+    if type::is_array then {
+        res::arrays => 1;
+        res::is_builtin => false;
+    }
+    return res;
+}
+
+
+let get_builtin_type_tdef(name: string): nt_elem {
+    let elem: nt_elem => {
+        Tag => tdef,
+        name => name,
+        tdef => get_builtin_type(name),
+    };
+    return elem;
+}
+
+let setup_name_table(table: nt): void {
+    // builtin types
+    push_nt(table, "int", get_builtin_type_tdef("int"));
+    push_nt(table, "boolean", get_builtin_type_tdef("boolean"));
+    push_nt(table, "char", get_builtin_type_tdef("char"));
+    push_nt(table, "string", get_builtin_type_tdef("string"));
+    push_nt(table, "void", get_builtin_type_tdef("void"));
+    push_nt(table, "__null_type", get_builtin_type_tdef("__null_type"));
+    push_nt(table, "__array", get_builtin_type_tdef("__array"));
+    push_nt(table, "__any", get_builtin_type_tdef("__any"));
+
+
+    // builtin literals
+    push_nt(table, "true", nt_builtin_vardef("true", "boolean"));
+    push_nt(table, "false", nt_builtin_vardef("false", "boolean"));
+    // push_nt(table, "NULL", nt_builtin_vardef("NULL", "__null_type"));
+    push_nt(table, "NULL", nt_builtin_vardef("NULL", "__any"));
+
+    // builtin functions
+
+    // get function
+    
+    let get_args: type_spec [] => [];
+    append(get_args, get_builtin_type("__array"));
+    append(get_args, get_builtin_type("int"));
+    let get_fun: nt_fun => {
+        // temporary
+        ret_type => get_builtin_type("__any"),
+        args => get_args
+    };
+    let get_elem: nt_elem => {
+        Tag => fdef,
+        name => "get",
+        fun => get_fun
+    };
+    push_nt(table,"get", get_elem);
+
+    
+    // pop function
+    let pop_args: type_spec [] => [];
+    append(pop_args, get_builtin_type("array"));
+    let pop_fun: nt_fun => {
+        ret_type => get_builtin_type("void"),
+        args => pop_args
+    };
+    let pop_elem: nt_elem => {
+        Tag => fdef,
+        name => "pop",
+        fun => pop_fun
+    };
+    push_nt(table, "pop", pop_elem);
+
+    // set function
+    
+    let set_args: type_spec [] => [];
+    append(set_args, get_builtin_type("array"));
+    append(set_args, get_builtin_type("int"));
+    append(set_args, get_builtin_type("__any"));
+    let set_fun: nt_fun => {
+        ret_type => get_builtin_type("void"),
+        args => set_args
+    };
+    let set_elem: nt_elem => {
+        Tag => fdef,
+        name => "set",
+        fun => set_fun
+    };
+    push_nt(table, "set", set_elem);
+    
+    // append function
+    
+    let append_args: type_spec [] => [];
+    append(append_args, get_builtin_type("__array"));
+    append(append_args, get_builtin_type("__any"));
+    let append_fun: nt_fun => {
+        ret_type => get_builtin_type("void"),
+        args => append_args
+    };
+    let append_elem: nt_elem => {
+        Tag => fdef,
+        name => "append",
+        fun => append_fun
+    };
+    push_nt(table, "append", append_elem);
+
+    // print function
+    let print_args: type_spec [] => [];
+    append(print_args, get_builtin_type("string"));
+    let print_fun: nt_fun => {
+        ret_type => get_builtin_type("void"),
+        args => print_args
+    };
+    let print_elem: nt_elem => {
+        Tag => fdef,
+        name => "print",
+        fun => print_fun
+    };
+    push_nt(table, "print", print_elem);
+
+    // str_eq function
+    let str_eq_args: type_spec [] => [];
+    append(str_eq_args, get_builtin_type("string"));
+    let str_eq_fun: nt_fun => {
+        ret_type => get_builtin_type("boolean"),
+        args => str_eq_args
+    };
+    let str_eq_elem: nt_elem => {
+        Tag => fdef,
+        name => "str_eq",
+        fun => str_eq_fun
+    };
+    push_nt(table, "str_eq", str_eq_elem);
+
+    // exit function
+    let exit_args: type_spec [] => [];
+    append(exit_args, get_builtin_type("int"));
+    let exit_fun: nt_fun => {
+        ret_type => get_builtin_type("void"),
+        args => exit_args
+    };
+    let exit_elem: nt_elem => {
+        Tag => fdef,
+        name => "exit",
+        fun => exit_fun
+    };
+    push_nt(table, "exit", exit_elem);
+
+    // get_length function
+    let get_length_args: type_spec [] => [];
+    append(get_length_args, get_builtin_type("__array"));
+    let get_length_fun: nt_fun => {
+        ret_type => get_builtin_type("int"),
+        args => get_length_args
+    };
+    let get_length_elem: nt_elem => {
+        Tag => fdef,
+        name => "get_length",
+        fun => get_length_fun
+    };
+    push_nt(table, "get_length", get_length_elem);
+
+    // get_args function
+    let get_args_args: type_spec [] => [];
+    let get_args_fun: nt_fun => {
+        ret_type => get_builtin_type("__array"),
+        args => get_args_args
+    };
+    let get_args_elem: nt_elem => {
+        Tag => fdef,
+        name => "get_args",
+        fun => get_args_fun
+    };
+    push_nt(table, "get_args", get_args_elem);
+
+    // read_file function
+    let read_file_args: type_spec [] => [];
+    append(read_file_args, get_builtin_type("string"));
+    let read_file_fun: nt_fun => {
+        ret_type => get_builtin_type("string"),
+        args => read_file_args
+    };
+    let read_file_elem: nt_elem => {
+        Tag => fdef,
+        name => "read_file",
+        fun => read_file_fun
+    };
+    push_nt(table, "read_file", read_file_elem);
+
+    // write_string_to_file function
+    let write_string_to_file_args: type_spec [] => [];
+    append(write_string_to_file_args, get_builtin_type("string"));
+    let write_string_to_file_fun: nt_fun => {
+        ret_type => get_builtin_type("void"),
+        args => write_string_to_file_args
+    };
+    let write_string_to_file_elem: nt_elem => {
+        Tag => fdef,
+        name => "write_string_to_file",
+        fun => write_string_to_file_fun
+    };
+    push_nt(table, "write_string_to_file", write_string_to_file_elem);
+
+    // concat_string function
+    let concat_string_args: type_spec [] => [];
+    append(concat_string_args, get_builtin_type("string"));
+    let concat_string_fun: nt_fun => {
+        ret_type => get_builtin_type("string"),
+        args => concat_string_args
+    };
+    let concat_string_elem: nt_elem => {
+        Tag => fdef,
+        name => "concat_string",
+        fun => concat_string_fun
+    };
+    push_nt(table, "concat_string", concat_string_elem);
+
+    // get_string_length function
+    let get_string_length_args: type_spec [] => [];
+    append(get_string_length_args, get_builtin_type("string"));
+    let get_string_length_fun: nt_fun => {
+        ret_type => get_builtin_type("int"),
+        args => get_string_length_args
+    };
+    let get_string_length_elem: nt_elem => {
+        Tag => fdef,
+        name => "get_string_length",
+        fun => get_string_length_fun
+    };
+    push_nt(table, "get_string_length", get_string_length_elem);
+
+    // get_nth_char function
+    let get_nth_char_args: type_spec [] => [];
+    append(get_nth_char_args, get_builtin_type("string"));
+    append(get_nth_char_args, get_builtin_type("int"));
+    let get_nth_char_fun: nt_fun => {
+        ret_type => get_builtin_type("char"),
+        args => get_nth_char_args
+    };
+    let get_nth_char_elem: nt_elem => {
+        Tag => fdef,
+        name => "get_nth_char",
+        fun => get_nth_char_fun
+    };
+    push_nt(table, "get_nth_char", get_nth_char_elem);
+
+    // system function
+    let system_args: type_spec [] => [];
+    append(system_args, get_builtin_type("string"));
+    let system_fun: nt_fun => {
+        ret_type => get_builtin_type("void"),
+        args => system_args
+    };
+    let system_elem: nt_elem => {
+        Tag => fdef,
+        name => "system",
+        fun => system_fun
+    };
+    push_nt(table, "system", system_elem);
+
+    // putchar function
+    let putchar_args: type_spec [] => [];
+    append(putchar_args, get_builtin_type("char"));
+    let putchar_fun: nt_fun => {
+        ret_type => get_builtin_type("void"),
+        args => putchar_args
+    };
+    let putchar_elem: nt_elem => {
+        Tag => fdef,
+        name => "putchar",
+        fun => putchar_fun
+    };
+    push_nt(table, "putchar", putchar_elem);
+
+    // get_abs_path function
+    let get_abs_path_args: type_spec [] => [];
+    append(get_abs_path_args, get_builtin_type("string"));
+    let get_abs_path_fun: nt_fun => {
+        ret_type => get_builtin_type("string"),
+        args => get_abs_path_args
+    };
+    let get_abs_path_elem: nt_elem => {
+        Tag => fdef,
+        name => "get_abs_path",
+        fun => get_abs_path_fun
+    };
+    push_nt(table, "get_abs_path", get_abs_path_elem);
+
+    // append_string function
+    let append_string_args: type_spec [] => [];
+    append(append_string_args, get_builtin_type("string"));
+    append(append_string_args, get_builtin_type("char"));
+    let append_string_fun: nt_fun => {
+        ret_type => get_builtin_type("string"),
+        args => append_string_args
+    };
+    let append_string_elem: nt_elem => {
+        Tag => fdef,
+        name => "append_string",
+        fun => append_string_fun
+    };
+    push_nt(table, "append_string", append_string_elem);
+}
+
+let print_type_spec(t: type_spec): void {
+    print(t::base_type);
+    loop i: 1 -> t::arrays =>
+        print(" []");
+}
+
+let decrease_array(table: nt, t: type_spec): type_spec {
+    if t = NULL then return NULL;
+    if t::arrays = 0 then return NULL;
+    if t::arrays = 1 then return get_tdef_ref(t::base_type, table);
+    let res: type_spec => {
+        base_type => t::base_type,
+        arrays => t::arrays - 1,
+        is_builtin => false,
+        tdef_kind => TDEF_ANY,
+        constructors => NULL,
+    }; return res;
+}
+
+
+let get_type_spec_of_constructor(t: type_spec, name: string): type_spec {
+    if t::arrays != 0 then return NULL;
+    if t::constructors = NULL then return NULL;
+    loop i: 0 -> get_length(t::constructors) => {
+        let c: constructor_spec => get(t::constructors, i);
+        if str_eq(c::name, name) then
+            return c::type;
+    }
+    return NULL;
+}

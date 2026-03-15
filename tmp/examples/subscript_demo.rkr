@@ -1,0 +1,30 @@
+include "lib/stdlib.rkr"
+
+record Person {
+  id : int,
+  name : string
+}
+
+sub main() {
+  dim people: Person [2] := [];
+  dim fred : Person := {id => 1, name => "Frederick"};
+  dim charles : Person := {id => 2, name => "Chuck"};
+  
+  // Array subscript assignment
+  people[0] := fred;
+  people[1] := charles;
+
+  // Array subscript read with field access
+  print(people[0].name);
+  print("\n");
+  print(people[1].name);
+  print("\n");
+  
+  // Array subscript with variable assignment
+  dim p : Person := people[0];
+  people[1] := p;
+  print(people[0].name);
+  print("\n");
+  print(people[1].name);
+  print("\n");
+}

@@ -1,0 +1,10 @@
+sub main() {
+  print("Before allocate\n");
+  dim fixed: string [3] := [];
+  print("After allocate\n");
+  fixed[0] := "hello";
+  print("After assign\n");
+  print(fixed[0]);
+  print("\n");
+  print("Done\n");
+}

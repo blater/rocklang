@@ -1,0 +1,181 @@
+//-----------------------------------------------------------------------------
+//  ROCKER COMPILER
+//  MIT License
+//  Copyright (c) 2024 Paul Passeron
+//-----------------------------------------------------------------------------
+
+// Compiler of Rocker programming 
+// language written in itself !
+
+include "lib/stdlib.rkr"
+include "lib/term.rkr"
+include "RockerSRC/lexer.rkr"
+include "RockerSRC/parser.rkr"
+include "RockerSRC/generator.rkr"
+include "RockerSRC/typechecker.rkr"
+
+let usage(prog_name: string): void {
+    print("Usage:\n");
+    print("\t");
+    print(prog_name);
+    print(" [flags] <input file> [output file]\n");
+    print("Possible flags:\n");
+    print("\t\'-o\' or \'--output\'    :\t Sets the output path of the executable and of the transpiled C file\n");
+    print("\t\'-t\' or \'--tmp\'       :\t Does not remove the temporary transpiled C files\n");
+    print("\t\'-c\' or \'--transpile\' :\t Only transpiles the Rocker to C but does not compile to a native executable\n");
+    print("\t\'-l\' or \'--lexer\'     :\t Prints the tokens contained in the file and included files\n");
+    print("\t\'-h\' or \'--help\'      :\t Displays this message\n");
+    print("\t\'-v\' or \'--verbose\'   :\t Prints infos and commands ran by the compiler\n");    
+}
+
+
+let main(): void {
+    let args: string [] => get_args();
+    let this_file: string => get(args, 0);
+    if get_length(args) < 2 then{
+        print_error();
+        print("Expected input !\n");
+        usage(this_file);
+        exit(1);
+    }
+    let compiler: string => "gcc";
+    let input: string => "";
+    let default_output: string => "a.out";
+    let output: string => default_output;
+    let print_lexer: boolean => false;
+    let quiet: boolean => true;
+    let keep_tmp: boolean => false;
+    let transpile_only: boolean => false;
+    loop i: 1 -> get_length(args) => {
+        let arg: string => get(args, i);
+        if get_nth_char(arg, 0) {
+            if get_string_length(arg) {
+                print_error();
+                print("Unexpected empty flag !\n");
+                usage(this_file);
+                exit(1);
+            }
+            if str_eq(arg, "-l") || str_eq(arg, "--lexer") then
+                print_lexer => true;
+            else if str_eq(arg, "-v") || str_eq(arg, "--verbose") then
+                quiet => false;
+            else if str_eq(arg, "-h") || str_eq(arg, "--help") then{
+                usage(this_file);
+                exit(0);
+            }
+            else if str_eq(arg, "-o") || str_eq(arg, "--output") then{
+                if i = get_length(args) {
+                    print_error();
+                    print("Expected output path after \'-o\' flag\n");
+                    exit(1);
+                }
+                output => get(args, i+1);
+                i => i + 1;
+            }
+            else if str_eq(arg, "-t") || str_eq(arg, "--tmp") then
+                keep_tmp => true;
+            else if str_eq(arg, "-c") || str_eq(arg, "--transpile") then
+                transpile_only => true;
+            else {
+                print_error();
+                print("Unknown flag \'");
+                print(arg);
+                print("\'!\n");
+                usage(this_file);
+                exit(1);
+            }
+        } else if get_string_length(input) = 0 then input => arg; 
+         else if get_string_length(output) = 0 then output => arg;
+         else {
+            print_error();
+            print("Unexpected argument: \'");
+            print(arg);
+            print("\'!\n");
+            usage(this_file);
+            exit(1);
+        }
+    }
+    if get_string_length(input) {
+        print_error();
+        print("Expected input !\n");
+        usage(this_file);
+        exit(1);
+    }
+    
+    let l: lexer => new_lexer(input);
+    lex_program(l);
+    let p: parser => new_parser(l::Toks);
+    parse_program(p);
+    if print_lexer then
+        print_list_types(p::Toks);
+    let cout: string => concat_string(output, ".c");
+    let g: gen => new_gen(cout);
+    let stdlib_path: string => g::stdlib_path;
+    transpile(g, p::Prog);
+    if g::error then{
+        g::f::Data => "";
+        keep_tmp => false;
+        exit(1);
+    }
+    kill_generator(g);
+    if quiet = false then {
+        print_info();
+        print("Transpiling to C successful\n");
+    }
+
+    if transpile_only = false then {
+        let command: string => "";
+        if keep_tmp = true then {
+            command => concat_string(command, "clang-format ");
+            command => concat_string(command, cout);
+            command => concat_string(command, " -i");
+            command => concat_string(command, " && ");
+        }
+        let deps: string [] => [];
+        append(deps, concat_string(stdlib_path, "external/fundefs.c"));
+        append(deps, concat_string(stdlib_path, "external/fundefs_internal.c"));
+
+        command => concat_string(command, compiler);
+        command => concat_string(command, " -Wall -g -o ");
+        command => concat_string(command, output);
+        command => concat_string(command, " ");
+        command => concat_string(command, cout);
+        iter dep: deps => {
+            command => concat_string(command, " ");
+            command => concat_string(command, dep);
+        }
+        command => concat_string(command, " RockerAllocator/alloc.c");
+        if quiet = false then {
+            print_cmd();
+            print(command);
+            print("\n");
+
+        }
+        system(command.data);
+        if quiet = false then {
+            print_info();
+            print("Compiling transpiled C file successful\n");
+        }
+    }
+    if keep_tmp = false && transpile_only = false then {
+
+    let remove_tmp: string => "rm ";
+        remove_tmp => concat_string(remove_tmp, cout);
+        if str_eq(cout, "") {
+            if quiet = false then {
+                print_cmd();
+                print(remove_tmp);
+                print("\n");
+                print_info();
+                print("Removing transpiled C file successful\n");
+            }
+            system(remove_tmp.data);
+        }
+    }
+    if quiet = false && transpile_only = false then{
+        print_info();
+        print("Rocker compiling successful\n");
+    }
+}
+
+//-----------------------------------------------------------------------------

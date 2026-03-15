@@ -1,0 +1,59 @@
+include "lib/stdlib.rkr"
+
+// Demonstrate all new syntax features
+
+// 1. Optional => in record declarations and loops
+// 2. Pascal-style := operator for assignments
+// 3. 'dim' keyword as synonym for 'let'
+// 4. Dot notation (.) for field access
+
+// 1. Optional => in record declarations
+record Point {
+  x: int
+  y: int
+}
+
+record Item {
+  value: int
+  next: Point
+}
+
+let main(): void => {
+  print("=== Syntax Demo ===\n");
+
+  // 1. Both 'let' and 'dim' for variable declarations
+  let a: int := 10;
+  dim b: int => 20;
+
+  // 2. Mixed declarations and operators
+  let c: int := a + b;
+
+  print("a := ");
+  print_int(a);
+  print("\n");
+
+  print("b => ");
+  print_int(b);
+  print("\n");
+
+  print("c := ");
+  print_int(c);
+  print("\n");
+
+  // 3. Optional => in loop statements
+  print("\nLoop with => arrow:\n");
+  loop i: 0 -> 2 => {
+    print_int(i);
+    print(" ");
+  }
+  print("\n");
+
+  print("Loop without => arrow:\n");
+  loop i: 0 -> 2 {
+    print_int(i);
+    print(" ");
+  }
+  print("\n");
+
+  print("=== End Demo ===\n");
+}

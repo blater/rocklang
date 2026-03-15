@@ -1,0 +1,17 @@
+include "test/Assert.rkr"
+
+let main() {
+  // Test toString with literals
+  AssertEquals("toString with literal", "42", toString(42));
+
+  // Test toString with variables
+  let num: int => 12345;
+  AssertEquals("toString with variable", "12345", toString(num));
+
+  // Test toString with expressions
+  AssertEquals("toString with expression", "30", toString(10 + 20));
+
+  // Test toString with negative numbers (indirectly)
+  let x: int => 7;
+  AssertEquals("toString with multiplication", "21", toString(x * 3));
+}
