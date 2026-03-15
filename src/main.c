@@ -111,35 +111,17 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  // compile C file
+  // compile C file using compile.sh script
   char command[1024];
   fclose(fopen(output, "w"));
 
-
+  char target_arg[32] = "--target=host";
   if (target_zxn) {
-    // target: zx next.  For ZX Spectrum Next we use z88dk's zcc
-    sprintf(command,
-            "zcc +zxn -subtype=nex -startup=0 -clib=sdcc_iy "
-            "-pragma-include:lib/zxn/zpragma_zxn.inc -create-app "
-            "-I lib/cpu_agnostic -I lib/z80 "
-            "-o %s %s "
-            "lib/cpu_agnostic/alloc.c "
-            "lib/cpu_agnostic/fundefs.c "
-            "lib/z80/asm_interop.c",
-            output, cout);
-  } else {
-    // target: host machine with gcc
-    sprintf(command,
-            "clang-format %s -i && "
-            "gcc -Wall -g -I lib/cpu_agnostic -I lib/z80 -o %s %s "
-            "lib/cpu_agnostic/alloc.c "
-            "lib/cpu_agnostic/fundefs.c "
-            "lib/cpu_agnostic/fundefs_internal.c "
-            "lib/z80/asm_interop.c",
-            cout, output, cout);
+    sprintf(target_arg, "--target=zxn");
   }
 
-  // compile the generated C
+  sprintf(command, "./src/compile.sh %s %s %s", target_arg, output, cout);
+
   printf("[COMPILATION CMD] %s\n", command);
   system(command);
 

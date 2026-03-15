@@ -115,7 +115,55 @@ void *__internal_get_elem(__internal_dynamic_array_t arr, size_t index) {
 }
 
 void __internal_insert(__internal_dynamic_array_t arr, size_t index,
-                       void *elem) {}
+                       void *elem) {
+  if (arr->data == NULL) {
+    printf("Uninitialized array!\n");
+    exit_rocker(1);
+  }
+
+  if (elem == NULL) {
+    printf("Could not insert elem into dynamic array: BAD ELEM\n");
+    exit_rocker(1);
+  }
+
+  if (arr->elem_size == 0) {
+    printf("Could not insert elem into dynamic array: BAD ELEMENT SIZE\n");
+    exit_rocker(1);
+  }
+
+  // For insert, index can be from 0 to length (inclusive)
+  if (index > arr->length) {
+    printf("Could not insert elem: INDEX OUT OF BOUNDS (%zu, length: %zu)\n",
+           index, arr->length);
+    exit_rocker(1);
+  }
+
+  // Check if we have room
+  if (arr->length >= arr->capacity) {
+    // For dynamic arrays only, grow capacity
+    if (arr->max_capacity == 0) {
+      arr->capacity *= 2;
+      arr->data = reallocate_compiler_persistent(arr->data,
+                                                 arr->capacity * arr->elem_size);
+    } else {
+      printf("Error: Array capacity exceeded, cannot insert\n");
+      exit_rocker(1);
+    }
+  }
+
+  // Shift elements right: move from [index...length-1] to [index+1...length]
+  // Must go backward to avoid overwriting
+  for (int i = arr->length; i > index; i--) {
+    void *src = arr->data + (i - 1) * arr->elem_size;
+    void *dst = arr->data + i * arr->elem_size;
+    memcpy(dst, src, arr->elem_size);
+  }
+
+  // Copy element into the insertion position
+  void *dst = arr->data + index * arr->elem_size;
+  memcpy(dst, elem, arr->elem_size);
+  arr->length++;
+}
 
 void __internal_set_elem(__internal_dynamic_array_t arr, size_t index,
                          void *elem) {

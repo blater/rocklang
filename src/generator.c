@@ -641,6 +641,11 @@ void generate_pop(generator_t *g, ast_funcall call) {
   generate_array_op(g, call, op);
 }
 
+void generate_insert(generator_t *g, ast_funcall call) {
+  array_op_t op = {3, "_insert", "insert"};
+  generate_array_op(g, call, op);
+}
+
 // Helper: Allocate a temporary string variable and return its name
 const char *allocate_string_tmp(generator_t *g) {
   char tmpname_buf[64];
@@ -686,6 +691,8 @@ void generate_funcall(generator_t *g, ast_t fun) {
     generate_set(g, funcall);
   } else if (svcmp(funcall.name.lexeme, sv_from_cstr("pop")) == 0) {
     generate_pop(g, funcall);
+  } else if (svcmp(funcall.name.lexeme, sv_from_cstr("insert")) == 0) {
+    generate_insert(g, funcall);
   } else if (svcmp(funcall.name.lexeme, sv_from_cstr("substring")) == 0) {
     generate_substring(g, funcall);
   } else if (svcmp(funcall.name.lexeme, sv_from_cstr("concat")) == 0) {
