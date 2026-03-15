@@ -61,7 +61,7 @@ if [[ "$TARGET" == "zxn" ]]; then
     exit 1
   fi
 
-  cd "$ROCK_ROOT"
+  cd "$ROCK_ROOT/src"
 
   # Get basename for output
   OUTPUT_BASE="$(basename "$OUTPUT_ABS")"
@@ -71,16 +71,16 @@ if [[ "$TARGET" == "zxn" ]]; then
     -create-app \
     -o "$OUTPUT_BASE" \
     "$GENERATED_C_ABS" \
-    "lib/cpu_agnostic/alloc.c" \
-    "lib/cpu_agnostic/fundefs.c" \
-    "lib/cpu_agnostic/fundefs_internal.c" \
-    "lib/z80/asm_interop.c"
+    "../lib/cpu_agnostic/alloc.c" \
+    "../lib/cpu_agnostic/fundefs.c" \
+    "../lib/cpu_agnostic/fundefs_internal.c" \
+    "../lib/z80/asm_interop.c"
 
-  # Move output to final location if different from ROCK_ROOT
-  if [[ "$OUTPUT_ABS" != "$ROCK_ROOT"* ]]; then
-    mv "$ROCK_ROOT/$OUTPUT_BASE" "$OUTPUT_ABS"
+  # Move output to final location if different from ROCK_ROOT/src
+  if [[ "$OUTPUT_ABS" != "$ROCK_ROOT/src"* ]]; then
+    mv "$ROCK_ROOT/src/$OUTPUT_BASE" "$OUTPUT_ABS"
     # Clean up object/map files that may have been generated
-    rm -f "$ROCK_ROOT/$OUTPUT_BASE".* 2>/dev/null || true
+    rm -f "$ROCK_ROOT/src/$OUTPUT_BASE".* 2>/dev/null || true
   fi
 
 elif [[ "$TARGET" == "host" ]]; then
@@ -93,7 +93,7 @@ elif [[ "$TARGET" == "host" ]]; then
   fi
 
   gcc -Wall -g \
-    -I "$ROCK_ROOT" \
+    -I "$ROCK_ROOT/src" \
     -o "$OUTPUT_ABS" \
     "$GENERATED_C_ABS" \
     "$LIB_CPU_AGNOSTIC/alloc.c" \
