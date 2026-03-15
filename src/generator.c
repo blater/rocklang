@@ -1276,13 +1276,17 @@ void generate_fundef(generator_t *g, ast_t fun) {
   if (svcmp(fundef.name.lexeme, sv_from_cstr("main")) != 0) {
     generate_type(f, fundef.ret_type);
     fprintf(f, " " SV_Fmt "(", SV_Arg(fundef.name.lexeme));
-    for (int i = 0; i < fundef.args.length; i++) {
-      push_nt(&g->table, fundef.args.data[i].lexeme, NT_VAR, fun);
-      if (i > 0)
-        fprintf(f, ", ");
-      generate_type(f, fundef.types.data[i]);
-      fprintf(f, " ");
-      fprintf(f, SV_Fmt, SV_Arg(fundef.args.data[i].lexeme));
+    if (fundef.args.length == 0) {
+      fprintf(f, "void");
+    } else {
+      for (int i = 0; i < fundef.args.length; i++) {
+        push_nt(&g->table, fundef.args.data[i].lexeme, NT_VAR, fun);
+        if (i > 0)
+          fprintf(f, ", ");
+        generate_type(f, fundef.types.data[i]);
+        fprintf(f, " ");
+        fprintf(f, SV_Fmt, SV_Arg(fundef.args.data[i].lexeme));
+      }
     }
     fprintf(f, ")\n");
     generate_compound(g, fundef.body);
@@ -1387,12 +1391,16 @@ void generate_forward_defs(generator_t *g, ast_t program) {
         generate_type(f, fundef.ret_type);
 
         fprintf(f, " " SV_Fmt "(", SV_Arg(fundef.name.lexeme));
-        for (int i = 0; i < fundef.args.length; i++) {
-          if (i > 0)
-            fprintf(f, ", ");
-          generate_type(f, fundef.types.data[i]);
-          fprintf(f, " ");
-          fprintf(f, SV_Fmt, SV_Arg(fundef.args.data[i].lexeme));
+        if (fundef.args.length == 0) {
+          fprintf(f, "void");
+        } else {
+          for (int i = 0; i < fundef.args.length; i++) {
+            if (i > 0)
+              fprintf(f, ", ");
+            generate_type(f, fundef.types.data[i]);
+            fprintf(f, " ");
+            fprintf(f, SV_Fmt, SV_Arg(fundef.args.data[i].lexeme));
+          }
         }
         fprintf(f, ");\n\n");
       }
