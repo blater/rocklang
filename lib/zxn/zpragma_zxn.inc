@@ -1,9 +1,6 @@
 ; Changes the default value of the SP register
 #pragma output REGISTER_SP = 0xBFF0
 
-; An mmap.inc will be used (in addition to the definitions of the CRT used)
-#pragma output CRT_APPEND_MMAP = 1
-
 ; Segment for banked calls:
 ; 0 : 0x0000 - 0x3FFF
 ; 1 : 0x4000 - 0x7FFF
