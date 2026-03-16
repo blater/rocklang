@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# CLAUDE IS FORBIDDEN TO CHANGE THIS FILE, OTHERWISE ITS TINY TESTICLE GET PAINFULLY RIPPED OFF AND PAINTED IN SALT.
+
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -10,10 +13,10 @@ OUTPUT="$2"
 GENERATED_C="$(cd "$(dirname "$3")" && pwd)/$(basename "$3")"
 
 LIBS=(
-  "$ROCK_ROOT/lib/cpu_agnostic/alloc.c"
-  "$ROCK_ROOT/lib/cpu_agnostic/fundefs.c"
-  "$ROCK_ROOT/lib/cpu_agnostic/fundefs_internal.c"
-  "$ROCK_ROOT/lib/z80/asm_interop.c"
+  "$ROCK_ROOT/src/lib/alloc.c"
+  "$ROCK_ROOT/src/lib/fundefs.c"
+  "$ROCK_ROOT/src/lib/fundefs_internal.c"
+  "$ROCK_ROOT/src/lib/asm_interop.c"
 )
 
 if [[ "$TARGET" == "zxn" ]]; then
@@ -21,7 +24,7 @@ if [[ "$TARGET" == "zxn" ]]; then
   cp "$ROCK_ROOT/src"/*.h .
 
   zcc +zxn -subtype=nex -startup=1 -clib=sdcc_iy \
-    -pragma-include:"$ROCK_ROOT/lib/zxn/zpragma_zxn.inc" \
+    -pragma-include:"$ROCK_ROOT/src/lib/zxn/zpragma_zxn.inc" \
     -create-app \
     -o "$OUTPUT" \
     "$GENERATED_C" \

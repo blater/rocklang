@@ -1,0 +1,11 @@
+include "test/Assert.rkr"
+
+sub main(): void {
+  dim args: string[];
+  args := get_args();
+
+  dim len: int;
+  len := length(args);
+
+  AssertEQ("get_args returns array", 0, len);
+}
