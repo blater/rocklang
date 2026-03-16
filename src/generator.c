@@ -190,7 +190,7 @@ static void flush_pre_f(generator_t *g, FILE *dest) {
   g->pre_f = open_memstream(&g->pre_buf, &g->pre_buf_size);
 }
 
-generator_t new_generator(char *filename) {
+generator_t new_generator(char *filename, char *lib_path) {
   generator_t res;
   res.f = fopen(filename, "wb");
   if (res.f == NULL)
@@ -198,6 +198,7 @@ generator_t new_generator(char *filename) {
   res.table = new_name_table();
   res.str_tmp_counter = 0;
   res.target = TARGET_HOST;
+  res.lib_path = lib_path;
 
   // Register C library builtin functions with their return types
   // Stdlib / I/O
@@ -1464,10 +1465,21 @@ void generate_tdef(generator_t *g, ast_t tdef_ast) {
 void transpile(generator_t *g, ast_t program) {
   FILE *f = g->f;
   ast_array_t stmts = program->data.program.prog;
-  fprintf(f, "#include \"alloc.h\"\n");
-  fprintf(f, "#include \"fundefs.h\"\n");
-  fprintf(f, "#include \"fundefs_internal.h\"\n");
-  fprintf(f, "#include \"typedefs.h\"\n\n");
+
+  // ZXN target uses relative includes (headers copied to temp dir by compile.sh)
+  // Host target uses absolute includes (works with -I flag)
+  if (g->target == TARGET_ZXN) {
+    fprintf(f, "#include \"alloc.h\"\n");
+    fprintf(f, "#include \"fundefs.h\"\n");
+    fprintf(f, "#include \"fundefs_internal.h\"\n");
+    fprintf(f, "#include \"typedefs.h\"\n\n");
+  } else {
+    fprintf(f, "#include \"%s/alloc.h\"\n",            g->lib_path);
+    fprintf(f, "#include \"%s/fundefs.h\"\n",           g->lib_path);
+    fprintf(f, "#include \"%s/fundefs_internal.h\"\n",  g->lib_path);
+    fprintf(f, "#include \"%s/typedefs.h\"\n\n",        g->lib_path);
+  }
+
   if (g->target == TARGET_ZXN)
     fprintf(f, "#define INIT_CAP_ALLOC_STACK 64\n\n");
 

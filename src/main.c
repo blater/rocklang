@@ -5,6 +5,8 @@
 #include "parser.h"
 #include "token.h"
 // #include "typechecker.h"
+#include <limits.h>
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -82,6 +84,12 @@ int main(int argc, char *argv[]) {
   if (output == NULL)
     output = "out";
 
+  // Compute lib_path from argv[0]
+  char resolved[PATH_MAX];
+  realpath(argv[0], resolved);
+  char lib_path[PATH_MAX];
+  snprintf(lib_path, sizeof(lib_path), "%s/src", dirname(resolved));
+
   lexer_t l = new_lexer(input);
   token_array_t prog = lex_program(&l);
   // if (print_lexer)
@@ -101,7 +109,8 @@ int main(int argc, char *argv[]) {
 
   char *cout = allocate_compiler_persistent(strlen(output) + 3);
   sprintf(cout, "%s.c", output);
-  generator_t g = new_generator(cout);
+  generator_t g = new_generator(cout, lib_path);
+  if (target_zxn) g.target = TARGET_ZXN;
   transpile(&g, p.prog);
   kill_generator(g);
 
