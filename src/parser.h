@@ -24,4 +24,5 @@ token_type_t peek_type(parser_t p);
 token_t peek_token(parser_t p);
 void parse_program(parser_t* p);
 token_t consume_token(parser_t* p);
+void set_include_base_dir(char *dir);
 #endif  // PARSER_H

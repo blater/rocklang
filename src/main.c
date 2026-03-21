@@ -84,6 +84,27 @@ int main(int argc, char *argv[]) {
   if (output == NULL)
     output = "out";
 
+  // Convert input to absolute path
+  char resolved_input[PATH_MAX];
+  realpath(input, resolved_input);
+  input = allocate_compiler_persistent(strlen(resolved_input) + 1);
+  strcpy(input, resolved_input);
+
+  // Compute project root from input file location
+  // Make a copy since dirname() modifies its input
+  char input_dir_copy[PATH_MAX];
+  strcpy(input_dir_copy, resolved_input);
+  char *input_dir = dirname(input_dir_copy);
+  // Go up one level from input directory to get project root
+  char project_root_copy[PATH_MAX];
+  strcpy(project_root_copy, input_dir);
+  char *project_root = dirname(project_root_copy);
+
+  // Pass project root to parser for include resolution
+  char *project_root_str = allocate_compiler_persistent(strlen(project_root) + 1);
+  strcpy(project_root_str, project_root);
+  set_include_base_dir(project_root_str);
+
   // Compute lib_path from argv[0]
   char resolved[PATH_MAX];
   realpath(argv[0], resolved);

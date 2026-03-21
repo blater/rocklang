@@ -6,12 +6,18 @@
 #include "stringview.h"
 #include "token.h"
 #include <limits.h>
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 char *includes[1024];
 int includes_num = 0;
+char *include_base_dir = NULL;  // Base directory for resolving relative include paths
+
+void set_include_base_dir(char *dir) {
+  include_base_dir = dir;
+}
 
 ast_t parse_expression(parser_t *p);
 ast_t parse_type(parser_t *p);
@@ -922,9 +928,18 @@ char *get_sub_string(char *s, size_t length) {
 char *realpath(const char *restrict, char *restrict);
 
 char *get_abs_path(char *s) {
+  char full_path[1024];
+
+  // If path is relative and we have a base directory, resolve relative to it
+  if (include_base_dir && s[0] != '/') {
+    snprintf(full_path, sizeof(full_path), "%s/%s", include_base_dir, s);
+  } else {
+    strcpy(full_path, s);
+  }
+
   char buffer[1024];
   memset(buffer, 0, 1024);
-  realpath(s, buffer);
+  realpath(full_path, buffer);
   int l = strlen(buffer);
   char *res = allocate_compiler_persistent(l + 1);
   strcpy(res, buffer);

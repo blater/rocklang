@@ -2,9 +2,9 @@ CC=gcc
 CFLAGS=-Werror -Wall -Wextra -g -pedantic -I src
 SRC=src/
 BUILD=build/
-LIB=lib/cpu_agnostic/
+LIB=src/lib/
 
-.PHONY: all create_build clean 
+.PHONY: all create_build clean
 
 all: create_build rockc
 
