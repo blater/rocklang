@@ -5,7 +5,7 @@
 #
 TMP=/tmp/rock$$
 TESTS=./test
-COMPILER=rockc
+COMPILER=./rock
 testcnt=0
 
 fatal() {

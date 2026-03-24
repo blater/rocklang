@@ -1,44 +1,42 @@
-#! /bin/bash
-ROCK_HOME=/Users/blater/src/rock
-ROCKC=$ROCK_HOME/rockc
-
-get_abs_filename() {
-  # $1 : relative filename
-  echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
-}
-
-
+#!/bin/bash
 set -e
-rkrFile="$1"
-if [ ! -f $rkrFile ]; then
-  echo "file $rkrFile not found" >&2; 
-  exit 1
+ROCK_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEBUG=0
+
+sourcefile=""
+target="cc"
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --target=*)
+      target=$( echo $1 | cut -f2 -d"=" )
+      shift 1
+      ;;
+    --debug)
+      DEBUG=1; shift;;
+    #-?*)
+    #  echo "Unknown option: $1" >&2; usage ;;
+    *) if [ "$sourcefile" = "" ]; then
+         sourcefile="$1"
+         source_abs=$(cd "$(dirname "$sourcefile")" && pwd)/$(basename "$sourcefile")
+         exe=$( basename $sourcefile | cut -f1 -d"." )".exe"
+       else
+         exe="$1"
+       fi
+       shift
+       ;;
+  esac
+done
+
+exe_dir=$(cd "$(dirname "$exe" 2>/dev/null || dirname .)" && pwd)
+exe_abs="$exe_dir/$(basename "$exe")"
+
+echo "compile $sourcefile to $exe with $target"
+make -C "$ROCK_ROOT" "target-${target}" SRC="$source_abs" OUT="$exe_abs"
+
+
+
+if [ $DEBUG -eq 0 ];then
+  rm -f ${exe_abs}.c
 fi
-
-name="$(basename $rkrFile | cut -f1 -d'.')"
-rkrAbsPath=$( get_abs_filename ${rkrFile} )
-rkrDir=$( dirname ${rkrAbsPath} )
-EXE=${rkrDir}/${name}.exe
-rm -f $EXE
-
-cd $ROCK_HOME
- $ROCKC $rkrAbsPath ${EXE}
- if [ $? -ne 0 ]; then
-   echo "Compilation error building ${rkrFile}"
-   exit 1
- fi
-cd -
-
-if [ -f ${EXE} ]; then
-  echo "created ${name}.exe"
-else
-  echo "error"; exit 1
-fi
-
-if [ -d "${EXE}.dSYM" ]; then
-  rm -rf "${EXE}.dSYM" 
-fi
-rm -f ${EXE}.c
-
-${EXE}
 

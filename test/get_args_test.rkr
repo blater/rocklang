@@ -1,5 +1,6 @@
 include "test/Assert.rkr"
 
+
 sub main(): void {
   dim args: string[];
   args := get_args();

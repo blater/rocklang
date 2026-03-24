@@ -105,12 +105,6 @@ int main(int argc, char *argv[]) {
   strcpy(project_root_str, project_root);
   set_include_base_dir(project_root_str);
 
-  // Compute lib_path from argv[0]
-  char resolved[PATH_MAX];
-  realpath(argv[0], resolved);
-  char lib_path[PATH_MAX];
-  snprintf(lib_path, sizeof(lib_path), "%s/src", dirname(resolved));
-
   lexer_t l = new_lexer(input);
   token_array_t prog = lex_program(&l);
   // if (print_lexer)
@@ -130,30 +124,16 @@ int main(int argc, char *argv[]) {
 
   char *cout = allocate_compiler_persistent(strlen(output) + 3);
   sprintf(cout, "%s.c", output);
-  generator_t g = new_generator(cout, lib_path);
+  generator_t g = new_generator(cout);
   if (target_zxn) g.target = TARGET_ZXN;
   transpile(&g, p.prog);
   kill_generator(g);
 
-  // If there were any compilation errors, exit without running C compiler
+  // If there were any compilation errors, exit after cleanup
   if (get_error_count() > 0) {
     kill_compiler_stack();
     return 1;
   }
-
-  // compile C file using compile.sh script
-  char command[1024];
-  fclose(fopen(output, "w"));
-
-  char target_arg[32] = "--target=host";
-  if (target_zxn) {
-    sprintf(target_arg, "--target=zxn");
-  }
-
-  sprintf(command, "./src/compile.sh %s %s %s", target_arg, output, cout);
-
-  printf("[COMPILATION CMD] %s\n", command);
-  system(command);
 
   // clean up
   kill_compiler_stack();
