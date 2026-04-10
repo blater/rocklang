@@ -122,3 +122,12 @@ Remaining issues: frontmatter/source attribution drift remains on overview.md an
 Link check: validated all [[...]] targets under wikiroot/pages; 34/34 page targets resolve to matching .md files.
 TODOs filed: none
 
+
+## [2026-04-10] lint | fix parser overview include resolution notes
+
+Changed files: 2
+
+Issues fixed: corrected parser_t field descriptions, updated include resolution to say paths are resolved relative to the including file, and corrected the nested-subs note to reference generator.c.
+Remaining issues: none in the touched page from this pass.
+TODOs filed: none
+
