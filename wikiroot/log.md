@@ -140,3 +140,12 @@ Issues fixed: removed stale let/dim syntax from language pages, updated parser d
 Remaining issues: one intentional parser note still mentions removed let/dim syntax only to state that they are no longer accepted; broader wiki lint coverage outside syntax/build topics remains for a later pass.
 TODOs filed: none
 
+
+## [2026-04-10] lint | remove stale include-path and pipeline misconceptions
+
+Changed files: 6
+
+Issues fixed: removed stale claims that host builds emit absolute runtime include paths; updated pipeline examples to current new_parser(prog) and new_generator(cout) usage; aligned host/ZXN target docs with the driver-managed -I "$ROCK_ROOT/src/lib" include strategy.
+Remaining issues: none found for the targeted misconception scan.
+TODOs filed: none.
+

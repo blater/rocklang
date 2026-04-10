@@ -29,7 +29,6 @@ typedef struct generator_t {
   char           **deferred_global_init_code;  // Deferred global init code strings
   int              deferred_global_init_count;
   int              deferred_global_init_capacity;
-  char            *lib_path;                   // Absolute path to src/ for includes
 } generator_t;
 ```
 
@@ -80,21 +79,15 @@ A memory-backed `FILE*` that accumulates setup code that must precede the curren
 
 At the top of every generated C file, `transpile()` emits runtime includes:
 
-**Host target** (absolute paths):
-```c
-#include "/abs/path/to/src/alloc.h"
-#include "/abs/path/to/src/lib/fundefs_internal.h"
-// etc.
-```
-
-**ZXN target** (relative paths, SDCC limitation):
+**All targets** (relative runtime header names):
 ```c
 #include "alloc.h"
+#include "fundefs.h"
 #include "fundefs_internal.h"
-// etc.
+#include "typedefs.h"
 ```
 
-The `lib_path` field of `generator_t` is computed by `main.c` at startup from `argv[0]` (always correct, never hardcoded).
+The compiler driver (`rock`) passes `-I "$ROCK_ROOT/src/lib"` for both host and ZXN builds so these includes resolve against the runtime library headers. The generator no longer embeds absolute repository paths into emitted C.
 
 ## Type Mapping
 

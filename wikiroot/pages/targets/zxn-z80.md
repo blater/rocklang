@@ -36,13 +36,13 @@ Z88DK's `zcc` frontend can use either `sccz80` or `SDCC` as the backend. Rock us
 
 ## Include Strategy
 
-SDCC does not handle absolute paths in generated `#include` directives. The generator emits **relative header names**:
+The generator emits **relative header names**:
 ```c
 #include "alloc.h"
 #include "fundefs_internal.h"
 ```
 
-The `rock` driver does not copy headers into the working directory. Instead, it invokes `zcc` with `-I"$ROCK_ROOT/src/lib"` so those relative includes resolve against the runtime library headers.
+This keeps the generated C portable across checkout locations and also avoids SDCC issues with absolute generated include paths. The `rock` driver does not copy headers into the working directory; it invokes `zcc` with `-I"$ROCK_ROOT/src/lib"` so those includes resolve against the runtime library headers.
 
 ## Compilation Command
 

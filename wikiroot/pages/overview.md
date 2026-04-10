@@ -58,8 +58,8 @@ rock <input.rkr> [output.exe] [--target=gcc|--target=zxn] [--debug]
 
 ### Host (gcc)
 - Generates standard C99-compatible output
-- Includes use absolute paths (`#include "/abs/path/to/src/alloc.h"`)
-- Compiled with `gcc -Wall -g -I src/`
+- Generated C includes runtime headers by relative name (`#include "alloc.h"`, etc.)
+- The `rock` driver compiles with `gcc -Wall -Wno-unused-variable -I "$ROCK_ROOT/src/lib"`
 - Full feature support
 
 ### ZXN (ZX Spectrum Next / Z80)

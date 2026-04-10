@@ -3,7 +3,7 @@ title: Host Target (gcc)
 category: targets
 tags: [host, gcc, linux, macos, target]
 sources: []
-updated: 2026-04-09
+updated: 2026-04-10
 status: current
 ---
 
@@ -36,22 +36,26 @@ Default output name is `<basename>.exe` (e.g. `test/foo.rkr` → `test/foo.exe`)
 
 ## Include Strategy
 
-The generator emits **absolute paths** for runtime headers:
+The generator emits **relative runtime header names**:
 ```c
-#include "/Users/blater/src/rock/src/alloc.h"
-#include "/Users/blater/src/rock/src/lib/fundefs_internal.h"
+#include "alloc.h"
+#include "fundefs.h"
+#include "fundefs_internal.h"
+#include "typedefs.h"
 ```
 
-The path is derived at runtime from `argv[0]` via `realpath()` + `dirname()`. `gcc` is passed `-I src/` so library `.c` files can `#include` each other without absolute paths.
+The `rock` driver invokes `gcc` with `-I "$ROCK_ROOT/src/lib"` so those headers resolve against the runtime library directory. Host builds no longer depend on absolute repository paths embedded into generated C.
 
 ## Compilation Command
 
 ```bash
-gcc -Wall -g \
-    -I "$ROCK_ROOT/src" \
+gcc -Wall -Wno-unused-variable \
+    -I "$ROCK_ROOT/src/lib" \
     out.c \
+    "$ROCK_ROOT/src/lib/alloc.c" \
+    "$ROCK_ROOT/src/lib/fundefs.c" \
     "$ROCK_ROOT/src/lib/fundefs_internal.c" \
-    "$ROCK_ROOT/src/alloc.c" \
+    "$ROCK_ROOT/src/lib/asm_interop.c" \
     -o out
 ```
 
@@ -59,7 +63,9 @@ gcc -Wall -g \
 
 All host programs link against:
 - `src/lib/fundefs_internal.c` — array ops, string helpers, arg access
-- `src/alloc.c` — arena allocator
+- `src/lib/fundefs.c` — public runtime helpers and declarations used by generated code
+- `src/lib/alloc.c` — arena allocator helpers used by the runtime
+- `src/lib/asm_interop.c` — host stub layer for shared runtime entry points
 
 Headers: `alloc.h`, `fundefs.h`, `fundefs_internal.h`, `typedefs.h`
 
@@ -79,4 +85,4 @@ The `-g` flag is always passed, so `gdb` / `lldb` debugging of generated C is su
 
 ## Test Suite
 
-All 27 tests in `test/` run on the host target. See [[testing/testing-overview]] for detail.
+See [[testing/testing-overview]] for the current auto-discovered host test count and status.

@@ -30,12 +30,9 @@ rock <input.rkr> [output-base] [--target=zxn]
 
 ### 2. Path Resolution
 ```c
-// Resolve argv[0] to absolute binary path
-char *real = realpath(argv[0], buf);
-// lib_path = dirname(real) + "/src"
-char *lib_path = compute_lib_path(real);
+input = get_abs_path(input, NULL);
 ```
-`lib_path` is the absolute path to the `src/` directory, computed at runtime from the binary location. This is used by the generator to emit absolute `#include` paths (host target only).
+`main.c` normalises the input path before lexing. The generated C uses relative runtime header names; the surrounding `rock` driver supplies `-I "$ROCK_ROOT/src/lib"` when it invokes `gcc` or `zcc`.
 
 ### 3. Allocator Initialisation
 ```c
@@ -52,8 +49,10 @@ Reads the entire source file, produces a flat token array with an EOF sentinel.
 
 ### 5. Parsing
 ```c
-parser_t p = new_parser(tokens, project_root);
-ast_t program = parse_program(&p);
+parser_t p = new_parser(prog);
+p.source = l.data;
+p.source_length = l.length;
+parse_program(&p);
 ```
 Consumes tokens, resolves includes (recursively lexing + splicing), builds the AST.
 
@@ -61,9 +60,11 @@ Included file paths resolve relative to the including file's directory.
 
 ### 6. Code Generation
 ```c
-generator_t g = new_generator(output_path, lib_path);
+char *cout = allocate_compiler_persistent(strlen(output) + 3);
+sprintf(cout, "%s.c", output);
+generator_t g = new_generator(cout);
 if (target == ZXN) g.target = TARGET_ZXN;
-transpile(&g, program);
+transpile(&g, p.prog);
 ```
 Walks the AST, emits C to the output file. See [[generator/generator-overview]].
 
@@ -95,7 +96,7 @@ There is no structured error recovery. Errors at any phase print a message to st
 
 ## Output File
 
-The generator writes to `<output-base>.c`. The file is created/truncated at the start of generation. On host, this file is then passed to `gcc` by `rockc`. On ZXN, it is passed to `zcc`.
+The generator writes to `<output-base>.c`. The file is created/truncated at the start of generation. The surrounding `rock` driver then passes that file to `gcc` on host builds or `zcc` on ZXN builds.
 
 ## Memory Lifecycle Summary
 
