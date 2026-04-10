@@ -1,5 +1,5 @@
 sub main() {
-  dim s: string := "Hello";
+  string s := "Hello";
 
   // This should trigger an out-of-bounds error
   print(substring(s, 10));

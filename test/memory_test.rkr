@@ -1,83 +1,84 @@
-include "test/Assert.rkr"
+include "Assert.rkr"
+Assert a;
 
 record Person {
   name: string,
-  age: int
+  age:  int
 }
 
 record Team {
-  leader: string,
-  members: string[]
+  leader:  string,         // TODO allow    string leader,
+  members: string[]        // TODO allow    string[]  members
 }
 
 sub main() {
   // Test 1: Simple string concat
-  dim s1: string := "hello";
-  dim s2: string := concat(s1, " world");
-  AssertEquals("concat result", "hello world", s2);
+  string s1 := "hello";
+  string s2 := concat(s1, " world");
+  a.AssertEquals("concat result", "hello world", s2);
 
   // Test 2: Dynamic string arrays
-  dim names: string[] := [];
+  string[] names := [];
   append(names, "Alice");
   append(names, "Bob");
   append(names, "Charlie");
-  AssertEquals("array[0]", "Alice", get(names, 0));
-  AssertEquals("array[1]", "Bob", get(names, 1));
-  AssertEquals("array[2]", "Charlie", get(names, 2));
-  AssertEQ("array length", 3, length(names));
+  a.AssertEquals("array[0]", "Alice", get(names, 0));
+  a.AssertEquals("array[1]", "Bob", get(names, 1));
+  a.AssertEquals("array[2]", "Charlie", get(names, 2));
+  a.AssertEQ("array length", 3, length(names));
 
   // Test 3: String concatenation in loop
-  loop i := 0 to 2 {
-    dim s: string => concat("Index ", toString(i));
+  for i := 0 to 2 {
+    string s := concat("Index ", toString(i));
   }
 
   // Test 4: Records with strings
-  dim p1: Person := {name => "Alice", age => 30};
-  dim p2: Person := {name => "Bob", age => 25};
-  AssertEquals("Person p1 name", "Alice", p1.name);
-  AssertEQ("Person p1 age", 30, p1.age);
-  AssertEquals("Person p2 name", "Bob", p2.name);
-  AssertEQ("Person p2 age", 25, p2.age);
+  Person p1 := {name := "Alice", age := 30};
+  Person p2 := {name := "Bob", age := 25};
+  a.AssertEquals("Person p1 name", "Alice", p1.name);
+  a.AssertEQ("Person p1 age", 30, p1.age);
+  a.AssertEquals("Person p2 name", "Bob", p2.name);
+  a.AssertEQ("Person p2 age", 25, p2.age);
 
   // Test 5: Records with dynamic string arrays
-  dim team: Team := {leader => "Alice", members => []};
+  Team team := {leader := "Alice", members := []};
   append(team.members, "Alice");
   append(team.members, "Bob");
   append(team.members, "Charlie");
-  AssertEquals("Team leader", "Alice", team.leader);
-  AssertEquals("Team members[0]", "Alice", get(team.members, 0));
-  AssertEquals("Team members[1]", "Bob", get(team.members, 1));
-  AssertEquals("Team members[2]", "Charlie", get(team.members, 2));
+  a.AssertEquals("Team leader", "Alice", team.leader);
+  a.AssertEquals("Team members[0]", "Alice", get(team.members, 0));
+  a.AssertEquals("Team members[1]", "Bob", get(team.members, 1));
+  a.AssertEquals("Team members[2]", "Charlie", get(team.members, 2));
 
   // Test 6: Nested scopes with concat
-  loop i := 0 to 2 {
-    dim prefix: string => concat("Item ", toString(i));
+  for i := 0 to 2 {
+    string prefix := concat("Item ", toString(i));
   }
 
   // Test 7: Dynamic array append and reassign
-  dim items: string[] => [];
+  string[] items := [];
   append(items, "first");
-  AssertEquals("initial array item", "first", get(items, 0));
+  a.AssertEquals("initial array item", "first", get(items, 0));
   items[0] := "second";
-  AssertEquals("reassigned array item", "second", get(items, 0));
+  a.AssertEquals("reassigned array item", "second", get(items, 0));
 
   // Test 8: String concatenation chain
-  dim result: string => concat("Hello", " ");
+  string result := concat("Hello", " ");
   result := concat(result, "World");
   result := concat(result, "!");
-  AssertEquals("concat chain", "Hello World!", result);
+  a.AssertEquals("concat chain", "Hello World!", result);
 
   // Test 9: Deep nesting with concat
-  loop i := 0 to 1 {
-    loop j := 0 to 1 {
-      dim msg: string => concat("i=", toString(i));
+  for i := 0 to 1 {
+    for j := 0 to 1 {
+      string msg := concat("i=", toString(i));
       msg := concat(msg, ", j=");
       msg := concat(msg, toString(j));
     }
   }
 
   // Test 10: Many iterations (loop allocation reuse)
-  loop i := 0 to 9 {
-    dim s: string => concat("Count: ", toString(i));
+  for i := 0 to 9 {
+    string s := concat("Count: ", toString(i));
   }
 }

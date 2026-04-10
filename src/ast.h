@@ -45,6 +45,7 @@ typedef struct ast_enum_tdef ast_enum_tdef;
 typedef struct ast_type ast_type;
 typedef struct ast_arr_index ast_arr_index;
 typedef struct ast_embed ast_embed;
+typedef struct ast_method_call ast_method_call;
 
 struct ast_arr_index {
   ast_t array;              // array identifier expression
@@ -81,10 +82,19 @@ struct ast_identifier {
 
 struct ast_fundef {
   token_t name;
+  token_t type_name;   // receiver type for method declarations (e.g. "string")
+  int is_method;       // 1 when declared as "sub Type.method(...)"
+  int is_array_method; // 1 when declared as "sub Type[].method(...)"
   token_array_t args;
   ast_array_t types;
   ast_t body;
   ast_t ret_type;
+};
+
+struct ast_method_call {
+  ast_t receiver;      // any expression — identifier, funcall, arr_index, etc.
+  token_t method;      // method name token
+  ast_array_t args;    // call args, NOT including receiver
 };
 
 struct ast_funcall {
@@ -114,6 +124,7 @@ struct ast_matchcase {
 };
 
 struct ast_sub {
+  ast_t receiver;
   token_array_t path;
   ast_t expr;
 };
@@ -139,12 +150,14 @@ struct ast_ifstmt {
 typedef enum tdef_type_t {
   TDEF_REC,
   TDEF_PRO,
+  TDEF_MODULE,
 } tdef_type_t;
 
 struct ast_tdef {
   token_t name;
   tdef_type_t t;
   ast_array_t constructors;
+  ast_array_t module_fields; // vardef nodes for per-instance state (TDEF_MODULE only)
 };
 
 struct ast_cons {
@@ -212,6 +225,7 @@ struct node_t {
     type,
     arr_index,
     embed,
+    method_call,
   } tag;
   union data {
     ast_op op;
@@ -239,6 +253,7 @@ struct node_t {
     ast_type type;
     ast_arr_index arr_index;
     ast_embed embed;
+    ast_method_call method_call;
   } data;
 };
 

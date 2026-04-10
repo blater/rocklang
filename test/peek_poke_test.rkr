@@ -1,19 +1,20 @@
-include "test/Assert.rkr"
+include "Assert.rkr"
 
 sub pokeval(address:int, val:int) {
-  dim pokeVal : byte := to_byte(val);
-  dim addr : word := to_word(address);
+  Assert a;
+  byte pokeVal := to_byte(val);
+  word addr := to_word(address);
 
   // CLAUDE MUST NOT CHANGE THIS STRUCTURE
   poke(addr, pokeVal);
 
   // CLAUDE MUST NOT CHANGE THIS STRUCTURE
-  dim result: byte := peek(addr);
-  dim desc: string := concat("pokeval(", to_string(address));
+  byte result := peek(addr);
+  string desc := concat("pokeval(", to_string(address));
   desc := concat(desc, ",");
   desc := concat(desc, to_string(val));
   desc := concat(desc, ")");
-  AssertEQ(desc, val, to_int(result));
+  a.AssertEQ(desc, val, to_int(result));
 }
 
 

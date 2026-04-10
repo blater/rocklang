@@ -1,4 +1,5 @@
-include "test/Assert.rkr"
+include "Assert.rkr"
+Assert as;
 
 record t {
   a:int, 
@@ -10,9 +11,9 @@ sub modify_t(arg: t) {
 }
 
 sub main() {
-  let var: t => {a => 3, b => "hey !\n"};
-  AssertEquals("record assignment", "hey !\n", var.b);
+  t var := {a := 3, b := "hey !\n"};
+  as.AssertEquals("record assignment", "hey !\n", var.b);
 
   modify_t(var);
-  AssertEquals("mutation by reference", "hooo\n", var.b);
+  as.AssertEquals("mutation by reference", "hooo\n", var.b);
 }

@@ -1,5 +1,5 @@
 #include "lexer.h"
-#include "alloc.h"
+#include "lib/alloc.h"
 #include "stringview.h"
 #include "token.h"
 #include <stdio.h>

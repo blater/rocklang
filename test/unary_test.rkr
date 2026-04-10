@@ -1,8 +1,9 @@
-include "test/Assert.rkr"
+include "Assert.rkr"
+Assert as;
 
 sub main(): void {
-  let a: int := -1;
-  AssertEQ("negative numbers", -1, a);
-  let b: int := -(-2);
-  AssertEQ("double negative", 2, b);
+  int a := -1;
+  as.AssertEQ("negative numbers", -1, a);
+  int b := -(-2);
+  as.AssertEQ("double negative", 2, b);
 }

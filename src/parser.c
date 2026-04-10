@@ -1,5 +1,5 @@
 #include "parser.h"
-#include "alloc.h"
+#include "lib/alloc.h"
 #include "ast.h"
 #include "error.h"
 #include "lexer.h"
@@ -13,16 +13,34 @@
 
 char *includes[1024];
 int includes_num = 0;
-char *include_base_dir = NULL;  // Base directory for resolving relative include paths
 
-void set_include_base_dir(char *dir) {
-  include_base_dir = dir;
+// Registry of module type names (for synthesize_default)
+static char *module_type_names[256];
+static int module_type_count = 0;
+
+static void register_module_type(string_view name) {
+  if (module_type_count >= 256) {
+    fprintf(stderr, "error: too many module types (max 256)\n");
+    exit(1);
+  }
+  module_type_names[module_type_count++] = string_of_sv(name);
 }
+
+static int is_module_typename(string_view name) {
+  for (int i = 0; i < module_type_count; i++) {
+    if (svcmp(name, sv_from_cstr(module_type_names[i])) == 0)
+      return 1;
+  }
+  return 0;
+}
+
 
 ast_t parse_expression(parser_t *p);
 ast_t parse_type(parser_t *p);
 ast_t parse_fundef(parser_t *p);
-ast_t parse_var_def(parser_t *p);
+static int is_new_style_vardef(parser_t p);
+static ast_t parse_new_style_var_def(parser_t *p);
+static ast_t parse_module(parser_t *p);
 ast_t parse_match(parser_t *p);
 ast_t parse_loop(parser_t *p);
 ast_t parse_compound(parser_t *p);
@@ -123,10 +141,10 @@ int is_assign(parser_t p) {
   token_type_t current = consume_token(&p).type;
   if (current == TOK_OPEN_BRACE || current == TOK_CLOSE_BRACE)
     return 0;
-  while (scope >= 0 && current != TOK_BIG_ARROW && current != TOK_GETS) {
-    if (current == TOK_OPEN_BRACE || current == TOK_OPEN_BRACE)
+  while (scope >= 0 && current != TOK_GETS) {
+    if (current == TOK_OPEN_PAREN || current == TOK_OPEN_BRACKET)
       scope++;
-    else if (current == TOK_CLOSE_BRACE || current == TOK_CLOSE_BRACE)
+    else if (current == TOK_CLOSE_PAREN || current == TOK_CLOSE_BRACKET)
       scope--;
     else if (current == TOK_COMMA)
       break;
@@ -136,7 +154,7 @@ int is_assign(parser_t p) {
       break;
     else if (current == TOK_SMALL_ARROW || current == TOK_TO)
       break;
-    else if (current == TOK_LOOP)
+    else if (current == TOK_LOOP || current == TOK_FOR)
       break;
     else if (current == TOK_ITER || current == TOK_FOR)
       break;
@@ -144,16 +162,16 @@ int is_assign(parser_t p) {
       break;
     current = consume_token(&p).type;
   }
-  return current == TOK_BIG_ARROW || current == TOK_GETS;
+  return current == TOK_GETS;
 }
 
 ast_t parse_assign(parser_t *p) {
   expect(*p, TOK_IDENTIFIER);
   ast_t target = parse_expression(p);
   token_type_t op = peek_type(*p);
-  if (op != TOK_BIG_ARROW && op != TOK_GETS) {
+  if (op != TOK_GETS) {
     token_t tok = peek_token(*p);
-    printf("%s:%d:%d: error: Expected '=>' or ':=' in assignment, got " SV_Fmt "\n",
+    printf("%s:%d:%d: error: Expected ':=' in assignment, got " SV_Fmt "\n",
            tok.filename, tok.line, tok.col, SV_Arg(lexeme_of_type(op)));
     exit(1);
   }
@@ -177,6 +195,31 @@ ast_t parse_cons(parser_t *p) {
   return new_ast((node_t){cons, {.cons = {name, type}}});
 }
 
+static ast_t parse_record_field(parser_t *p) {
+  token_t name;
+  ast_t type;
+
+  // Disambiguate old style `field: Type` from type-first `Type field`.
+  parser_t la = *p;
+  expect(la, TOK_IDENTIFIER);
+  consume_token(&la);
+
+  if (peek_type(la) == TOK_COLON) {
+    expect(*p, TOK_IDENTIFIER);
+    name = consume_token(p);
+    consume_token(p);  // consume ':'
+    type = parse_type(p);
+  } else {
+    type = parse_type(p);
+    expect(*p, TOK_IDENTIFIER);
+    name = consume_token(p);
+  }
+
+  if (peek_type(*p) == TOK_COMMA)
+    consume_token(p);
+  return new_ast((node_t){cons, {.cons = {name, type}}});
+}
+
 ast_t parse_tdef(parser_t *p) {
   tdef_type_t type = -1;
   if (peek_type(*p) == TOK_REC)
@@ -191,10 +234,14 @@ ast_t parse_tdef(parser_t *p) {
   expect(*p, TOK_OPEN_BRACE);
   consume_token(p);
   ast_array_t conss = new_ast_array();
-  while (peek_type(*p) != TOK_CLOSE_BRACE)
-    push_ast_array(&conss, parse_cons(p));
+  while (peek_type(*p) != TOK_CLOSE_BRACE) {
+    if (type == TDEF_REC)
+      push_ast_array(&conss, parse_record_field(p));
+    else
+      push_ast_array(&conss, parse_cons(p));
+  }
   consume_token(p);
-  return new_ast((node_t){tdef, {.tdef = {name, type, conss}}});
+  return new_ast((node_t){tdef, {.tdef = {name, type, conss, new_ast_array()}}});
 }
 
 ast_t parse_ret(parser_t *p) {
@@ -214,9 +261,37 @@ ast_t parse_literal(parser_t *p) {
   return new_ast((node_t){literal, {.literal = {.lit = consume_token(p)}}});
 }
 
+// Inject `receiver` at the base of a method_call chain.
+// If expr is a funcall, wrap it as method_call{receiver, ...}.
+// If expr is a method_call, recurse into its receiver.
+// Returns NULL if expr is neither.
+static ast_t inject_method_receiver(ast_t receiver, ast_t expr) {
+  if (expr->tag == funcall) {
+    ast_funcall call = expr->data.funcall;
+    return new_ast((node_t){method_call, {.method_call = {receiver, call.name, call.args}}});
+  }
+  if (expr->tag == method_call) {
+    ast_method_call mc = expr->data.method_call;
+    ast_t new_recv = inject_method_receiver(receiver, mc.receiver);
+    if (!new_recv) return NULL;
+    mc.receiver = new_recv;
+    return new_ast((node_t){method_call, {.method_call = mc}});
+  }
+  return NULL;
+}
+
+static ast_t make_field_access(ast_t receiver, token_t field) {
+  ast_t field_expr = new_ast((node_t){identifier, {.identifier = {field}}});
+  return new_ast((node_t){sub,
+                  {.sub = {.receiver = receiver,
+                           .path = new_token_array(),
+                           .expr = field_expr}}});
+}
+
 ast_t parse_sub(parser_t *p) {
+  token_t base = consume_token(p);
+  ast_t receiver = new_ast((node_t){identifier, {.identifier = {base}}});
   token_array_t path = new_token_array();
-  token_array_push(&path, consume_token(p));
   while (peek_type(*p) == TOK_DBLCOLON || peek_type(*p) == TOK_DOT) {
     consume_token(p);
     if (is_sub(*p))
@@ -225,7 +300,34 @@ ast_t parse_sub(parser_t *p) {
       break;
   }
   ast_t expr = parse_expression(p);
-  return new_ast((node_t){sub, {.sub = {.expr = expr, .path = path}}});
+
+  // Method call: path[0..n].method(args) → ast_method_call
+  // Also handles chained calls: path.method1().method2() → nested method_call
+  if (expr->tag == funcall || expr->tag == method_call) {
+    ast_t method_receiver;
+    if (path.length == 0) {
+      method_receiver = receiver;
+    } else {
+      // a.b.method() → receiver = sub{receiver:a, expr:identifier("b")}
+      token_array_t recv_path = new_token_array();
+      for (int i = 0; i < path.length - 1; i++) {
+        token_array_push(&recv_path, path.data[i]);
+      }
+      ast_t last = new_ast((node_t){identifier,
+                            {.identifier = {path.data[path.length - 1]}}});
+      method_receiver = new_ast((node_t){sub,
+                                 {.sub = {.receiver = receiver,
+                                          .path = recv_path,
+                                          .expr = last}}});
+    }
+    ast_t result = inject_method_receiver(method_receiver, expr);
+    if (result) return result;
+  }
+
+  return new_ast((node_t){sub,
+                  {.sub = {.receiver = receiver,
+                           .expr = expr,
+                           .path = path}}});
 }
 
 ast_t parse_if(parser_t *p) {
@@ -271,8 +373,6 @@ ast_t parse_enum(parser_t *p) {
   consume_token(p);
   expect(*p, TOK_IDENTIFIER);
   token_t name = consume_token(p);
-  expect(*p, TOK_BIG_ARROW);
-  consume_token(p);
   expect(*p, TOK_OPEN_BRACE);
   consume_token(p);
   token_array_t elems = new_token_array();
@@ -299,14 +399,21 @@ ast_t parse_statement(parser_t *p) {
     return parse_enum(p);
   else if (a == TOK_PRO || a == TOK_REC)
     return parse_tdef(p);
+  else if (a == TOK_MODULE)
+    return parse_module(p);
   else if (a == TOK_WHILE)
     return parse_while_loop(p);
+  else if (a == TOK_SUB) {
+    // Check sub before is_assign — is_assign scans ahead and could find := inside a function body
+    return parse_fundef(p);
+  }
+  else if (a == TOK_IDENTIFIER && is_new_style_vardef(*p))
+    return parse_new_style_var_def(p);
   else if (is_assign(*p))
     return parse_assign(p);
-  else if (a == TOK_LOOP || a == TOK_FOR) {
-    // Both 'loop' and 'for' can be used for counter loops
-    // 'for' can also be used for item loops - need lookahead
-    if (a == TOK_FOR) {
+  else if (a == TOK_FOR) {
+    // 'for' handles both counter loops (for i := 0 to N) and iterator loops (for x in arr)
+    {
       // Lookahead to distinguish: for x:= arr vs for i:= 0 to 10 vs for x in arr
       parser_t p_lookahead = *p;
       consume_token(&p_lookahead);  // skip 'for'
@@ -326,7 +433,7 @@ ast_t parse_statement(parser_t *p) {
           while (lookahead_limit > 0) {
             token_type_t t = peek_type(p_lookahead);
             // Check for statement/expression boundaries
-            if (t == TOK_BIG_ARROW || t == TOK_OPEN_BRACE) {
+            if (t == TOK_OPEN_BRACE) {
               // End of expression, no range operator found - item loop
               return parse_iter_loop(p);
             }
@@ -353,14 +460,7 @@ ast_t parse_statement(parser_t *p) {
   }
   else if (a == TOK_ITER)
     return parse_iter_loop(p);
-  else if (a == TOK_SUB) {
-    // 'sub' keyword is for function definitions
-    return parse_fundef(p);
-  }
-  else if (a == TOK_LET || a == TOK_DIM) {
-    // 'let' and 'dim' keywords are for variable definitions
-    return parse_var_def(p);
-  } else if (a == TOK_RETURN) {
+  else if (a == TOK_RETURN) {
     return parse_ret(p);
   } else if (a == TOK_MATCH)
     return parse_match(p);
@@ -389,8 +489,6 @@ ast_t parse_match(parser_t *p) {
   expect(*p, TOK_MATCH);
   consume_token(p);
   ast_t to_match = parse_expression(p);
-  expect(*p, TOK_BIG_ARROW);
-  consume_token(p);
   expect(*p, TOK_OPEN_BRACE);
   consume_token(p);
   ast_array_t cases = new_ast_array();
@@ -407,9 +505,9 @@ ast_t parse_match(parser_t *p) {
 ast_t parse_loop(parser_t *p) {
   // Accept both 'loop' and 'for' keywords
   token_type_t t = peek_type(*p);
-  if (t != TOK_LOOP && t != TOK_FOR) {
+  if (t != TOK_FOR) {
     print_error_prefix(*p);
-    printf("Expected 'loop' or 'for' keyword\n");
+    printf("Expected 'for' keyword\n");
     exit(1);
   }
   consume_token(p);
@@ -493,7 +591,13 @@ ast_t parse_record_expression(parser_t *p) {
     expect(*p, TOK_IDENTIFIER);
     token_t cons_name = consume_token(p);
     token_array_push(&names, cons_name);
-    expect(*p, TOK_BIG_ARROW);
+    token_type_t sep = peek_type(*p);
+    if (sep != TOK_GETS) {
+      token_t tok = peek_token(*p);
+      printf("%s:%d:%d: error: Expected ':=' in record initializer, got " SV_Fmt "\n",
+             tok.filename, tok.line, tok.col, SV_Arg(lexeme_of_type(sep)));
+      exit(1);
+    }
     consume_token(p);
     ast_t expr = parse_expression(p);
     push_ast_array(&exprs, expr);
@@ -542,6 +646,20 @@ static ast_t synthesize_default(ast_t type_node) {
     return new_ast((node_t){literal, {.literal = {tok}}});
   }
 
+  // Module types: default to TypeName_new()
+  if (is_module_typename(name)) {
+    size_t nl = name.length;
+    char *fn = allocate_compiler_persistent(nl + 5);
+    memcpy(fn, name.data, nl);
+    memcpy(fn + nl, "_new", 4);
+    fn[nl + 4] = '\0';
+    token_t tok = pos;
+    tok.type = TOK_IDENTIFIER;
+    tok.lexeme = sv_from_cstr(fn);
+    ast_array_t no_args = new_ast_array();
+    return new_ast((node_t){funcall, {.funcall = {tok, no_args}}});
+  }
+
   // User-defined types: no sensible default
   error(pos.filename, pos.line, pos.col,
         "Type '" SV_Fmt "' has no default value; use explicit initialization",
@@ -549,33 +667,68 @@ static ast_t synthesize_default(ast_t type_node) {
   return NULL;  // unreachable
 }
 
-ast_t parse_var_def(parser_t *p) {
-  // Accept both 'let' and 'dim' for variable declaration
-  token_type_t t = peek_type(*p);
-  if (t != TOK_LET && t != TOK_DIM) {
-    print_error_prefix(*p);
-    printf("Expected 'let' or 'dim' but got: " SV_Fmt "\n", SV_Arg(lexeme_of_type(t)));
-    exit(1);
+// Lookahead predicate: does the current token stream start a C/Java-style vardef?
+// Patterns:
+//   IDENT IDENT ( := | ; )          →  type varname
+//   IDENT ARR_DECL IDENT ( := | ; ) →  type[] varname
+//   IDENT [ NUM ] IDENT ( := | ; )  →  type[N] varname
+static int is_new_style_vardef(parser_t p) {
+  if (consume_token(&p).type != TOK_IDENTIFIER) return 0;
+  token_type_t t1 = peek_type(p);
+
+  if (t1 == TOK_IDENTIFIER) {
+    consume_token(&p);
+    token_type_t t2 = peek_type(p);
+    return t2 == TOK_GETS || t2 == TOK_SEMICOL;
   }
+  if (t1 == TOK_ARR_DECL) {
+    consume_token(&p);
+    if (peek_type(p) != TOK_IDENTIFIER) return 0;
+    consume_token(&p);
+    token_type_t t3 = peek_type(p);
+    return t3 == TOK_GETS || t3 == TOK_SEMICOL;
+  }
+  if (t1 == TOK_OPEN_BRACKET) {
+    consume_token(&p);
+    if (peek_type(p) != TOK_NUM_LIT) return 0;
+    consume_token(&p);
+    if (peek_type(p) != TOK_CLOSE_BRACKET) return 0;
+    consume_token(&p);
+    if (peek_type(p) != TOK_IDENTIFIER) return 0;
+    consume_token(&p);
+    token_type_t t5 = peek_type(p);
+    return t5 == TOK_GETS || t5 == TOK_SEMICOL;
+  }
+  return 0;
+}
+
+// Parse a module declaration: module Name;
+// Produces a tdef node with TDEF_MODULE type and no constructors.
+static ast_t parse_module(parser_t *p) {
+  consume_token(p);  // consume 'module'
+  expect(*p, TOK_IDENTIFIER);
+  token_t name = consume_token(p);
+  expect(*p, TOK_SEMICOL);
   consume_token(p);
+  register_module_type(name.lexeme);
+  ast_array_t empty = new_ast_array();
+  return new_ast((node_t){tdef, {.tdef = {name, TDEF_MODULE, empty, new_ast_array()}}});
+}
+
+// Parse a C/Java-style variable declaration: type varname [:= expr];
+static ast_t parse_new_style_var_def(parser_t *p) {
+  ast_t type = parse_type(p);
+
   expect(*p, TOK_IDENTIFIER);
   token_t id = consume_token(p);
 
-  expect(*p, TOK_COLON);
-  consume_token(p);
-
-  ast_t type = parse_type(p);
-
-  // Accept both '=>' and ':=' for variable initialization, or ';' for default
   token_type_t op = peek_type(*p);
   int is_rec = 0;
   ast_t expr = NULL;
 
-  if (op == TOK_BIG_ARROW || op == TOK_GETS) {
+  if (op == TOK_GETS) {
     consume_token(p);
-
     if (peek_type(*p) == TOK_OPEN_BRACE) {
-      // We have a Record variable declaration !!
       is_rec = 1;
       consume_token(p);
       expr = parse_record_expression(p);
@@ -587,7 +740,6 @@ ast_t parse_var_def(parser_t *p) {
       expr = parse_expression(p);
     }
   } else if (op == TOK_SEMICOL) {
-    // No initializer: synthesize default
     expr = synthesize_default(type);
   } else {
     token_t tok = peek_token(*p);
@@ -595,6 +747,7 @@ ast_t parse_var_def(parser_t *p) {
           "Expected ':=' or ';' in variable declaration, got " SV_Fmt,
           SV_Arg(lexeme_of_type(op)));
   }
+
   expect(*p, TOK_SEMICOL);
   consume_token(p);
   return new_ast((node_t){
@@ -666,19 +819,70 @@ ast_t parse_fundef(parser_t *p) {
   consume_token(p);
   expect(*p, TOK_IDENTIFIER);
   token_t id = consume_token(p);
+
+  // Method declaration: sub Type.method(...) or sub Type[].method(...)
+  int is_method = 0;
+  int is_array_method = 0;
+  token_t type_name_tok = id;  // safe default (overwritten below if is_method)
+  if (peek_type(*p) == TOK_ARR_DECL) {
+    // Look ahead: expect [] (TOK_ARR_DECL) followed by .
+    parser_t la = *p;
+    consume_token(&la);  // consume []
+    if (peek_type(la) == TOK_DOT) {
+      // Confirmed: sub Type[].method(...)
+      consume_token(p);  // consume []
+      consume_token(p);  // consume .
+      is_method = 1;
+      is_array_method = 1;
+      expect(*p, TOK_IDENTIFIER);
+      id = consume_token(p);  // id is now the method name
+    }
+  } else if (peek_type(*p) == TOK_DOT) {
+    consume_token(p);  // consume '.'
+    is_method = 1;
+    // type_name_tok already holds the type (e.g. "string")
+    expect(*p, TOK_IDENTIFIER);
+    id = consume_token(p);  // id is now the method name (e.g. "add")
+  }
+
   expect(*p, TOK_OPEN_PAREN);
   consume_token(p);
   token_array_t args = new_token_array();
   ast_array_t types = new_ast_array();
-  while (peek_type(*p) != TOK_CLOSE_PAREN) {
-    expect(*p, TOK_IDENTIFIER);
-    token_t arg = consume_token(p);
-    token_array_push(&args, arg);
 
-    expect(*p, TOK_COLON);
-    consume_token(p);
-    ast_t type = parse_type(p);
-    push_ast_array(&types, type);
+  // Prepend implicit "this" parameter for method declarations
+  if (is_method) {
+    token_t this_tok = type_name_tok;
+    this_tok.lexeme = sv_from_cstr("this");
+    token_array_push(&args, this_tok);
+    int this_is_array = is_array_method ? 1 : 0;
+    ast_t this_type = new_ast((node_t){type, {.type = {type_name_tok, this_is_array, 0}}});
+    push_ast_array(&types, this_type);
+  }
+
+  while (peek_type(*p) != TOK_CLOSE_PAREN) {
+    token_t arg;
+    ast_t param_type;
+
+    // Disambiguate: old style "name: type" vs new style "type name"
+    // Peek two tokens ahead — if second is ':', it's old style.
+    parser_t la = *p;
+    consume_token(&la);  // skip first identifier
+    if (peek_type(la) == TOK_COLON) {
+      // Old style: name : type
+      expect(*p, TOK_IDENTIFIER);
+      arg = consume_token(p);
+      consume_token(p);  // consume ':'
+      param_type = parse_type(p);
+    } else {
+      // New style: type name
+      param_type = parse_type(p);
+      expect(*p, TOK_IDENTIFIER);
+      arg = consume_token(p);
+    }
+
+    token_array_push(&args, arg);
+    push_ast_array(&types, param_type);
 
     if (peek_type(*p) != TOK_COMMA)
       break;
@@ -704,6 +908,9 @@ ast_t parse_fundef(parser_t *p) {
                           {.fundef = {.args = args,
                                       .body = body,
                                       .name = id,
+                                      .type_name = type_name_tok,
+                                      .is_method = is_method,
+                                      .is_array_method = is_array_method,
                                       .types = types,
                                       .ret_type = ret_type}}});
 }
@@ -790,6 +997,15 @@ ast_t parse_subscript(parser_t *p) {
     }
     result.has_field = 1;
     result.field_expr = parse_expression(p);  // final field name
+
+    // arr[idx].method(args) with no intermediate fields → method_call node
+    if (result.field_path.length == 0 && result.field_expr->tag == funcall) {
+      ast_t base = new_ast((node_t){arr_index,
+                    {.arr_index = {arr_id, index, 0, new_token_array(), NULL}}});
+      ast_funcall call = result.field_expr->data.funcall;
+      return new_ast((node_t){method_call,
+                      {.method_call = {base, call.name, call.args}}});
+    }
   }
 
   return new_ast((node_t){arr_index, {.arr_index = result}});
@@ -801,8 +1017,6 @@ ast_t parse_primary(parser_t *p) {
     return parse_funcall(p);
   } else if (is_subscript(*p)) {
     return parse_subscript(p);
-  } else if (is_sub(*p)) {
-    return parse_sub(p);
   } else if (type == TOK_STR_LIT || type == TOK_CHR_LIT ||
              type == TOK_NUM_LIT || type == TOK_WILDCARD ||
              type == TOK_IDENTIFIER || type == TOK_ARR_DECL) {
@@ -856,6 +1070,48 @@ ast_t parse_expression(parser_t *p) {
 
 ast_t parse_expression_aux(parser_t *p, int min_precedence) {
   ast_t left = parse_primary(p);
+
+  // Postfix field access, method calls, and indexing on arbitrary receivers.
+  while (1) {
+    token_type_t next = peek_type(*p);
+
+    if (next == TOK_DOT || next == TOK_DBLCOLON) {
+      token_type_t sep = consume_token(p).type;
+      expect(*p, TOK_IDENTIFIER);
+      token_t field = consume_token(p);
+
+      if (sep == TOK_DOT && peek_type(*p) == TOK_OPEN_PAREN) {
+        consume_token(p);  // consume '('
+        ast_array_t args = new_ast_array();
+        while (peek_type(*p) != TOK_CLOSE_PAREN) {
+          push_ast_array(&args, parse_expression(p));
+          if (peek_type(*p) != TOK_COMMA) break;
+          consume_token(p);
+        }
+        expect(*p, TOK_CLOSE_PAREN);
+        consume_token(p);
+        left = new_ast((node_t){method_call, {.method_call = {left, field, args}}});
+        continue;
+      }
+
+      left = make_field_access(left, field);
+      continue;
+    }
+
+    if (next == TOK_OPEN_BRACKET) {
+      consume_token(p);                   // consume '['
+      ast_t index = parse_expression(p);  // parse index
+      expect(*p, TOK_CLOSE_BRACKET);
+      consume_token(p);                   // consume ']'
+
+      left = new_ast((node_t){arr_index,
+                      {.arr_index = {left, index, 0, new_token_array(), NULL}}});
+      continue;
+    }
+
+    break;
+  }
+
   while (1) {
     ast_t node = parse_increasing_precedence(p, left, min_precedence);
     if (node == left)
@@ -868,7 +1124,7 @@ ast_t parse_expression_aux(parser_t *p, int min_precedence) {
   // Valid tokens after expression: terminators, separators, continuation operators
   if (next != TOK_SEMICOL && next != TOK_CLOSE_BRACE && next != TOK_EOF &&
       next != TOK_COMMA && next != TOK_CLOSE_PAREN && next != TOK_CLOSE_BRACKET &&
-      next != TOK_BIG_ARROW && next != TOK_SMALL_ARROW && next != TOK_TO &&
+      next != TOK_SMALL_ARROW && next != TOK_TO &&
       next != TOK_OPEN_BRACE) {  // { is valid in loop contexts
     // Check if this looks like an unexpected expression start
     if (next == TOK_STR_LIT || next == TOK_CHR_LIT || next == TOK_NUM_LIT ||
@@ -925,22 +1181,22 @@ char *get_sub_string(char *s, size_t length) {
   return res;
 }
 
-char *realpath(const char *restrict, char *restrict);
-
-char *get_abs_path(char *s) {
-  char full_path[1024];
-
-  // If path is relative and we have a base directory, resolve relative to it
-  if (include_base_dir && s[0] != '/') {
-    snprintf(full_path, sizeof(full_path), "%s/%s", include_base_dir, s);
+char *get_abs_path(char *s, char *base_dir) {
+  char buffer[PATH_MAX];
+  if (base_dir && s[0] != '/') {
+    char full_path[PATH_MAX];
+    snprintf(full_path, sizeof(full_path), "%s/%s", base_dir, s);
+    if (!realpath(full_path, buffer)) {
+      fprintf(stderr, "error: cannot resolve path '%s'\n", full_path);
+      exit(1);
+    }
   } else {
-    strcpy(full_path, s);
+    if (!realpath(s, buffer)) {
+      fprintf(stderr, "error: cannot resolve path '%s'\n", s);
+      exit(1);
+    }
   }
-
-  char buffer[1024];
-  memset(buffer, 0, 1024);
-  realpath(full_path, buffer);
-  int l = strlen(buffer);
+  size_t l = strlen(buffer);
   char *res = allocate_compiler_persistent(l + 1);
   strcpy(res, buffer);
   return res;
@@ -948,19 +1204,24 @@ char *get_abs_path(char *s) {
 
 void parse_program(parser_t *p) {
   ast_array_t prog = new_ast_array();
+  ast_t last_module = NULL; // tracks the most recent module tdef for field collection
   while (p->cursor < p->tokens.length) {
     if (peek_type(*p) == TOK_EMBED) {
-      // Top-level embeds are declarations, handle them directly
       ast_t stmt = parse_embed(p);
       push_ast_array(&prog, stmt);
+      last_module = NULL;
       continue;
     }
     if (peek_type(*p) == TOK_INCLUDE) {
       consume_token(p);
       expect(*p, TOK_STR_LIT);
       token_t tok = consume_token(p);
+      char tok_dir_buf[PATH_MAX];
+      strcpy(tok_dir_buf, tok.filename);
+      char *tok_dir = dirname(tok_dir_buf);
       char *abs_path = get_abs_path(
-          get_sub_string(string_of_sv(tok.lexeme) + 1, tok.lexeme.length - 2));
+          get_sub_string(string_of_sv(tok.lexeme) + 1, tok.lexeme.length - 2),
+          tok_dir);
       if (!has_been_included(abs_path)) {
         if (includes_num >= 1024) {
           printf("%s:%d:%d: error: Include limit reached (max 1024 files)\n",
@@ -971,6 +1232,14 @@ void parse_program(parser_t *p) {
 
         lexer_t l = new_lexer(abs_path);
         token_array_t toks = lex_program(&l);
+
+        // All included files must begin with a module declaration
+        if (toks.length == 0 || toks.data[0].type != TOK_MODULE) {
+          error(tok.filename, tok.line, tok.col,
+                "included file '%s' must start with a module declaration (module Name;)",
+                abs_path);
+        }
+
         token_array_t new_toks = new_token_array();
         // Add tokens before cursor from original
         for (int i = 0; i < p->cursor; i++)
@@ -988,10 +1257,14 @@ void parse_program(parser_t *p) {
       continue;
     }
     ast_t stmt = parse_statement(p);
-    if (stmt != NULL)  // parse_statement returns NULL when EOF is reached
-      push_ast_array(&prog, stmt);
-    else
-      break;  // End of program
+    if (stmt == NULL) break;
+    // Vardefs immediately following a module declaration become instance fields
+    if (stmt->tag == vardef && last_module != NULL) {
+      push_ast_array(&last_module->data.tdef.module_fields, stmt);
+      continue;
+    }
+    last_module = (stmt->tag == tdef && stmt->data.tdef.t == TDEF_MODULE) ? stmt : NULL;
+    push_ast_array(&prog, stmt);
   }
   p->prog = new_ast((node_t){program, {.program = {prog}}});
 }

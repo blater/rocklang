@@ -1,26 +1,27 @@
-include "test/Assert.rkr"
+include "Assert.rkr"
+Assert a;
 
 sub main() {
   // Basic range loop without =>
-  dim sum: int := 0;
-  loop i := 0 to 4 {
+  int sum := 0;
+  for i := 0 to 4 {
     sum := sum + i;
   }
-  AssertEQ("sum 0..4", 10, sum);
+  a.AssertEQ("sum 0..4", 10, sum);
 
   // Single-iteration loop (start == end, runs once)
-  dim count: int := 0;
-  loop i := 0 to 0 {
+  int count := 0;
+  for i := 0 to 0 {
     count := count + 1;
   }
-  AssertEQ("single iteration", 1, count);
+  a.AssertEQ("single iteration", 1, count);
 
   // Nested loops without =>
-  dim pairs: int := 0;
-  loop i := 0 to 2 {
-    loop j := 0 to 2 {
+  int pairs := 0;
+  for i := 0 to 2 {
+    for j := 0 to 2 {
       pairs := pairs + 1;
     }
   }
-  AssertEQ("nested loops 3x3", 9, pairs);
+  a.AssertEQ("nested loops 3x3", 9, pairs);
 }

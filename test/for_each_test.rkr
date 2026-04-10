@@ -1,35 +1,28 @@
-include "test/Assert.rkr"
+include "Assert.rkr"
+Assert a;
 
 sub main() {
-  // Test 1: iter with 'in' separator
-  dim arr1: int[];
-  dim sum1: int := 0;
-  iter item in arr1 {
+  int[] arr1;
+  int sum1 := 0;
+
+  for item in arr1 {
     sum1 := sum1 + item;
   }
-  AssertEQ("iter with in, empty array", 0, sum1);
+  a.AssertEQ("for with in, empty array", 0, sum1);
 
-  // Test 2: for with 'in' separator
-  dim arr2: int[];
-  dim sum2: int := 0;
+  // Test 2: for with 'in' separator, default to 0
+  int[1] arr2;
+  int sum2 := 0;
   for item in arr2 {
     sum2 := sum2 + item;
   }
-  AssertEQ("for with in, empty array", 0, sum2);
+  a.AssertEQ("for with in, array with default elements", 0, sum2);
 
   // Test 3: for with ':=' separator
-  dim arr3: int[];
-  dim sum3: int := 0;
+  int[] arr3;
+  int sum3 := 0;
   for item := arr3 {
     sum3 := sum3 + item;
   }
-  AssertEQ("for with :=, empty array", 0, sum3);
-
-  // Test 4: iter with ':=' separator
-  dim arr4: int[];
-  dim sum4: int := 0;
-  iter item := arr4 {
-    sum4 := sum4 + item;
-  }
-  AssertEQ("iter with :=, empty array", 0, sum4);
+  a.AssertEQ("for with :=, empty array", 0, sum3);
 }

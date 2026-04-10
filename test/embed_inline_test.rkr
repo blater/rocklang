@@ -1,9 +1,11 @@
-include "test/Assert.rkr"
+include "Assert.rkr"
+Assert a;
 
 sub main() {
-  dim x: int := 10;
+  int x := 10;
   @embed c
     x = x * 2;
   @end c
-  AssertEQ("Variable modified in embedded C", 20, x);
+
+  a.AssertEQ("Variable modified in embedded C", 20, x);
 }

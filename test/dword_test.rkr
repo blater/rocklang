@@ -1,28 +1,29 @@
-include "test/Assert.rkr"
+include "Assert.rkr"
+Assert a;
 
 sub main() {
-  dim d: dword := 1000000;
-  AssertEquals("Basic dword variable and to_string", "1000000", to_string(d));
+  dword d := 1000000;
+  a.AssertEquals("Basic dword variable and to_string", "1000000", to_string(d));
 
-  dim n: int := to_int(d);
-  AssertEquals("dword to_int", "1000000", to_string(n));
+  int n:= to_int(d);
+  a.AssertEquals("dword to_int", "1000000", to_string(n));
 
-  dim d2: dword := to_dword(2000000);
-  AssertEquals("Cast int to_dword(2000000)", "2000000", to_string(d2));
+  dword d2 := to_dword(2000000);
+  a.AssertEquals("Cast int to_dword(2000000)", "2000000", to_string(d2));
 
-  dim d3: dword := to_dword(2147483647);
-  AssertEquals("Max size 32-bit int to_dword(2147483647)", "2147483647", to_string(d3));
+  dword d3 := to_dword(2147483647);
+  a.AssertEquals("Max size 32-bit int to_dword(2147483647)", "2147483647", to_string(d3));
 
-  dim sum: int := to_int(d) + to_int(d2);
-  AssertEquals("Arithmentic via in promotion(1000000 + 2000000)","3000000", to_string(sum)); 
+  int sum := to_int(d) + to_int(d2);
+  a.AssertEquals("Arithmentic via in promotion(1000000 + 2000000)","3000000", to_string(sum)); 
 
-  dim arr: dword[] := [];
+  dword[] arr := [];
   append(arr, to_dword(100000));
   append(arr, to_dword(200000));
   append(arr, to_dword(300000));
-  AssertEQ("dword arrays length", 3, length(arr));
-  AssertEQ("dword arrays value", 200000, get(arr,1));
+  a.AssertEQ("dword arrays length", 3, length(arr));
+  a.AssertEQ("dword arrays value", 200000, get(arr,1));
 
-  dim i: int := 42;
-  AssertEquals("to_string on int", "42", to_string(i));
+  int i := 42;
+  a.AssertEquals("to_string on int", "42", to_string(i));
 }

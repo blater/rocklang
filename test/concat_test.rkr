@@ -1,13 +1,14 @@
-include "test/Assert.rkr"
+include "Assert.rkr"
 
 sub main() {
-  let s1: string := "Hello";
-  let s2: string := " World";
-  let result1: string := concat(s1, s2);
-  AssertEquals("String concatination", "Hello World", result1);
+  Assert a;
+  string s1 := "Hello";
+  string s2 := " World";
+  string result1 := concat(s1, s2);
+  a.AssertEquals("String concatination", "Hello World", result1);
 
-  let s3: string := "ABC";
-  let c: char := 'D';
-  let result2: string := concat(s3, c);
-  AssertEquals("Test string + char (via intermediate result)", "ABCD", result2);
+  string s3 := "ABC";
+  char c := 'D';
+  string result2 := concat(s3, c);
+  a.AssertEquals("Test string + char (via intermediate result)", "ABCD", result2);
 }

@@ -1,0 +1,12 @@
+module Mod;
+
+int i := 0;
+
+sub Mod.get() : int {
+  return i;
+}
+
+sub Mod.set(int val) {
+  i := val;
+}
+

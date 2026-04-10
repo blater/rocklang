@@ -23,9 +23,15 @@ typedef struct generator_t {
   name_table_t table;
   int str_tmp_counter;
   target_t target;
-  FILE *pre_f;          // Buffer for pre-statements (ZXN statement splitting)
-  char *pre_buf;        // Contents of pre_f buffer
-  size_t pre_buf_size;  // Size of pre_buf
+  FILE *pre_f;               // Buffer for pre-statements (ZXN statement splitting)
+  char *pre_buf;             // Contents of pre_f buffer
+  size_t pre_buf_size;       // Size of pre_buf
+  string_view current_module_type; // Set while generating a module method body
+  int in_global_scope;       // 1 when emitting top-level statements, 0 inside functions
+  ast_array_t deferred_module_inits; // global module vars needing _new() in main()
+  char **deferred_global_init_code; // runtime-init code to emit at start of main()
+  int deferred_global_init_count;
+  int deferred_global_init_capacity;
 } generator_t;
 
 generator_t new_generator(char *filename);

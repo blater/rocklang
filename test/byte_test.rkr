@@ -1,35 +1,36 @@
-include "test/Assert.rkr"
+include "Assert.rkr"
+Assert a;
 
 sub main() {
   // Basic byte variable and to_string
-  dim b: byte := 65;
-  AssertEquals("byte value", "65", to_string(b));
+  byte b := 65;
+  a.AssertEquals("byte value", "65", to_string(b));
 
   // to_int
-  dim n: int := to_int(b);
-  AssertEquals("to_int", "65", to_string(n));
+  int n := to_int(b);
+  a.AssertEquals("to_int", "65", to_string(n));
 
   // to_byte
-  dim b2: byte := to_byte(200);
-  AssertEquals("to_byte(200)", "200", to_string(b2));
+  byte b2 := to_byte(200);
+  a.AssertEquals("to_byte(200)", "200", to_string(b2));
 
   // Silent truncation: 300 mod 256 = 44
-  dim b3: byte := to_byte(300);
-  AssertEquals("to_byte(300) truncated", "44", to_string(b3));
+  byte b3 := to_byte(300);
+  a.AssertEquals("to_byte(300) truncated", "44", to_string(b3));
 
   // Arithmetic via int promotion
-  dim sum: int := to_int(b) + to_int(b2);
-  AssertEquals("65 + 200", "265", to_string(sum));
+  int sum := to_int(b) + to_int(b2);
+  a.AssertEquals("65 + 200", "265", to_string(sum));
 
   // byte arrays
-  dim arr: byte[] := [];
+  byte[] arr := [];
   append(arr, to_byte(10));
   append(arr, to_byte(20));
   append(arr, to_byte(30));
-  AssertEQ("array length", 3, length(arr));
-  AssertEQ("arr[1]", 20, to_int(get(arr, 1)));
+  a.AssertEQ("array length", 3, length(arr));
+  a.AssertEQ("arr[1]", 20, to_int(get(arr, 1)));
 
   // to_string on int (default _Generic branch)
-  dim i: int := 42;
-  AssertEquals("to_string(int)", "42", to_string(i));
+  int i := 42;
+  a.AssertEquals("to_string(int)", "42", to_string(i));
 }

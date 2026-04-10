@@ -5,7 +5,7 @@
 //-----------------------------------------------------------------------------
 
 #include "generator.h"
-#include "alloc.h"
+#include "lib/alloc.h"
 #include "ast.h"
 #include "error.h"
 #include "name_table.h"
@@ -23,6 +23,8 @@ void generate_tdef(generator_t *g, ast_t tdef_ast);
 void generate_fundef(generator_t *g, ast_t fun);
 int is_builtin_typename(char *name);
 void generate_sub_as_expression(generator_t *g, ast_t expr);
+void generate_method_call(generator_t *g, ast_t node);
+string_view infer_expr_type(ast_t expr, name_table_t table);
 void generate_assignement(generator_t *g, ast_t assignment);
 void generate_iter_loop(generator_t *g, ast_t loop);
 void generate_embed(generator_t *g, ast_t node);
@@ -35,6 +37,31 @@ int get_literal_string_length(token_t tok);
 
 // Helper: Flush accumulated pre-statements to destination and reset pre_f
 static void flush_pre_f(generator_t *g, FILE *dest);
+
+static token_t token_for_expr(ast_t expr) {
+  if (!expr) {
+    token_t tok = {0};
+    tok.type = TOK_EOF;
+    tok.lexeme = sv_from_cstr("<expr>");
+    tok.filename = "unknown";
+    return tok;
+  }
+
+  if (expr->tag == identifier) return expr->data.identifier.id;
+  if (expr->tag == literal) return expr->data.literal.lit;
+  if (expr->tag == funcall) return expr->data.funcall.name;
+  if (expr->tag == method_call) return expr->data.method_call.method;
+  if (expr->tag == sub) return token_for_expr(expr->data.sub.expr);
+  if (expr->tag == arr_index) return token_for_expr(expr->data.arr_index.array);
+  if (expr->tag == vardef) return expr->data.vardef.name;
+  if (expr->tag == cons) return expr->data.cons.name;
+
+  token_t tok = {0};
+  tok.type = TOK_EOF;
+  tok.lexeme = sv_from_cstr("<expr>");
+  tok.filename = "unknown";
+  return tok;
+}
 
 // Helper: Capture expression into a temporary buffer and return it
 // Caller must free() the returned buffer
@@ -52,6 +79,28 @@ static char* capture_expression(generator_t *g, ast_t expr) {
 }
 
 // Helper: Create a synthetic AST type node for registering builtin signatures
+// Build a mangled method name: "TypeName_methodName" or "TypeName_array_methodName".
+// Returns a null-terminated string allocated in the compiler persistent arena.
+static char *mangle_method(string_view type_name, string_view method_name, int is_array_method) {
+  size_t tl = type_name.length;
+  size_t ml = method_name.length;
+  char *buf;
+  if (is_array_method) {
+    buf = allocate_compiler_persistent(tl + 7 + ml + 1);
+    memcpy(buf, type_name.data, tl);
+    memcpy(buf + tl, "_array_", 7);
+    memcpy(buf + tl + 7, method_name.data, ml);
+    buf[tl + 7 + ml] = '\0';
+  } else {
+    buf = allocate_compiler_persistent(tl + 1 + ml + 1);
+    memcpy(buf, type_name.data, tl);
+    buf[tl] = '_';
+    memcpy(buf + tl + 1, method_name.data, ml);
+    buf[tl + 1 + ml] = '\0';
+  }
+  return buf;
+}
+
 static ast_t make_type_node(const char *type_name) {
   node_t n = {0};
   n.tag = type;
@@ -66,6 +115,20 @@ static void register_builtin(name_table_t *table, const char *name,
   fn.tag = fundef;
   fn.data.fundef.name.lexeme = sv_from_cstr((char*)name);
   fn.data.fundef.ret_type = make_type_node(ret_type);
+  push_nt(table, sv_from_cstr((char*)name), NT_FUN, new_ast(fn));
+}
+
+// Helper: Register a builtin that returns an array type (e.g. get_args → string[])
+static void register_builtin_array(name_table_t *table, const char *name,
+                                   const char *elem_type) {
+  node_t rt = {0};
+  rt.tag = type;
+  rt.data.type.name.lexeme = sv_from_cstr((char*)elem_type);
+  rt.data.type.is_array = 1;
+  node_t fn = {0};
+  fn.tag = fundef;
+  fn.data.fundef.name.lexeme = sv_from_cstr((char*)name);
+  fn.data.fundef.ret_type = new_ast(rt);
   push_nt(table, sv_from_cstr((char*)name), NT_FUN, new_ast(fn));
 }
 
@@ -190,6 +253,37 @@ static void flush_pre_f(generator_t *g, FILE *dest) {
   g->pre_f = open_memstream(&g->pre_buf, &g->pre_buf_size);
 }
 
+// Helper: Append a string to the deferred global init list, growing as needed.
+static void push_deferred_global_init(generator_t *g, char *code) {
+  if (g->deferred_global_init_count >= g->deferred_global_init_capacity) {
+    g->deferred_global_init_capacity = g->deferred_global_init_capacity == 0 ? 8 : g->deferred_global_init_capacity * 2;
+    g->deferred_global_init_code = realloc(g->deferred_global_init_code,
+                                           g->deferred_global_init_capacity * sizeof(char *));
+  }
+  g->deferred_global_init_code[g->deferred_global_init_count++] = code;
+}
+
+// Helper: Save deferred init code (pre_f setup + assignment) for emitting in main()
+static void defer_global_init(generator_t *g, string_view var_name, const char *expr_text) {
+  // Build: pre_f_content + "var = expr;\n"
+  char *code = NULL;
+  size_t size = 0;
+  FILE *out = open_memstream(&code, &size);
+  fflush(g->pre_f);
+  if (g->pre_buf && g->pre_buf_size > 0)
+    fprintf(out, "%s", g->pre_buf);
+  fprintf(out, SV_Fmt " = %s;\n", SV_Arg(var_name), expr_text);
+  fflush(out);
+  fclose(out);
+  // Reset pre_f
+  fclose(g->pre_f);
+  free(g->pre_buf);
+  g->pre_buf = NULL;
+  g->pre_buf_size = 0;
+  g->pre_f = open_memstream(&g->pre_buf, &g->pre_buf_size);
+  push_deferred_global_init(g, code);
+}
+
 generator_t new_generator(char *filename) {
   generator_t res;
   res.f = fopen(filename, "wb");
@@ -198,6 +292,12 @@ generator_t new_generator(char *filename) {
   res.table = new_name_table();
   res.str_tmp_counter = 0;
   res.target = TARGET_HOST;
+  res.current_module_type = sv_from_cstr("");
+  res.in_global_scope = 1;
+  res.deferred_module_inits = new_ast_array();
+  res.deferred_global_init_code = NULL;
+  res.deferred_global_init_count = 0;
+  res.deferred_global_init_capacity = 0;
 
   // Register C library builtin functions with their return types
   // Stdlib / I/O
@@ -228,6 +328,8 @@ generator_t new_generator(char *filename) {
   register_builtin(&res.table, "concat",               "string");
   register_builtin(&res.table, "to_string",            "string");
   register_builtin(&res.table, "toString",             "string");
+  // Command-line argument access
+  register_builtin_array(&res.table, "get_args",       "string");
   // Core compiler functions - always available
   register_builtin(&res.table, "exit",                 "void");
   register_builtin(&res.table, "putchar",              "void");
@@ -284,12 +386,23 @@ string_view get_array_var_type(string_view var_name, name_table_t table,
   if (ref == NULL) {
     error(tok.filename, tok.line, tok.col, "Array is not declared in the current scope");
   }
-  if (ref->tag != vardef) {
-    error(tok.filename, tok.line, tok.col, "Arrays must be declared as variables (got tag %d)",
-          ref->tag);
+  if (ref->tag == vardef) {
+    ast_type type = ref->data.vardef.type->data.type;
+    return type.name.lexeme;
   }
-  ast_type type = ref->data.vardef.type->data.type;
-  return type.name.lexeme;
+  if (ref->tag == fundef) {
+    // Parameter lookup (e.g. "this" in an array method body)
+    ast_fundef fd = ref->data.fundef;
+    for (int i = 0; i < fd.args.length; i++) {
+      if (svcmp(fd.args.data[i].lexeme, var_name) == 0) {
+        ast_type type = fd.types.data[i]->data.type;
+        return type.name.lexeme;
+      }
+    }
+  }
+  error(tok.filename, tok.line, tok.col, "Arrays must be declared as variables (got tag %d)",
+        ref->tag);
+  return sv_from_cstr(""); // unreachable
 }
 
 // Helper: Get the declared type of a variable identifier
@@ -312,6 +425,126 @@ string_view get_var_type(string_view name, name_table_t table) {
         return type.name.lexeme;
       }
     }
+  }
+
+  return sv_from_cstr("");
+}
+
+// Helper: Build an array type name string_view, e.g. "int" → "int_array".
+static string_view make_array_type_sv(string_view base) {
+  char *buf = allocate_compiler_persistent(base.length + 7);
+  sprintf(buf, SV_Fmt "_array", SV_Arg(base));
+  return sv_from_cstr(buf);
+}
+
+// Helper: Return the declared type name of any field in a user-defined record.
+// For scalar fields returns the type name (e.g. "Address").
+// For array fields returns the element type name (e.g. "Person" for Person[]).
+// Returns empty string_view if the record or field is not found.
+string_view get_field_type(string_view base_type, string_view field_name,
+                           name_table_t table) {
+  ast_t tdef_ref = get_ref(base_type, table);
+  if (!tdef_ref || tdef_ref->tag != tdef) return sv_from_cstr("");
+  ast_tdef td = tdef_ref->data.tdef;
+  for (int i = 0; i < td.constructors.length; i++) {
+    ast_t cons_ast = td.constructors.data[i];
+    if (cons_ast->tag != cons) continue;
+    ast_cons c = cons_ast->data.cons;
+    if (svcmp(c.name.lexeme, field_name) != 0) continue;
+    if (c.type && c.type->tag == type)
+      return c.type->data.type.name.lexeme;
+  }
+  return sv_from_cstr("");
+}
+
+// Helper: Infer the Rock type name of an arbitrary expression.
+// Returns empty string_view when the type cannot be determined.
+string_view infer_expr_type(ast_t expr, name_table_t table) {
+  if (!expr) return sv_from_cstr("");
+
+  if (expr->tag == identifier) {
+    ast_t ref = get_ref(expr->data.identifier.id.lexeme, table);
+    if (!ref) return sv_from_cstr("");
+    if (ref->tag == vardef) {
+      ast_type t = ref->data.vardef.type->data.type;
+      return t.is_array ? make_array_type_sv(t.name.lexeme) : t.name.lexeme;
+    }
+    if (ref->tag == fundef) {
+      ast_fundef fd = ref->data.fundef;
+      string_view name = expr->data.identifier.id.lexeme;
+      for (int i = 0; i < fd.args.length; i++) {
+        if (svcmp(fd.args.data[i].lexeme, name) == 0) {
+          ast_type t = fd.types.data[i]->data.type;
+          return t.is_array ? make_array_type_sv(t.name.lexeme) : t.name.lexeme;
+        }
+      }
+    }
+    return sv_from_cstr("");
+  }
+
+  if (expr->tag == literal) {
+    token_type_t t = expr->data.literal.lit.type;
+    if (t == TOK_STR_LIT) return sv_from_cstr("string");
+    if (t == TOK_NUM_LIT) return sv_from_cstr("int");
+    if (t == TOK_CHR_LIT) return sv_from_cstr("char");
+    return sv_from_cstr("");
+  }
+
+  if (expr->tag == funcall) {
+    ast_funcall call = expr->data.funcall;
+    // get(arr, idx) → element type of arr (same as get_var_type since Rock
+    // stores element type directly in the vardef)
+    if (svcmp(call.name.lexeme, sv_from_cstr("get")) == 0 &&
+        call.args.length >= 1 && call.args.data[0]->tag == identifier) {
+      return get_var_type(call.args.data[0]->data.identifier.id.lexeme, table);
+    }
+    // User-defined function → look up declared return type
+    ast_t ref = get_ref(call.name.lexeme, table);
+    if (ref && ref->tag == fundef && ref->data.fundef.ret_type) {
+      ast_type rt = ref->data.fundef.ret_type->data.type;
+      return rt.is_array ? make_array_type_sv(rt.name.lexeme) : rt.name.lexeme;
+    }
+    return sv_from_cstr("");
+  }
+
+  if (expr->tag == method_call) {
+    // Recursive: infer receiver type → form mangled name → look up return type
+    ast_method_call mc = expr->data.method_call;
+    string_view recv_type = infer_expr_type(mc.receiver, table);
+    if (recv_type.length == 0) return sv_from_cstr("");
+    ast_t ref = get_ref(sv_from_cstr(mangle_method(recv_type, mc.method.lexeme, 0)), table);
+    if (ref && ref->tag == fundef && ref->data.fundef.ret_type) {
+      ast_type rt = ref->data.fundef.ret_type->data.type;
+      return rt.is_array ? make_array_type_sv(rt.name.lexeme) : rt.name.lexeme;
+    }
+    return sv_from_cstr("");
+  }
+
+  if (expr->tag == sub) {
+    ast_sub s = expr->data.sub;
+    // expr must be the terminal field identifier
+    if (!s.expr || s.expr->tag != identifier) return sv_from_cstr("");
+    if (!s.receiver) return sv_from_cstr("");
+    // Start from the receiver expression's type
+    string_view current_type = infer_expr_type(s.receiver, table);
+    if (current_type.length == 0) return sv_from_cstr("");
+    // Walk any intermediate path segments
+    for (int i = 0; i < s.path.length; i++) {
+      current_type = get_field_type(current_type, s.path.data[i].lexeme, table);
+      if (current_type.length == 0) return sv_from_cstr("");
+    }
+    // Resolve the terminal field
+    return get_field_type(current_type, s.expr->data.identifier.id.lexeme, table);
+  }
+
+  if (expr->tag == arr_index) {
+    ast_arr_index ai = expr->data.arr_index;
+    // Direct arr[idx] inherits the array element type.
+    if (!ai.has_field) {
+      token_t tok = token_for_expr(ai.array);
+      return get_array_element_type(ai.array, table, tok);
+    }
+    return sv_from_cstr("");
   }
 
   return sv_from_cstr("");
@@ -433,34 +666,18 @@ string_view get_array_element_type(ast_t arr, name_table_t table,
     string_view name = tok.lexeme;
     return get_array_var_type(name, table, tok);
   } else if (arr->tag == sub) {
-    // Handle field access: base::field
+    // Handle field access: receiver::field or receiver.field
     ast_sub sub = arr->data.sub;
 
-    // The path contains the base identifier(s)
-    // The expr contains the field being accessed
-    string_view base_type = sv_from_cstr("");
+    string_view current_type = sv_from_cstr("");
     string_view field_name = sv_from_cstr("");
 
-    // Get the base type from the first identifier in path
-    if (sub.path.length > 0) {
-      string_view base_name = sub.path.data[0].lexeme;
-      ast_t base_ref = get_ref(base_name, table);
+    if (sub.receiver) {
+      current_type = infer_expr_type(sub.receiver, table);
+    }
 
-      // Extract base type from either vardef or fundef parameter
-      if (base_ref) {
-        if (base_ref->tag == vardef) {
-          base_type = base_ref->data.vardef.type->data.type.name.lexeme;
-        } else if (base_ref->tag == fundef) {
-          // Function parameter: find which arg matches base_name
-          ast_fundef fundef = base_ref->data.fundef;
-          for (int i = 0; i < fundef.args.length; i++) {
-            if (svcmp(fundef.args.data[i].lexeme, base_name) == 0) {
-              base_type = fundef.types.data[i]->data.type.name.lexeme;
-              break;
-            }
-          }
-        }
-      }
+    for (int i = 0; i < sub.path.length && current_type.length > 0; i++) {
+      current_type = get_field_type(current_type, sub.path.data[i].lexeme, table);
     }
 
     // Get the field name from expr (should be an identifier)
@@ -468,9 +685,9 @@ string_view get_array_element_type(ast_t arr, name_table_t table,
       field_name = sub.expr->data.identifier.id.lexeme;
     }
 
-    // Look up the field type if we have both base type and field name
-    if (base_type.length > 0 && field_name.length > 0) {
-      string_view field_type = try_get_field_array_type(base_type, field_name, table);
+    // Look up the field type if we have both receiver type and field name
+    if (current_type.length > 0 && field_name.length > 0) {
+      string_view field_type = try_get_field_array_type(current_type, field_name, table);
 
       // If we found a known field type, return it
       if (field_type.length > 0) {
@@ -524,7 +741,7 @@ void generate_expression(generator_t *g, ast_t expr);
 void generate_subscript(generator_t *g, ast_t expr) {
   FILE *f = g->f;
   ast_arr_index sub = expr->data.arr_index;
-  token_t call_token = sub.array->data.identifier.id;
+  token_t call_token = token_for_expr(sub.array);
   string_view elem_type = get_array_element_type(sub.array, g->table, call_token);
 
   // For string arrays, use pre_f to emit setup statements
@@ -893,10 +1110,29 @@ void generate_loop(generator_t *g, ast_t loop_ast) {
   end_nt_scope(&g->table);
 }
 
+void generate_method_call(generator_t *g, ast_t node) {
+  FILE *f = g->f;
+  ast_method_call mc = node->data.method_call;
+  string_view recv_type = infer_expr_type(mc.receiver, g->table);
+  if (recv_type.length == 0) {
+    error(mc.method.filename, mc.method.line, mc.method.col,
+          "cannot determine type of receiver for method call '" SV_Fmt "'",
+          SV_Arg(mc.method.lexeme));
+  }
+  fprintf(f, "%s(", mangle_method(recv_type, mc.method.lexeme, 0));
+  generate_expression(g, mc.receiver);
+  for (int i = 0; i < mc.args.length; i++) {
+    fprintf(f, ", ");
+    generate_expression(g, mc.args.data[i]);
+  }
+  fprintf(f, ")");
+}
+
 void generate_sub_as_expression(generator_t *g, ast_t expr) {
   FILE *f = g->f;
   ast_sub sub = expr->data.sub;
-  // assert(sub.path.length == 1 && "SUB AS EXPRESSION LENGTH LIMIT\n");
+  generate_expression(g, sub.receiver);
+  fprintf(f, "->");
   for (int i = 0; i < sub.path.length; i++) {
     fprintf(f, SV_Fmt "->", SV_Arg(sub.path.data[i].lexeme));
   }
@@ -932,13 +1168,26 @@ void generate_iter_loop(generator_t *g, ast_t loop) {
   if (iter_loop.iterable->tag == identifier) {
     string_view iter_name = iter_loop.iterable->data.identifier.id.lexeme;
     ast_t ref = get_ref(iter_name, g->table);
+    ast_type elem_type = {0};
+    int found_type = 0;
     if (ref != NULL && ref->tag == vardef) {
-      // Get the base type (without array brackets)
-      ast_vardef vardef = ref->data.vardef;
-      ast_type type = vardef.type->data.type;
+      elem_type = ref->data.vardef.type->data.type;
+      found_type = 1;
+    } else if (ref != NULL && ref->tag == fundef) {
+      // Parameter lookup (e.g. "this" in an array method body)
+      ast_fundef fd = ref->data.fundef;
+      for (int j = 0; j < fd.args.length; j++) {
+        if (svcmp(fd.args.data[j].lexeme, iter_name) == 0) {
+          elem_type = fd.types.data[j]->data.type;
+          found_type = 1;
+          break;
+        }
+      }
+    }
+    if (found_type) {
       // Generate assignment with cast to proper pointer type before indexing
-      fprintf(f, SV_Fmt " " SV_Fmt " = ((", SV_Arg(type.name.lexeme), SV_Arg(iter_loop.variable.lexeme));
-      fprintf(f, SV_Fmt " *)", SV_Arg(type.name.lexeme));
+      fprintf(f, SV_Fmt " " SV_Fmt " = ((", SV_Arg(elem_type.name.lexeme), SV_Arg(iter_loop.variable.lexeme));
+      fprintf(f, SV_Fmt " *)", SV_Arg(elem_type.name.lexeme));
       generate_expression(g, iter_loop.iterable);
       fprintf(f, "->data)[__iter_i];\n");
     } else {
@@ -986,6 +1235,20 @@ void generate_expression(generator_t *g, ast_t expr) {
     }
   } else if (expr->tag == identifier) {
     string_view lexeme = expr->data.identifier.id.lexeme;
+    // In a module method, rewrite module field names to this->field
+    if (g->current_module_type.length > 0) {
+      ast_t mod_ref = get_ref(g->current_module_type, g->table);
+      if (mod_ref && mod_ref->tag == tdef && mod_ref->data.tdef.t == TDEF_MODULE) {
+        ast_array_t fields = mod_ref->data.tdef.module_fields;
+        for (int i = 0; i < fields.length; i++) {
+          ast_vardef vd = fields.data[i]->data.vardef;
+          if (svcmp(vd.name.lexeme, lexeme) == 0) {
+            fprintf(f, "this->" SV_Fmt, SV_Arg(lexeme));
+            return;
+          }
+        }
+      }
+    }
     fprintf(f, SV_Fmt, SV_Arg(lexeme));
   } else if (expr->tag == funcall)
     generate_funcall(g, expr);
@@ -1009,6 +1272,8 @@ void generate_expression(generator_t *g, ast_t expr) {
     generate_iter_loop(g, expr);
   else if (expr->tag == arr_index)
     generate_subscript(g, expr);
+  else if (expr->tag == method_call)
+    generate_method_call(g, expr);
 
   else {
     printf("TAG is %d\n", expr->tag);
@@ -1022,7 +1287,7 @@ void generate_assignement(generator_t *g, ast_t assignment) {
   if (assign.target->tag == arr_index) {
     // arr[i] := value  =>  TYPE_set_elem(arr, i, value)
     ast_arr_index sub = assign.target->data.arr_index;
-    token_t tok = sub.array->data.identifier.id;
+    token_t tok = token_for_expr(sub.array);
     string_view elem_type = get_array_element_type(sub.array, g->table, tok);
     fprintf(f, SV_Fmt "_set_elem(", SV_Arg(elem_type));
     generate_expression(g, sub.array);
@@ -1038,12 +1303,44 @@ void generate_assignement(generator_t *g, ast_t assignment) {
   }
 }
 
+// Returns 1 if type_name refers to a module type
+static int is_module_type(string_view type_name, name_table_t table) {
+  ast_t ref = get_ref(type_name, table);
+  return ref && ref->tag == tdef && ref->data.tdef.t == TDEF_MODULE;
+}
+
 void generate_vardef(generator_t *g, ast_t var) {
   FILE *f = g->f;
   ast_vardef vardef = var->data.vardef;
   push_nt(&g->table, vardef.name.lexeme, NT_VAR, var);
   string_view type_name = vardef.type->data.type.name.lexeme;
+
+  // Global module vars cannot be initialized with TypeName_new() (not a constant).
+  // Emit NULL and defer the real initialization to main().
+  if (g->in_global_scope && !vardef.type->data.type.is_array &&
+      is_module_type(type_name, g->table)) {
+    generate_type(f, vardef.type);
+    fprintf(f, " " SV_Fmt " = NULL;\n", SV_Arg(vardef.name.lexeme));
+    push_ast_array(&g->deferred_module_inits, var);
+    return;
+  }
   if (vardef.type->data.type.is_array) {
+    if (g->in_global_scope) {
+      // Array initialization requires a function call — defer to main()
+      generate_type(f, vardef.type);
+      fprintf(f, " " SV_Fmt " = NULL;\n", SV_Arg(vardef.name.lexeme));
+      // Build deferred init code
+      char *code = NULL;
+      size_t code_size = 0;
+      FILE *code_f = open_memstream(&code, &code_size);
+      int capacity = vardef.type->data.type.array_capacity;
+      fprintf(code_f, SV_Fmt " = __internal_make_array(sizeof(" SV_Fmt "), %d);\n",
+              SV_Arg(vardef.name.lexeme), SV_Arg(type_name), capacity);
+      fflush(code_f);
+      fclose(code_f);
+      push_deferred_global_init(g, code);
+      return;
+    }
     generate_type(f, vardef.type);
     fprintf(f, " " SV_Fmt " = \n", SV_Arg(vardef.name.lexeme));
     if (vardef.expr->tag != literal) {
@@ -1062,16 +1359,23 @@ void generate_vardef(generator_t *g, ast_t var) {
   } else if (is_builtin_typename(string_of_sv(type_name))) {
     // Capture the expression reference in a temp buffer while accumulating
     // setup statements to pre_f
-    char *expr_text;
-    if (vardef.expr->tag == sub)
-      expr_text = capture_expression(g, vardef.expr);
-    else
-      expr_text = capture_expression(g, vardef.expr);
+    char *expr_text = capture_expression(g, vardef.expr);
 
-    // Now emit any accumulated setup statements from pre_f
+    if (g->in_global_scope) {
+      // Check if the expression requires runtime setup (non-constant)
+      fflush(g->pre_f);
+      if (g->pre_buf && g->pre_buf_size > 0) {
+        // Non-constant: emit zero-init at global scope, defer real init to main()
+        defer_global_init(g, vardef.name.lexeme, expr_text);
+        generate_type(f, vardef.type);
+        fprintf(f, " " SV_Fmt " = {0};\n", SV_Arg(vardef.name.lexeme));
+        free(expr_text);
+        return;
+      }
+    }
+
+    // Constant expression (e.g. integer literal) or inside a function: emit normally
     flush_pre_f(g, f);
-
-    // Finally emit the declaration with the captured expression reference
     generate_type(f, vardef.type);
     fprintf(f, " " SV_Fmt " = %s;\n", SV_Arg(vardef.name.lexeme), expr_text);
 
@@ -1272,10 +1576,17 @@ void generate_fundef(generator_t *g, ast_t fun) {
   FILE *f = g->f;
   ast_fundef fundef = fun->data.fundef;
   new_nt_scope(&g->table);
-  push_nt(&g->table, fundef.name.lexeme, NT_FUN, fun);
+
+  string_view emit_name;
+  if (fundef.is_method)
+    emit_name = sv_from_cstr(mangle_method(fundef.type_name.lexeme, fundef.name.lexeme, fundef.is_array_method));
+  else
+    emit_name = fundef.name.lexeme;
+  push_nt(&g->table, emit_name, NT_FUN, fun);
+
   if (svcmp(fundef.name.lexeme, sv_from_cstr("main")) != 0) {
     generate_type(f, fundef.ret_type);
-    fprintf(f, " " SV_Fmt "(", SV_Arg(fundef.name.lexeme));
+    fprintf(f, " " SV_Fmt "(", SV_Arg(emit_name));
     if (fundef.args.length == 0) {
       fprintf(f, "void");
     } else {
@@ -1289,13 +1600,35 @@ void generate_fundef(generator_t *g, ast_t fun) {
       }
     }
     fprintf(f, ")\n");
+    // For module methods, expose field names as implicit this-> references
+    string_view saved_module_type = g->current_module_type;
+    if (fundef.is_method)
+      g->current_module_type = fundef.type_name.lexeme;
+    int saved_global = g->in_global_scope;
+    g->in_global_scope = 0;
     generate_compound(g, fundef.body);
+    g->in_global_scope = saved_global;
+    g->current_module_type = saved_module_type;
     fprintf(f, "\n\n");
   } else {
     fprintf(f, "int main(int argc, char **argv) {\n");
     fprintf(f, "init_compiler_stack();\n");
     fprintf(f, "fill_cmd_args(argc, argv);\n");
+    // Initialize any global module vars that were deferred from global scope
+    for (int i = 0; i < g->deferred_module_inits.length; i++) {
+      ast_vardef vd = g->deferred_module_inits.data[i]->data.vardef;
+      string_view tn = vd.type->data.type.name.lexeme;
+      fprintf(f, SV_Fmt " = " SV_Fmt "_new();\n",
+              SV_Arg(vd.name.lexeme), SV_Arg(tn));
+    }
+    // Initialize any global vars with non-constant expressions (e.g. strings)
+    for (int i = 0; i < g->deferred_global_init_count; i++) {
+      fprintf(f, "%s", g->deferred_global_init_code[i]);
+    }
+    int saved_global = g->in_global_scope;
+    g->in_global_scope = 0;
     generate_compound(g, fundef.body);
+    g->in_global_scope = saved_global;
     fprintf(f, "kill_compiler_stack();\n");
     fprintf(f, "return 0;\n");
     fprintf(f, "}\n\n");
@@ -1333,6 +1666,8 @@ void generate_forward_defs(generator_t *g, ast_t program) {
       string_view name = tdef.name.lexeme;
       fprintf(f, "typedef struct " SV_Fmt " *" SV_Fmt ";\n", SV_Arg(name),
               SV_Arg(name));
+      if (tdef.t == TDEF_MODULE)
+        fprintf(f, SV_Fmt " " SV_Fmt "_new(void);\n", SV_Arg(name), SV_Arg(name));
     }
     if (stmt->tag == enum_tdef) {
       struct ast_tdef tdef = stmt->data.tdef;
@@ -1390,7 +1725,10 @@ void generate_forward_defs(generator_t *g, ast_t program) {
       if (svcmp(fundef.name.lexeme, sv_from_cstr("main")) != 0) {
         generate_type(f, fundef.ret_type);
 
-        fprintf(f, " " SV_Fmt "(", SV_Arg(fundef.name.lexeme));
+        if (fundef.is_method)
+          fprintf(f, " %s(", mangle_method(fundef.type_name.lexeme, fundef.name.lexeme, fundef.is_array_method));
+        else
+          fprintf(f, " " SV_Fmt "(", SV_Arg(fundef.name.lexeme));
         if (fundef.args.length == 0) {
           fprintf(f, "void");
         } else {
@@ -1424,6 +1762,35 @@ void generate_tdef(generator_t *g, ast_t tdef_ast) {
 
   // Register the type in the name table so it can be looked up later
   push_nt(&g->table, name, NT_USER_TYPE, tdef_ast);
+
+  if (tdef.t == TDEF_MODULE) {
+    // Register TypeName_new in the name table
+    register_builtin(&g->table, mangle_method(name, sv_from_cstr("new"), 0), string_of_sv(name));
+
+    if (tdef.module_fields.length == 0) {
+      fprintf(f, "struct " SV_Fmt " { char _reserved; };\n", SV_Arg(name));
+    } else {
+      fprintf(f, "struct " SV_Fmt " {\n", SV_Arg(name));
+      for (int i = 0; i < tdef.module_fields.length; i++) {
+        ast_vardef vd = tdef.module_fields.data[i]->data.vardef;
+        generate_type(f, vd.type);
+        fprintf(f, " " SV_Fmt ";\n", SV_Arg(vd.name.lexeme));
+      }
+      fprintf(f, "};\n");
+    }
+    // Emit allocator: TypeName TypeName_new(void) { ... }
+    fprintf(f, SV_Fmt " " SV_Fmt "_new(void) {\n", SV_Arg(name), SV_Arg(name));
+    fprintf(f, "  " SV_Fmt " __inst = (" SV_Fmt ")malloc(sizeof(struct " SV_Fmt "));\n",
+            SV_Arg(name), SV_Arg(name), SV_Arg(name));
+    for (int i = 0; i < tdef.module_fields.length; i++) {
+      ast_vardef vd = tdef.module_fields.data[i]->data.vardef;
+      fprintf(f, "  __inst->" SV_Fmt " = ", SV_Arg(vd.name.lexeme));
+      generate_expression(g, vd.expr);
+      fprintf(f, ";\n");
+    }
+    fprintf(f, "  return __inst;\n}\n");
+    return;
+  }
 
   // fprintf(f, "typedef struct %s %s;\n", name, name);
   fprintf(f, "struct " SV_Fmt "{\n", SV_Arg(name));

@@ -22,8 +22,6 @@ typedef enum token_type_t {
   TOK_CHR_LIT,
   TOK_STR_LIT,
   TOK_NUM_LIT,
-  TOK_LET,
-  TOK_DIM,
   TOK_COLON,
   TOK_COMMA,
   TOK_SMALL_ARROW,
@@ -76,6 +74,7 @@ typedef enum token_type_t {
   TOK_EMBED,
   TOK_END,
   TOK_EMBED_BODY,
+  TOK_MODULE,
   TOK_EOF,
   TOK_COUNT
 

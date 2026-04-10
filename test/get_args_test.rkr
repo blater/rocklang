@@ -1,12 +1,13 @@
-include "test/Assert.rkr"
+include "Assert.rkr"
+Assert as;
 
 
 sub main(): void {
-  dim args: string[];
+  string[] args;
   args := get_args();
 
-  dim len: int;
+  int len;
   len := length(args);
 
-  AssertEQ("get_args returns array", 0, len);
+  as.AssertEQ("get_args returns array", 0, len);
 }

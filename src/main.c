@@ -1,12 +1,10 @@
-#include "alloc.h"
+#include "lib/alloc.h"
 #include "error.h"
 #include "generator.h"
 #include "lexer.h"
 #include "parser.h"
 #include "token.h"
 // #include "typechecker.h"
-#include <limits.h>
-#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,6 +37,7 @@ int main(int argc, char *argv[]) {
 
   for (int i = 1; i < argc; i++) {
     char *arg = argv[i];
+
     if (*arg == '-') {
       // This is a flag
       if (strlen(arg) == 1) {
@@ -50,10 +49,8 @@ int main(int argc, char *argv[]) {
       else if (strncmp(arg, "--target=", 9) == 0) {
         if (strcmp(arg + 9, "zxn") == 0) {
           target_zxn = 1;
-        } else {
-          printf("Unknown target '%s'!\n", arg + 9);
-          usage(argv[0]);
-          exit(1);
+        } else if (strcmp(arg + 9, "gcc") != 0) {
+          printf("defaulting target to gcc");
         }
       }
       //  else if (*(arg + 1) == 't' && !print_tree)
@@ -84,26 +81,7 @@ int main(int argc, char *argv[]) {
   if (output == NULL)
     output = "out";
 
-  // Convert input to absolute path
-  char resolved_input[PATH_MAX];
-  realpath(input, resolved_input);
-  input = allocate_compiler_persistent(strlen(resolved_input) + 1);
-  strcpy(input, resolved_input);
-
-  // Compute project root from input file location
-  // Make a copy since dirname() modifies its input
-  char input_dir_copy[PATH_MAX];
-  strcpy(input_dir_copy, resolved_input);
-  char *input_dir = dirname(input_dir_copy);
-  // Go up one level from input directory to get project root
-  char project_root_copy[PATH_MAX];
-  strcpy(project_root_copy, input_dir);
-  char *project_root = dirname(project_root_copy);
-
-  // Pass project root to parser for include resolution
-  char *project_root_str = allocate_compiler_persistent(strlen(project_root) + 1);
-  strcpy(project_root_str, project_root);
-  set_include_base_dir(project_root_str);
+  input = get_abs_path(input, NULL);
 
   lexer_t l = new_lexer(input);
   token_array_t prog = lex_program(&l);

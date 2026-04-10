@@ -1,0 +1,2913 @@
+/tmp/tmpdYn5JbEG.asm:
+     1                          MODULE fundefs_internal_c
+     2                          LINE 0, "/Users/blater/src/rock/src/lib/fundefs_internal.c"
+/Users/blater/src/rock/src/lib/fundefs_internal.c:
+                                
+     1                          ;--------------------------------------------------------
+     2                          ; File Created by SDCC : free open source ISO C Compiler
+     3                          ; Version 4.5.0 #15242 (Mac OS X ppc)
+     4                          ;--------------------------------------------------------
+     5                          ; Processed by Z88DK
+     6                          ;--------------------------------------------------------
+     7                          
+     8                          	EXTERN __divschar
+     9                          	EXTERN __divschar_callee
+    10                          	EXTERN __divsint
+    11                          	EXTERN __divsint_callee
+    12                          	EXTERN __divslong
+    13                          	EXTERN __divslong_callee
+    14                          	EXTERN __divslonglong
+    15                          	EXTERN __divslonglong_callee
+    16                          	EXTERN __divsuchar
+    17                          	EXTERN __divsuchar_callee
+    18                          	EXTERN __divuchar
+    19                          	EXTERN __divuchar_callee
+    20                          	EXTERN __divuint
+    21                          	EXTERN __divuint_callee
+    22                          	EXTERN __divulong
+    23                          	EXTERN __divulong_callee
+    24                          	EXTERN __divulonglong
+    25                          	EXTERN __divulonglong_callee
+    26                          	EXTERN __divuschar
+    27                          	EXTERN __divuschar_callee
+    28                          	EXTERN __modschar
+    29                          	EXTERN __modschar_callee
+    30                          	EXTERN __modsint
+    31                          	EXTERN __modsint_callee
+    32                          	EXTERN __modslong
+    33                          	EXTERN __modslong_callee
+    34                          	EXTERN __modslonglong
+    35                          	EXTERN __modslonglong_callee
+    36                          	EXTERN __modsuchar
+    37                          	EXTERN __modsuchar_callee
+    38                          	EXTERN __moduchar
+    39                          	EXTERN __moduchar_callee
+    40                          	EXTERN __moduint
+    41                          	EXTERN __moduint_callee
+    42                          	EXTERN __modulong
+    43                          	EXTERN __modulong_callee
+    44                          	EXTERN __modulonglong
+    45                          	EXTERN __modulonglong_callee
+    46                          	EXTERN __moduschar
+    47                          	EXTERN __moduschar_callee
+    48                          	EXTERN __mulint
+    49                          	EXTERN __mulint_callee
+    50                          	EXTERN __mullong
+    51                          	EXTERN __mullong_callee
+    52                          	EXTERN __mullonglong
+    53                          	EXTERN __mullonglong_callee
+    54                          	EXTERN __mulschar
+    55                          	EXTERN __mulschar_callee
+    56                          	EXTERN __mulsuchar
+    57                          	EXTERN __mulsuchar_callee
+    58                          	EXTERN __muluchar
+    59                          	EXTERN __muluchar_callee
+    60                          	EXTERN __muluschar
+    61                          	EXTERN __muluschar_callee
+    62                          	EXTERN __rlslonglong
+    63                          	EXTERN __rlslonglong_callee
+    64                          	EXTERN __rlulonglong
+    65                          	EXTERN __rlulonglong_callee
+    66                          	EXTERN __rrslonglong
+    67                          	EXTERN __rrslonglong_callee
+    68                          	EXTERN __rrulonglong
+    69                          	EXTERN __rrulonglong_callee
+    70                          	EXTERN ___mulsint2slong
+    71                          	EXTERN ___mulsint2slong_callee
+    72                          	EXTERN ___muluint2ulong
+    73                          	EXTERN ___muluint2ulong_callee
+    74                          	EXTERN ___sdcc_call_hl
+    75                          	EXTERN ___sdcc_call_iy
+    76                          	EXTERN ___sdcc_enter_ix
+    77                          	EXTERN banked_call
+    78                          	EXTERN _banked_ret
+    79                          	EXTERN ___fs2schar
+    80                          	EXTERN ___fs2schar_callee
+    81                          	EXTERN ___fs2sint
+    82                          	EXTERN ___fs2sint_callee
+    83                          	EXTERN ___fs2slong
+    84                          	EXTERN ___fs2slong_callee
+    85                          	EXTERN ___fs2slonglong
+    86                          	EXTERN ___fs2slonglong_callee
+    87                          	EXTERN ___fs2uchar
+    88                          	EXTERN ___fs2uchar_callee
+    89                          	EXTERN ___fs2uint
+    90                          	EXTERN ___fs2uint_callee
+    91                          	EXTERN ___fs2ulong
+    92                          	EXTERN ___fs2ulong_callee
+    93                          	EXTERN ___fs2ulonglong
+    94                          	EXTERN ___fs2ulonglong_callee
+    95                          	EXTERN ___fsadd
+    96                          	EXTERN ___fsadd_callee
+    97                          	EXTERN ___fsdiv
+    98                          	EXTERN ___fsdiv_callee
+    99                          	EXTERN ___fseq
+   100                          	EXTERN ___fseq_callee
+   101                          	EXTERN ___fsgt
+   102                          	EXTERN ___fsgt_callee
+   103                          	EXTERN ___fslt
+   104                          	EXTERN ___fslt_callee
+   105                          	EXTERN ___fsmul
+   106                          	EXTERN ___fsmul_callee
+   107                          	EXTERN ___fsneq
+   108                          	EXTERN ___fsneq_callee
+   109                          	EXTERN ___fssub
+   110                          	EXTERN ___fssub_callee
+   111                          	EXTERN ___schar2fs
+   112                          	EXTERN ___schar2fs_callee
+   113                          	EXTERN ___sint2fs
+   114                          	EXTERN ___sint2fs_callee
+   115                          	EXTERN ___slong2fs
+   116                          	EXTERN ___slong2fs_callee
+   117                          	EXTERN ___slonglong2fs
+   118                          	EXTERN ___slonglong2fs_callee
+   119                          	EXTERN ___uchar2fs
+   120                          	EXTERN ___uchar2fs_callee
+   121                          	EXTERN ___uint2fs
+   122                          	EXTERN ___uint2fs_callee
+   123                          	EXTERN ___ulong2fs
+   124                          	EXTERN ___ulong2fs_callee
+   125                          	EXTERN ___ulonglong2fs
+   126                          	EXTERN ___ulonglong2fs_callee
+   127                          	EXTERN ____sdcc_2_copy_src_mhl_dst_deix
+   128                          	EXTERN ____sdcc_2_copy_src_mhl_dst_bcix
+   129                          	EXTERN ____sdcc_4_copy_src_mhl_dst_deix
+   130                          	EXTERN ____sdcc_4_copy_src_mhl_dst_bcix
+   131                          	EXTERN ____sdcc_4_copy_src_mhl_dst_mbc
+   132                          	EXTERN ____sdcc_4_ldi_nosave_bc
+   133                          	EXTERN ____sdcc_4_ldi_save_bc
+   134                          	EXTERN ____sdcc_4_push_hlix
+   135                          	EXTERN ____sdcc_4_push_mhl
+   136                          	EXTERN ____sdcc_lib_setmem_hl
+   137                          	EXTERN ____sdcc_ll_add_de_bc_hl
+   138                          	EXTERN ____sdcc_ll_add_de_bc_hlix
+   139                          	EXTERN ____sdcc_ll_add_de_hlix_bc
+   140                          	EXTERN ____sdcc_ll_add_de_hlix_bcix
+   141                          	EXTERN ____sdcc_ll_add_deix_bc_hl
+   142                          	EXTERN ____sdcc_ll_add_deix_hlix
+   143                          	EXTERN ____sdcc_ll_add_hlix_bc_deix
+   144                          	EXTERN ____sdcc_ll_add_hlix_deix_bc
+   145                          	EXTERN ____sdcc_ll_add_hlix_deix_bcix
+   146                          	EXTERN ____sdcc_ll_asr_hlix_a
+   147                          	EXTERN ____sdcc_ll_asr_mbc_a
+   148                          	EXTERN ____sdcc_ll_copy_src_de_dst_hlix
+   149                          	EXTERN ____sdcc_ll_copy_src_de_dst_hlsp
+   150                          	EXTERN ____sdcc_ll_copy_src_deix_dst_hl
+   151                          	EXTERN ____sdcc_ll_copy_src_deix_dst_hlix
+   152                          	EXTERN ____sdcc_ll_copy_src_deixm_dst_hlsp
+   153                          	EXTERN ____sdcc_ll_copy_src_desp_dst_hlsp
+   154                          	EXTERN ____sdcc_ll_copy_src_hl_dst_de
+   155                          	EXTERN ____sdcc_ll_copy_src_hlsp_dst_de
+   156                          	EXTERN ____sdcc_ll_copy_src_hlsp_dst_deixm
+   157                          	EXTERN ____sdcc_ll_lsl_hlix_a
+   158                          	EXTERN ____sdcc_ll_lsl_mbc_a
+   159                          	EXTERN ____sdcc_ll_lsr_hlix_a
+   160                          	EXTERN ____sdcc_ll_lsr_mbc_a
+   161                          	EXTERN ____sdcc_ll_push_hlix
+   162                          	EXTERN ____sdcc_ll_push_mhl
+   163                          	EXTERN ____sdcc_ll_sub_de_bc_hl
+   164                          	EXTERN ____sdcc_ll_sub_de_bc_hlix
+   165                          	EXTERN ____sdcc_ll_sub_de_hlix_bc
+   166                          	EXTERN ____sdcc_ll_sub_de_hlix_bcix
+   167                          	EXTERN ____sdcc_ll_sub_deix_bc_hl
+   168                          	EXTERN ____sdcc_ll_sub_deix_hlix
+   169                          	EXTERN ____sdcc_ll_sub_hlix_bc_deix
+   170                          	EXTERN ____sdcc_ll_sub_hlix_deix_bc
+   171                          	EXTERN ____sdcc_ll_sub_hlix_deix_bcix
+   172                          	EXTERN ____sdcc_load_debc_deix
+   173                          	EXTERN ____sdcc_load_dehl_deix
+   174                          	EXTERN ____sdcc_load_debc_mhl
+   175                          	EXTERN ____sdcc_load_hlde_mhl
+   176                          	EXTERN ____sdcc_store_dehl_bcix
+   177                          	EXTERN ____sdcc_store_debc_hlix
+   178                          	EXTERN ____sdcc_store_debc_mhl
+   179                          	EXTERN ____sdcc_cpu_pop_ei
+   180                          	EXTERN ____sdcc_cpu_pop_ei_jp
+   181                          	EXTERN ____sdcc_cpu_push_di
+   182                          	EXTERN ____sdcc_outi
+   183                          	EXTERN ____sdcc_outi_128
+   184                          	EXTERN ____sdcc_outi_256
+   185                          	EXTERN ____sdcc_ldi
+   186                          	EXTERN ____sdcc_ldi_128
+   187                          	EXTERN ____sdcc_ldi_256
+   188                          	EXTERN ____sdcc_4_copy_srcd_hlix_dst_deix
+   189                          	EXTERN ____sdcc_4_and_src_mbc_mhl_dst_deix
+   190                          	EXTERN ____sdcc_4_or_src_mbc_mhl_dst_deix
+   191                          	EXTERN ____sdcc_4_xor_src_mbc_mhl_dst_deix
+   192                          	EXTERN ____sdcc_4_or_src_dehl_dst_bcix
+   193                          	EXTERN ____sdcc_4_xor_src_dehl_dst_bcix
+   194                          	EXTERN ____sdcc_4_and_src_dehl_dst_bcix
+   195                          	EXTERN ____sdcc_4_xor_src_mbc_mhl_dst_debc
+   196                          	EXTERN ____sdcc_4_or_src_mbc_mhl_dst_debc
+   197                          	EXTERN ____sdcc_4_and_src_mbc_mhl_dst_debc
+   198                          	EXTERN ____sdcc_4_cpl_src_mhl_dst_debc
+   199                          	EXTERN ____sdcc_4_xor_src_debc_mhl_dst_debc
+   200                          	EXTERN ____sdcc_4_or_src_debc_mhl_dst_debc
+   201                          	EXTERN ____sdcc_4_and_src_debc_mhl_dst_debc
+   202                          	EXTERN ____sdcc_4_and_src_debc_hlix_dst_debc
+   203                          	EXTERN ____sdcc_4_or_src_debc_hlix_dst_debc
+   204                          	EXTERN ____sdcc_4_xor_src_debc_hlix_dst_debc
+   205                          	.zxn
+   206                          
+   207                          ;--------------------------------------------------------
+   208                          ; Public variables in this module
+   209                          ;--------------------------------------------------------
+   210                          	GLOBAL _global_argv
+   211                          	GLOBAL _global_argc
+   212                          	GLOBAL ___internal_make_array
+   213                          	GLOBAL ___internal_push_array
+   214                          	GLOBAL ___internal_pop_array
+   215                          	GLOBAL ___internal_get_elem
+   216                          	GLOBAL ___internal_insert
+   217                          	GLOBAL ___internal_set_elem
+   218                          	GLOBAL ___length_array
+   219                          	GLOBAL ___length_string
+   220                          	GLOBAL _int_make_array
+   221                          	GLOBAL _int_push_array
+   222                          	GLOBAL _int_pop_array
+   223                          	GLOBAL _int_get_elem
+   224                          	GLOBAL _int_set_elem
+   225                          	GLOBAL _int_insert
+   226                          	GLOBAL _boolean_make_array
+   227                          	GLOBAL _boolean_push_array
+   228                          	GLOBAL _boolean_pop_array
+   229                          	GLOBAL _boolean_get_elem
+   230                          	GLOBAL _boolean_set_elem
+   231                          	GLOBAL _boolean_insert
+   232                          	GLOBAL _string_make_array
+   233                          	GLOBAL _string_push_array
+   234                          	GLOBAL _string_pop_array
+   235                          	GLOBAL _string_get_elem
+   236                          	GLOBAL _string_set_elem
+   237                          	GLOBAL _string_insert
+   238                          	GLOBAL _char_make_array
+   239                          	GLOBAL _char_push_array
+   240                          	GLOBAL _char_pop_array
+   241                          	GLOBAL _char_get_elem
+   242                          	GLOBAL _char_set_elem
+   243                          	GLOBAL _char_insert
+   244                          	GLOBAL _byte_make_array
+   245                          	GLOBAL _byte_push_array
+   246                          	GLOBAL _byte_pop_array
+   247                          	GLOBAL _byte_get_elem
+   248                          	GLOBAL _byte_set_elem
+   249                          	GLOBAL _byte_insert
+   250                          	GLOBAL _word_make_array
+   251                          	GLOBAL _word_push_array
+   252                          	GLOBAL _word_pop_array
+   253                          	GLOBAL _word_get_elem
+   254                          	GLOBAL _word_set_elem
+   255                          	GLOBAL _word_insert
+   256                          	GLOBAL _dword_make_array
+   257                          	GLOBAL _dword_push_array
+   258                          	GLOBAL _dword_pop_array
+   259                          	GLOBAL _dword_get_elem
+   260                          	GLOBAL _dword_set_elem
+   261                          	GLOBAL _dword_insert
+   262                          	GLOBAL _fill_cmd_args
+   263                          	GLOBAL _get_args
+   264                          	GLOBAL _init_rocker
+   265                          	GLOBAL _end_rocker
+   266                          	GLOBAL _exit_rocker
+   267                          ;--------------------------------------------------------
+   268                          ; Externals used
+   269                          ;--------------------------------------------------------
+   270                          	GLOBAL _ffsll_callee
+   271                          	GLOBAL _ffsll
+   272                          	GLOBAL _strxfrm_callee
+   273                          	GLOBAL _strxfrm
+   274                          	GLOBAL _strupr_fastcall
+   275                          	GLOBAL _strupr
+   276                          	GLOBAL _strtok_r_callee
+   277                          	GLOBAL _strtok_r
+   278                          	GLOBAL _strtok_callee
+   279                          	GLOBAL _strtok
+   280                          	GLOBAL _strstrip_fastcall
+   281                          	GLOBAL _strstrip
+   282                          	GLOBAL _strstr_callee
+   283                          	GLOBAL _strstr
+   284                          	GLOBAL _strspn_callee
+   285                          	GLOBAL _strspn
+   286                          	GLOBAL _strsep_callee
+   287                          	GLOBAL _strsep
+   288                          	GLOBAL _strrstrip_fastcall
+   289                          	GLOBAL _strrstrip
+   290                          	GLOBAL _strrstr_callee
+   291                          	GLOBAL _strrstr
+   292                          	GLOBAL _strrspn_callee
+   293                          	GLOBAL _strrspn
+   294                          	GLOBAL _strrev_fastcall
+   295                          	GLOBAL _strrev
+   296                          	GLOBAL _strrcspn_callee
+   297                          	GLOBAL _strrcspn
+   298                          	GLOBAL _strrchr_callee
+   299                          	GLOBAL _strrchr
+   300                          	GLOBAL _strpbrk_callee
+   301                          	GLOBAL _strpbrk
+   302                          	GLOBAL _strnlen_callee
+   303                          	GLOBAL _strnlen
+   304                          	GLOBAL _strnicmp_callee
+   305                          	GLOBAL _strnicmp
+   306                          	GLOBAL _strndup_callee
+   307                          	GLOBAL _strndup
+   308                          	GLOBAL _strncpy_callee
+   309                          	GLOBAL _strncpy
+   310                          	GLOBAL _strncmp_callee
+   311                          	GLOBAL _strncmp
+   312                          	GLOBAL _strnchr_callee
+   313                          	GLOBAL _strnchr
+   314                          	GLOBAL _strncat_callee
+   315                          	GLOBAL _strncat
+   316                          	GLOBAL _strncasecmp_callee
+   317                          	GLOBAL _strncasecmp
+   318                          	GLOBAL _strlwr_fastcall
+   319                          	GLOBAL _strlwr
+   320                          	GLOBAL _strlen_fastcall
+   321                          	GLOBAL _strlen
+   322                          	GLOBAL _strlcpy_callee
+   323                          	GLOBAL _strlcpy
+   324                          	GLOBAL _strlcat_callee
+   325                          	GLOBAL _strlcat
+   326                          	GLOBAL _stricmp_callee
+   327                          	GLOBAL _stricmp
+   328                          	GLOBAL _strerror_fastcall
+   329                          	GLOBAL _strerror
+   330                          	GLOBAL _strdup_fastcall
+   331                          	GLOBAL _strdup
+   332                          	GLOBAL _strcspn_callee
+   333                          	GLOBAL _strcspn
+   334                          	GLOBAL _strcpy_callee
+   335                          	GLOBAL _strcpy
+   336                          	GLOBAL _strcoll_callee
+   337                          	GLOBAL _strcoll
+   338                          	GLOBAL _strcmp_callee
+   339                          	GLOBAL _strcmp
+   340                          	GLOBAL _strchrnul_callee
+   341                          	GLOBAL _strchrnul
+   342                          	GLOBAL _strchr_callee
+   343                          	GLOBAL _strchr
+   344                          	GLOBAL _strcat_callee
+   345                          	GLOBAL _strcat
+   346                          	GLOBAL _strcasecmp_callee
+   347                          	GLOBAL _strcasecmp
+   348                          	GLOBAL _stpncpy_callee
+   349                          	GLOBAL _stpncpy
+   350                          	GLOBAL _stpcpy_callee
+   351                          	GLOBAL _stpcpy
+   352                          	GLOBAL _memswap_callee
+   353                          	GLOBAL _memswap
+   354                          	GLOBAL _memset_wr_callee
+   355                          	GLOBAL _memset_wr
+   356                          	GLOBAL _memset_callee
+   357                          	GLOBAL _memset
+   358                          	GLOBAL _memrchr_callee
+   359                          	GLOBAL _memrchr
+   360                          	GLOBAL _memmove_callee
+   361                          	GLOBAL _memmove
+   362                          	GLOBAL _memmem_callee
+   363                          	GLOBAL _memmem
+   364                          	GLOBAL _memcpy_callee
+   365                          	GLOBAL _memcpy
+   366                          	GLOBAL _memcmp_callee
+   367                          	GLOBAL _memcmp
+   368                          	GLOBAL _memchr_callee
+   369                          	GLOBAL _memchr
+   370                          	GLOBAL _memccpy_callee
+   371                          	GLOBAL _memccpy
+   372                          	GLOBAL _ffsl_fastcall
+   373                          	GLOBAL _ffsl
+   374                          	GLOBAL _ffs_fastcall
+   375                          	GLOBAL _ffs
+   376                          	GLOBAL __strrstrip__fastcall
+   377                          	GLOBAL __strrstrip_
+   378                          	GLOBAL __memupr__callee
+   379                          	GLOBAL __memupr_
+   380                          	GLOBAL __memstrcpy__callee
+   381                          	GLOBAL __memstrcpy_
+   382                          	GLOBAL __memlwr__callee
+   383                          	GLOBAL __memlwr_
+   384                          	GLOBAL _rawmemchr_callee
+   385                          	GLOBAL _rawmemchr
+   386                          	GLOBAL _strnset_callee
+   387                          	GLOBAL _strnset
+   388                          	GLOBAL _strset_callee
+   389                          	GLOBAL _strset
+   390                          	GLOBAL _rindex_callee
+   391                          	GLOBAL _rindex
+   392                          	GLOBAL _index_callee
+   393                          	GLOBAL _index
+   394                          	GLOBAL _bzero_callee
+   395                          	GLOBAL _bzero
+   396                          	GLOBAL _bcopy_callee
+   397                          	GLOBAL _bcopy
+   398                          	GLOBAL _bcmp_callee
+   399                          	GLOBAL _bcmp
+   400                          	GLOBAL _reallocate_compiler_persistent
+   401                          	GLOBAL _reallocate_compiler
+   402                          	GLOBAL _allocate_compiler_persistent
+   403                          	GLOBAL _allocate_compiler
+   404                          	GLOBAL _end_compiler_scope
+   405                          	GLOBAL _new_compiler_scope
+   406                          	GLOBAL _kill_compiler_stack
+   407                          	GLOBAL _init_compiler_stack
+   408                          	GLOBAL _reallocate_persistent
+   409                          	GLOBAL _reallocate
+   410                          	GLOBAL _allocate_persistent
+   411                          	GLOBAL _allocate
+   412                          	GLOBAL _end_scope
+   413                          	GLOBAL _new_scope
+   414                          	GLOBAL _kill_stack
+   415                          	GLOBAL _init_stack
+   416                          	GLOBAL _env_getenv_callee
+   417                          	GLOBAL _env_getenv
+   418                          	GLOBAL _getenv_ex_callee
+   419                          	GLOBAL _getenv_ex
+   420                          	GLOBAL _getenv_fastcall
+   421                          	GLOBAL _getenv
+   422                          	GLOBAL _mkstemp_ex_fastcall
+   423                          	GLOBAL _mkstemp_ex
+   424                          	GLOBAL _ulltoa_callee
+   425                          	GLOBAL _ulltoa
+   426                          	GLOBAL _strtoull_callee
+   427                          	GLOBAL _strtoull
+   428                          	GLOBAL _strtoll_callee
+   429                          	GLOBAL _strtoll
+   430                          	GLOBAL _lltoa_callee
+   431                          	GLOBAL _lltoa
+   432                          	GLOBAL _llabs_callee
+   433                          	GLOBAL _llabs
+   434                          	GLOBAL __lldivu__callee
+   435                          	GLOBAL __lldivu_
+   436                          	GLOBAL __lldiv__callee
+   437                          	GLOBAL __lldiv_
+   438                          	GLOBAL _atoll_callee
+   439                          	GLOBAL _atoll
+   440                          	GLOBAL _realloc_unlocked_callee
+   441                          	GLOBAL _realloc_unlocked
+   442                          	GLOBAL _malloc_unlocked_fastcall
+   443                          	GLOBAL _malloc_unlocked
+   444                          	GLOBAL _free_unlocked_fastcall
+   445                          	GLOBAL _free_unlocked
+   446                          	GLOBAL _calloc_unlocked_callee
+   447                          	GLOBAL _calloc_unlocked
+   448                          	GLOBAL _aligned_alloc_unlocked_callee
+   449                          	GLOBAL _aligned_alloc_unlocked
+   450                          	GLOBAL _realloc_callee
+   451                          	GLOBAL _realloc
+   452                          	GLOBAL _malloc_fastcall
+   453                          	GLOBAL _malloc
+   454                          	GLOBAL _free_fastcall
+   455                          	GLOBAL _free
+   456                          	GLOBAL _calloc_callee
+   457                          	GLOBAL _calloc
+   458                          	GLOBAL _aligned_alloc_callee
+   459                          	GLOBAL _aligned_alloc
+   460                          	GLOBAL _utoa_callee
+   461                          	GLOBAL _utoa
+   462                          	GLOBAL _ultoa_callee
+   463                          	GLOBAL _ultoa
+   464                          	GLOBAL _system_fastcall
+   465                          	GLOBAL _system
+   466                          	GLOBAL _strtoul_callee
+   467                          	GLOBAL _strtoul
+   468                          	GLOBAL _strtol_callee
+   469                          	GLOBAL _strtol
+   470                          	GLOBAL _strtof_callee
+   471                          	GLOBAL _strtof
+   472                          	GLOBAL _strtod_callee
+   473                          	GLOBAL _strtod
+   474                          	GLOBAL _srand_fastcall
+   475                          	GLOBAL _srand
+   476                          	GLOBAL _rand
+   477                          	GLOBAL _quick_exit_fastcall
+   478                          	GLOBAL _quick_exit
+   479                          	GLOBAL _qsort_callee
+   480                          	GLOBAL _qsort
+   481                          	GLOBAL _ltoa_callee
+   482                          	GLOBAL _ltoa
+   483                          	GLOBAL _labs_fastcall
+   484                          	GLOBAL _labs
+   485                          	GLOBAL _itoa_callee
+   486                          	GLOBAL _itoa
+   487                          	GLOBAL _ftoh_callee
+   488                          	GLOBAL _ftoh
+   489                          	GLOBAL _ftog_callee
+   490                          	GLOBAL _ftog
+   491                          	GLOBAL _ftoe_callee
+   492                          	GLOBAL _ftoe
+   493                          	GLOBAL _ftoa_callee
+   494                          	GLOBAL _ftoa
+   495                          	GLOBAL _exit_fastcall
+   496                          	GLOBAL _exit
+   497                          	GLOBAL _dtoh_callee
+   498                          	GLOBAL _dtoh
+   499                          	GLOBAL _dtog_callee
+   500                          	GLOBAL _dtog
+   501                          	GLOBAL _dtoe_callee
+   502                          	GLOBAL _dtoe
+   503                          	GLOBAL _dtoa_callee
+   504                          	GLOBAL _dtoa
+   505                          	GLOBAL _bsearch_callee
+   506                          	GLOBAL _bsearch
+   507                          	GLOBAL _atol_fastcall
+   508                          	GLOBAL _atol
+   509                          	GLOBAL _atoi_fastcall
+   510                          	GLOBAL _atoi
+   511                          	GLOBAL _atof_fastcall
+   512                          	GLOBAL _atof
+   513                          	GLOBAL _atexit_fastcall
+   514                          	GLOBAL _atexit
+   515                          	GLOBAL _at_quick_exit_fastcall
+   516                          	GLOBAL _at_quick_exit
+   517                          	GLOBAL _abs_fastcall
+   518                          	GLOBAL _abs
+   519                          	GLOBAL _abort
+   520                          	GLOBAL __strtou__callee
+   521                          	GLOBAL __strtou_
+   522                          	GLOBAL __strtoi__callee
+   523                          	GLOBAL __strtoi_
+   524                          	GLOBAL __random_uniform_xor_8__fastcall
+   525                          	GLOBAL __random_uniform_xor_8_
+   526                          	GLOBAL __random_uniform_xor_32__fastcall
+   527                          	GLOBAL __random_uniform_xor_32_
+   528                          	GLOBAL __random_uniform_cmwc_8__fastcall
+   529                          	GLOBAL __random_uniform_cmwc_8_
+   530                          	GLOBAL __shellsort__callee
+   531                          	GLOBAL __shellsort_
+   532                          	GLOBAL __quicksort__callee
+   533                          	GLOBAL __quicksort_
+   534                          	GLOBAL __insertion_sort__callee
+   535                          	GLOBAL __insertion_sort_
+   536                          	GLOBAL __ldivu__callee
+   537                          	GLOBAL __ldivu_
+   538                          	GLOBAL __ldiv__callee
+   539                          	GLOBAL __ldiv_
+   540                          	GLOBAL __divu__callee
+   541                          	GLOBAL __divu_
+   542                          	GLOBAL __div__callee
+   543                          	GLOBAL __div_
+   544                          	GLOBAL ___to_string_int
+   545                          	GLOBAL ___to_string_dword
+   546                          	GLOBAL ___to_dword_int
+   547                          	GLOBAL ___to_int_dword
+   548                          	GLOBAL ___to_string_word
+   549                          	GLOBAL ___to_word_int
+   550                          	GLOBAL ___to_int_word
+   551                          	GLOBAL ___to_string_byte
+   552                          	GLOBAL ___to_byte_int
+   553                          	GLOBAL ___to_int_byte
+   554                          	GLOBAL ___rock_make_string
+   555                          	GLOBAL ___substring_range
+   556                          	GLOBAL ___substring_from
+   557                          	GLOBAL _get_string_index_base
+   558                          	GLOBAL _set_string_index_base
+   559                          	GLOBAL ___free_string
+   560                          	GLOBAL ___get_abs_path_impl
+   561                          	GLOBAL _str_eq
+   562                          	GLOBAL _write_string_to_file
+   563                          	GLOBAL _new_string
+   564                          	GLOBAL ___read_file_impl
+   565                          	GLOBAL _set_nth_char
+   566                          	GLOBAL _get_string_length
+   567                          	GLOBAL ___concat_str
+   568                          	GLOBAL ___concat_char
+   569                          	GLOBAL _get_nth_char
+   570                          	GLOBAL _cstr_to_string
+   571                          	GLOBAL _string_to_cstr
+   572                          	GLOBAL _print
+   573                          	GLOBAL _tmpnam_ex_fastcall
+   574                          	GLOBAL _tmpnam_ex
+   575                          	GLOBAL _tmpnam_fastcall
+   576                          	GLOBAL _tmpnam
+   577                          	GLOBAL _vscanf_unlocked_callee
+   578                          	GLOBAL _vscanf_unlocked
+   579                          	GLOBAL _vprintf_unlocked_callee
+   580                          	GLOBAL _vprintf_unlocked
+   581                          	GLOBAL _vfscanf_unlocked_callee
+   582                          	GLOBAL _vfscanf_unlocked
+   583                          	GLOBAL _vfprintf_unlocked_callee
+   584                          	GLOBAL _vfprintf_unlocked
+   585                          	GLOBAL _ungetc_unlocked_callee
+   586                          	GLOBAL _ungetc_unlocked
+   587                          	GLOBAL _scanf_unlocked
+   588                          	GLOBAL _rewind_unlocked_fastcall
+   589                          	GLOBAL _rewind_unlocked
+   590                          	GLOBAL _puts_unlocked_fastcall
+   591                          	GLOBAL _puts_unlocked
+   592                          	GLOBAL _putchar_unlocked_fastcall
+   593                          	GLOBAL _putchar_unlocked
+   594                          	GLOBAL _putc_unlocked_callee
+   595                          	GLOBAL _putc_unlocked
+   596                          	GLOBAL _printf_unlocked
+   597                          	GLOBAL _gets_unlocked_fastcall
+   598                          	GLOBAL _gets_unlocked
+   599                          	GLOBAL _getline_unlocked_callee
+   600                          	GLOBAL _getline_unlocked
+   601                          	GLOBAL _getdelim_unlocked_callee
+   602                          	GLOBAL _getdelim_unlocked
+   603                          	GLOBAL _getchar_unlocked
+   604                          	GLOBAL _getc_unlocked_fastcall
+   605                          	GLOBAL _getc_unlocked
+   606                          	GLOBAL _fwrite_unlocked_callee
+   607                          	GLOBAL _fwrite_unlocked
+   608                          	GLOBAL _ftell_unlocked_fastcall
+   609                          	GLOBAL _ftell_unlocked
+   610                          	GLOBAL _fsetpos_unlocked_callee
+   611                          	GLOBAL _fsetpos_unlocked
+   612                          	GLOBAL _fseek_unlocked_callee
+   613                          	GLOBAL _fseek_unlocked
+   614                          	GLOBAL _fscanf_unlocked
+   615                          	GLOBAL _freopen_unlocked_callee
+   616                          	GLOBAL _freopen_unlocked
+   617                          	GLOBAL _fread_unlocked_callee
+   618                          	GLOBAL _fread_unlocked
+   619                          	GLOBAL _fputs_unlocked_callee
+   620                          	GLOBAL _fputs_unlocked
+   621                          	GLOBAL _fputc_unlocked_callee
+   622                          	GLOBAL _fputc_unlocked
+   623                          	GLOBAL _fprintf_unlocked
+   624                          	GLOBAL _fileno_unlocked_fastcall
+   625                          	GLOBAL _fileno_unlocked
+   626                          	GLOBAL _fgets_unlocked_callee
+   627                          	GLOBAL _fgets_unlocked
+   628                          	GLOBAL _fgetpos_unlocked_callee
+   629                          	GLOBAL _fgetpos_unlocked
+   630                          	GLOBAL _fgetc_unlocked_fastcall
+   631                          	GLOBAL _fgetc_unlocked
+   632                          	GLOBAL _fflush_unlocked_fastcall
+   633                          	GLOBAL _fflush_unlocked
+   634                          	GLOBAL _ferror_unlocked_fastcall
+   635                          	GLOBAL _ferror_unlocked
+   636                          	GLOBAL _feof_unlocked_fastcall
+   637                          	GLOBAL _feof_unlocked
+   638                          	GLOBAL _fclose_unlocked_fastcall
+   639                          	GLOBAL _fclose_unlocked
+   640                          	GLOBAL _clearerr_unlocked_fastcall
+   641                          	GLOBAL _clearerr_unlocked
+   642                          	GLOBAL _vsscanf_callee
+   643                          	GLOBAL _vsscanf
+   644                          	GLOBAL _vsprintf_callee
+   645                          	GLOBAL _vsprintf
+   646                          	GLOBAL _vsnprintf_callee
+   647                          	GLOBAL _vsnprintf
+   648                          	GLOBAL _vscanf_callee
+   649                          	GLOBAL _vscanf
+   650                          	GLOBAL _vprintf_callee
+   651                          	GLOBAL _vprintf
+   652                          	GLOBAL _vfscanf_callee
+   653                          	GLOBAL _vfscanf
+   654                          	GLOBAL _vfprintf_callee
+   655                          	GLOBAL _vfprintf
+   656                          	GLOBAL _vasprintf_callee
+   657                          	GLOBAL _vasprintf
+   658                          	GLOBAL _ungetc_callee
+   659                          	GLOBAL _ungetc
+   660                          	GLOBAL _sscanf
+   661                          	GLOBAL _sprintf
+   662                          	GLOBAL _snprintf
+   663                          	GLOBAL _scanf
+   664                          	GLOBAL _rewind_fastcall
+   665                          	GLOBAL _rewind
+   666                          	GLOBAL _puts_fastcall
+   667                          	GLOBAL _puts
+   668                          	GLOBAL _putchar_fastcall
+   669                          	GLOBAL _putchar
+   670                          	GLOBAL _putc_callee
+   671                          	GLOBAL _putc
+   672                          	GLOBAL _printf
+   673                          	GLOBAL _perror_fastcall
+   674                          	GLOBAL _perror
+   675                          	GLOBAL _open_memstream_callee
+   676                          	GLOBAL _open_memstream
+   677                          	GLOBAL _obstack_vprintf_callee
+   678                          	GLOBAL _obstack_vprintf
+   679                          	GLOBAL _obstack_printf
+   680                          	GLOBAL _gets_fastcall
+   681                          	GLOBAL _gets
+   682                          	GLOBAL _getline_callee
+   683                          	GLOBAL _getline
+   684                          	GLOBAL _getdelim_callee
+   685                          	GLOBAL _getdelim
+   686                          	GLOBAL _getchar
+   687                          	GLOBAL _getc_fastcall
+   688                          	GLOBAL _getc
+   689                          	GLOBAL _fwrite_callee
+   690                          	GLOBAL _fwrite
+   691                          	GLOBAL _funlockfile_fastcall
+   692                          	GLOBAL _funlockfile
+   693                          	GLOBAL _ftrylockfile_fastcall
+   694                          	GLOBAL _ftrylockfile
+   695                          	GLOBAL _ftell_fastcall
+   696                          	GLOBAL _ftell
+   697                          	GLOBAL _fsetpos_callee
+   698                          	GLOBAL _fsetpos
+   699                          	GLOBAL _fseek_callee
+   700                          	GLOBAL _fseek
+   701                          	GLOBAL _fscanf
+   702                          	GLOBAL _freopen_callee
+   703                          	GLOBAL _freopen
+   704                          	GLOBAL _fread_callee
+   705                          	GLOBAL _fread
+   706                          	GLOBAL _fputs_callee
+   707                          	GLOBAL _fputs
+   708                          	GLOBAL _fputc_callee
+   709                          	GLOBAL _fputc
+   710                          	GLOBAL _fprintf
+   711                          	GLOBAL _fopen_callee
+   712                          	GLOBAL _fopen
+   713                          	GLOBAL _fmemopen_callee
+   714                          	GLOBAL _fmemopen
+   715                          	GLOBAL _flockfile_fastcall
+   716                          	GLOBAL _flockfile
+   717                          	GLOBAL _fileno_fastcall
+   718                          	GLOBAL _fileno
+   719                          	GLOBAL _fgets_callee
+   720                          	GLOBAL _fgets
+   721                          	GLOBAL _fgetpos_callee
+   722                          	GLOBAL _fgetpos
+   723                          	GLOBAL _fgetc_fastcall
+   724                          	GLOBAL _fgetc
+   725                          	GLOBAL _fflush_fastcall
+   726                          	GLOBAL _fflush
+   727                          	GLOBAL _ferror_fastcall
+   728                          	GLOBAL _ferror
+   729                          	GLOBAL _feof_fastcall
+   730                          	GLOBAL _feof
+   731                          	GLOBAL _fdopen_callee
+   732                          	GLOBAL _fdopen
+   733                          	GLOBAL _fclose_fastcall
+   734                          	GLOBAL _fclose
+   735                          	GLOBAL _clearerr_fastcall
+   736                          	GLOBAL _clearerr
+   737                          	GLOBAL _asprintf
+   738                          	GLOBAL __fmemopen__callee
+   739                          	GLOBAL __fmemopen_
+   740                          	GLOBAL _poke
+   741                          	GLOBAL _peek
+   742                          	GLOBAL ___rock_substr_index_base
+   743                          	GLOBAL _stderr
+   744                          	GLOBAL _stdout
+   745                          	GLOBAL _stdin
+   746                          	GLOBAL __MAX_FOPEN
+   747                          ;--------------------------------------------------------
+   748                          ; special function registers
+   749                          ;--------------------------------------------------------
+   750                          ;--------------------------------------------------------
+   751                          ; ram data
+   752                          ;--------------------------------------------------------
+   753                          	SECTION bss_compiler
+   754                          _global_argc:
+   755  0000  0000              	DEFS 2
+   756                          _global_argv:
+   757  0002  0000              	DEFS 2
+   758                          ;--------------------------------------------------------
+   759                          ; ram data
+   760                          ;--------------------------------------------------------
+   761                          
+   762                          IF 0
+   763                          
+   764                          ; .area _INITIALIZED removed by z88dk
+   765                          
+   766                          
+   767                          ENDIF
+   768                          
+   769                          ;--------------------------------------------------------
+   770                          ; absolute external ram data
+   771                          ;--------------------------------------------------------
+   772                          	SECTION IGNORE
+   773                          ;--------------------------------------------------------
+   774                          ; global & static initialisations
+   775                          ;--------------------------------------------------------
+   776                          	SECTION code_crt_init
+   777                          ;--------------------------------------------------------
+   778                          ; Home
+   779                          ;--------------------------------------------------------
+   780                          	SECTION code_home
+   781                          ;--------------------------------------------------------
+   782                          ; code
+   783                          ;--------------------------------------------------------
+   784                          	SECTION code_compiler
+   785                          ;	---------------------------------
+   786                          ; Function read_file
+   787                          ; ---------------------------------
+   788                          _read_file:
+   789  0000  dde5              	push	ix
+   790  0002  dd210000          	ld	ix,0
+   791  0006  dd39              	add	ix,sp
+   792  0008  f5                	push	af
+   793  0009  f5                	push	af
+   794  000a  af                	xor	a, a
+   795  000b  dd77fc            	ld	(ix-4),a
+   796  000e  dd77fd            	ld	(ix-3),a
+   797  0011  af                	xor	a, a
+   798  0012  dd77fe            	ld	(ix-2),a
+   799  0015  dd77ff            	ld	(ix-1),a
+   800  0018  210800            	ld	hl,8
+   801  001b  39                	add	hl, sp
+   802  001c  5e                	ld	e, (hl)
+   803  001d  23                	inc	hl
+   804  001e  56                	ld	d, (hl)
+   805  001f  210000            	ld	hl,0
+   806  0022  39                	add	hl, sp
+   807  0023  010400            	ld	bc,4
+   808  0026  edb0              	ldir
+   809  0028  ddf9              	ld	sp, ix
+   810  002a  dde1              	pop	ix
+   811  002c  c9                	ret
+   812                          ;	---------------------------------
+   813                          ; Function get_abs_path
+   814                          ; ---------------------------------
+   815                          _get_abs_path:
+   816  002d  dde5              	push	ix
+   817  002f  dd210000          	ld	ix,0
+   818  0033  dd39              	add	ix,sp
+   819  0035  f5                	push	af
+   820  0036  f5                	push	af
+   821  0037  af                	xor	a, a
+   822  0038  dd77fc            	ld	(ix-4),a
+   823  003b  dd77fd            	ld	(ix-3),a
+   824  003e  af                	xor	a, a
+   825  003f  dd77fe            	ld	(ix-2),a
+   826  0042  dd77ff            	ld	(ix-1),a
+   827  0045  210800            	ld	hl,8
+   828  0048  39                	add	hl, sp
+   829  0049  5e                	ld	e, (hl)
+   830  004a  23                	inc	hl
+   831  004b  56                	ld	d, (hl)
+   832  004c  210000            	ld	hl,0
+   833  004f  39                	add	hl, sp
+   834  0050  010400            	ld	bc,4
+   835  0053  edb0              	ldir
+   836  0055  ddf9              	ld	sp, ix
+   837  0057  dde1              	pop	ix
+   838  0059  c9                	ret
+   839                          ;	---------------------------------
+   840                          ; Function __internal_make_array
+   841                          ; ---------------------------------
+   842                          ___internal_make_array:
+   843  005a  dde5              	push	ix
+   844  005c  dd210000          	ld	ix,0
+   845  0060  dd39              	add	ix,sp
+   846  0062  f5                	push	af
+   847  0063  f5                	push	af
+   848  0064  210a00            	ld	hl,0x000a
+   849  0067  e5                	push	hl
+   850  0068  cd0000            	call	_allocate_compiler_persistent
+   851  006b  f1                	pop	af
+   852  006c  eb                	ex	de, hl
+   853  006d  dd7e05            	ld	a,(ix+5)
+   854  0070  ddb604            	or	a,(ix+4)
+   855  0073  200d              	jr	NZ,l___internal_make_array_00102
+   856  0075  d5                	push	de
+   857  0076  210000            	ld	hl,___str_1
+   858  0079  e5                	push	hl
+   859  007a  cd0000            	call	_puts
+   860  007d  f1                	pop	af
+   861  007e  d1                	pop	de
+   862  007f  eb                	ex	de, hl
+   863  0080  186e              	jr	l___internal_make_array_00106
+   864                          l___internal_make_array_00102:
+   865  0082  210600            	ld	hl,0x0006
+   866  0085  19                	add	hl, de
+   867  0086  4d                	ld	c,l
+   868  0087  44                	ld	b,h
+   869  0088  dd7e04            	ld	a,(ix+4)
+   870  008b  77                	ld	(hl), a
+   871  008c  23                	inc	hl
+   872  008d  dd7e05            	ld	a,(ix+5)
+   873  0090  77                	ld	(hl), a
+   874  0091  210800            	ld	hl,0x0008
+   875  0094  19                	add	hl, de
+   876  0095  dd7e06            	ld	a,(ix+6)
+   877  0098  77                	ld	(hl), a
+   878  0099  23                	inc	hl
+   879  009a  dd7e07            	ld	a,(ix+7)
+   880  009d  77                	ld	(hl), a
+   881  009e  210400            	ld	hl,0x0004
+   882  00a1  19                	add	hl, de
+   883  00a2  e3                	ex	(sp), hl
+   884  00a3  dd7e07            	ld	a,(ix+7)
+   885  00a6  ddb606            	or	a,(ix+6)
+   886  00a9  280d              	jr	Z,l___internal_make_array_00104
+   887  00ab  e1                	pop	hl
+   888  00ac  e5                	push	hl
+   889  00ad  dd7e06            	ld	a,(ix+6)
+   890  00b0  77                	ld	(hl), a
+   891  00b1  23                	inc	hl
+   892  00b2  dd7e07            	ld	a,(ix+7)
+   893  00b5  77                	ld	(hl), a
+   894  00b6  1807              	jr	l___internal_make_array_00105
+   895                          l___internal_make_array_00104:
+   896  00b8  e1                	pop	hl
+   897  00b9  e5                	push	hl
+   898  00ba  3640              	ld	(hl),0x40
+   899  00bc  23                	inc	hl
+   900  00bd  3600              	ld	(hl),0x00
+   901                          l___internal_make_array_00105:
+   902  00bf  dd73fe            	ld	(ix-2),e
+   903  00c2  dd72ff            	ld	(ix-1),d
+   904  00c5  69                	ld	l, c
+   905  00c6  60                	ld	h, b
+   906  00c7  4e                	ld	c, (hl)
+   907  00c8  23                	inc	hl
+   908  00c9  46                	ld	b, (hl)
+   909  00ca  e1                	pop	hl
+   910  00cb  e5                	push	hl
+   911  00cc  7e                	ld	a, (hl)
+   912  00cd  23                	inc	hl
+   913  00ce  66                	ld	h, (hl)
+   914  00cf  6f                	ld	l, a
+   915  00d0  d5                	push	de
+   916  00d1  e5                	push	hl
+   917  00d2  c5                	push	bc
+   918  00d3  cd0000            	call	__mulint_callee
+   919  00d6  e5                	push	hl
+   920  00d7  cd0000            	call	_allocate_compiler_persistent
+   921  00da  f1                	pop	af
+   922  00db  4d                	ld	c, l
+   923  00dc  44                	ld	b, h
+   924  00dd  d1                	pop	de
+   925  00de  dd6efe            	ld	l,(ix-2)
+   926  00e1  dd66ff            	ld	h,(ix-1)
+   927  00e4  71                	ld	(hl), c
+   928  00e5  23                	inc	hl
+   929  00e6  70                	ld	(hl), b
+   930  00e7  4b                	ld	c, e
+   931  00e8  42                	ld	b, d
+   932  00e9  03                	inc	bc
+   933  00ea  03                	inc	bc
+   934  00eb  af                	xor	a, a
+   935  00ec  02                	ld	(bc), a
+   936  00ed  03                	inc	bc
+   937  00ee  02                	ld	(bc), a
+   938  00ef  eb                	ex	de, hl
+   939                          l___internal_make_array_00106:
+   940  00f0  ddf9              	ld	sp, ix
+   941  00f2  dde1              	pop	ix
+   942  00f4  c9                	ret
+   943                          	SECTION rodata_compiler
+   944                          ___str_1:
+   945  0000  436f756c64206e6f  	DEFM "Could not pop elem out of dynamic array: BAD ELEMENT SIZE"
+              7420706f7020656c  
+              656d206f7574206f  
+              662064796e616d69  
+              632061727261793a  
+              2042414420454c45  
+              4d454e542053495a  
+              45                
+   946  0039  00                	DEFB 0x00
+   947                          	SECTION code_compiler
+   948                          ;	---------------------------------
+   949                          ; Function __internal_push_array
+   950                          ; ---------------------------------
+   951                          ___internal_push_array:
+   952  00f5  dde5              	push	ix
+   953  00f7  dd210000          	ld	ix,0
+   954  00fb  dd39              	add	ix,sp
+   955  00fd  21f6ff            	ld	hl, -10
+   956  0100  39                	add	hl, sp
+   957  0101  f9                	ld	sp, hl
+   958  0102  dd4e04            	ld	c,(ix+4)
+   959  0105  dd4605            	ld	b,(ix+5)
+   960  0108  33                	inc	sp
+   961  0109  33                	inc	sp
+   962  010a  c5                	push	bc
+   963  010b  e1                	pop	hl
+   964  010c  e5                	push	hl
+   965  010d  5e                	ld	e, (hl)
+   966  010e  23                	inc	hl
+   967  010f  7e                	ld	a, (hl)
+   968  0110  b3                	or	a, e
+   969  0111  2011              	jr	NZ,l___internal_push_array_00102
+   970  0113  c5                	push	bc
+   971  0114  213a00            	ld	hl,___str_3
+   972  0117  e5                	push	hl
+   973  0118  cd0000            	call	_puts
+   974  011b  210100            	ld	hl,0x0001
+   975  011e  e3                	ex	(sp),hl
+   976  011f  cdc00b            	call	_exit_rocker
+   977  0122  f1                	pop	af
+   978  0123  c1                	pop	bc
+   979                          l___internal_push_array_00102:
+   980  0124  dd7e07            	ld	a,(ix+7)
+   981  0127  ddb606            	or	a,(ix+6)
+   982  012a  2011              	jr	NZ,l___internal_push_array_00104
+   983  012c  c5                	push	bc
+   984  012d  215000            	ld	hl,___str_5
+   985  0130  e5                	push	hl
+   986  0131  cd0000            	call	_puts
+   987  0134  210100            	ld	hl,0x0001
+   988  0137  e3                	ex	(sp),hl
+   989  0138  cdc00b            	call	_exit_rocker
+   990  013b  f1                	pop	af
+   991  013c  c1                	pop	bc
+   992                          l___internal_push_array_00104:
+   993  013d  210800            	ld	hl,0x0008
+   994  0140  09                	add	hl, bc
+   995  0141  dd75f8            	ld	(ix-8),l
+   996  0144  dd74f9            	ld	(ix-7),h
+   997  0147  dd6ef8            	ld	l,(ix-8)
+   998  014a  dd66f9            	ld	h,(ix-7)
+   999  014d  5e                	ld	e, (hl)
+  1000  014e  23                	inc	hl
+  1001  014f  56                	ld	d, (hl)
+  1002  0150  210200            	ld	hl,0x0002
+  1003  0153  09                	add	hl, bc
+  1004  0154  dd75fe            	ld	(ix-2),l
+  1005  0157  dd74ff            	ld	(ix-1),h
+  1006  015a  7a                	ld	a, d
+  1007  015b  b3                	or	a, e
+  1008  015c  2834              	jr	Z,l___internal_push_array_00106
+  1009  015e  dd6efe            	ld	l,(ix-2)
+  1010  0161  dd66ff            	ld	h,(ix-1)
+  1011  0164  7e                	ld	a, (hl)
+  1012  0165  dd77fc            	ld	(ix-4),a
+  1013  0168  23                	inc	hl
+  1014  0169  7e                	ld	a, (hl)
+  1015  016a  dd77fd            	ld	(ix-3),a
+  1016  016d  dd7efc            	ld	a,(ix-4)
+  1017  0170  93                	sub	a, e
+  1018  0171  dd7efd            	ld	a,(ix-3)
+  1019  0174  9a                	sbc	a, d
+  1020  0175  381b              	jr	C,l___internal_push_array_00106
+  1021  0177  c5                	push	bc
+  1022  0178  dd6efc            	ld	l,(ix-4)
+  1023  017b  dd66fd            	ld	h,(ix-3)
+  1024  017e  e5                	push	hl
+  1025  017f  d5                	push	de
+  1026  0180  217f00            	ld	hl,___str_6
+  1027  0183  e5                	push	hl
+  1028  0184  cd0000            	call	_printf
+  1029  0187  f1                	pop	af
+  1030  0188  f1                	pop	af
+  1031  0189  210100            	ld	hl,0x0001
+  1032  018c  e3                	ex	(sp),hl
+  1033  018d  cdc00b            	call	_exit_rocker
+  1034  0190  f1                	pop	af
+  1035  0191  c1                	pop	bc
+  1036                          l___internal_push_array_00106:
+  1037  0192  dd7efe            	ld	a,(ix-2)
+  1038  0195  dd77fa            	ld	(ix-6),a
+  1039  0198  dd7eff            	ld	a,(ix-1)
+  1040  019b  dd77fb            	ld	(ix-5),a
+  1041  019e  dd6efe            	ld	l,(ix-2)
+  1042  01a1  dd66ff            	ld	h,(ix-1)
+  1043  01a4  7e                	ld	a, (hl)
+  1044  01a5  dd77fc            	ld	(ix-4),a
+  1045  01a8  23                	inc	hl
+  1046  01a9  7e                	ld	a, (hl)
+  1047  01aa  dd77fd            	ld	(ix-3),a
+  1048  01ad  210400            	ld	hl,0x0004
+  1049  01b0  09                	add	hl, bc
+  1050  01b1  dd75fe            	ld	(ix-2),l
+  1051  01b4  dd74ff            	ld	(ix-1),h
+  1052  01b7  dd6efe            	ld	l,(ix-2)
+  1053  01ba  dd66ff            	ld	h,(ix-1)
+  1054  01bd  5e                	ld	e, (hl)
+  1055  01be  23                	inc	hl
+  1056  01bf  56                	ld	d, (hl)
+  1057  01c0  3e06              	ld	a,0x06
+  1058  01c2  ed33              	add	bc, a
+  1059  01c4  7b                	ld	a, e
+  1060  01c5  dd96fc            	sub	a,(ix-4)
+  1061  01c8  7a                	ld	a, d
+  1062  01c9  dd9efd            	sbc	a,(ix-3)
+  1063  01cc  304f              	jr	NC,l___internal_push_array_00112
+  1064  01ce  dd6ef8            	ld	l,(ix-8)
+  1065  01d1  dd66f9            	ld	h,(ix-7)
+  1066  01d4  23                	inc	hl
+  1067  01d5  7e                	ld	a, (hl)
+  1068  01d6  2b                	dec	hl
+  1069  01d7  6e                	ld	l, (hl)
+  1070  01d8  b5                	or	a, l
+  1071  01d9  2031              	jr	NZ,l___internal_push_array_00109
+  1072  01db  eb                	ex	de, hl
+  1073  01dc  29                	add	hl, hl
+  1074  01dd  eb                	ex	de, hl
+  1075  01de  dd6efe            	ld	l,(ix-2)
+  1076  01e1  dd66ff            	ld	h,(ix-1)
+  1077  01e4  73                	ld	(hl), e
+  1078  01e5  23                	inc	hl
+  1079  01e6  72                	ld	(hl), d
+  1080  01e7  69                	ld	l, c
+  1081  01e8  60                	ld	h, b
+  1082  01e9  7e                	ld	a, (hl)
+  1083  01ea  23                	inc	hl
+  1084  01eb  66                	ld	h, (hl)
+  1085  01ec  6f                	ld	l, a
+  1086  01ed  c5                	push	bc
+  1087  01ee  e5                	push	hl
+  1088  01ef  d5                	push	de
+  1089  01f0  cd0000            	call	__mulint_callee
+  1090  01f3  eb                	ex	de, hl
+  1091  01f4  c1                	pop	bc
+  1092  01f5  e1                	pop	hl
+  1093  01f6  e5                	push	hl
+  1094  01f7  7e                	ld	a, (hl)
+  1095  01f8  23                	inc	hl
+  1096  01f9  66                	ld	h, (hl)
+  1097  01fa  6f                	ld	l, a
+  1098  01fb  c5                	push	bc
+  1099  01fc  d5                	push	de
+  1100  01fd  e5                	push	hl
+  1101  01fe  cd0000            	call	_reallocate_compiler_persistent
+  1102  0201  f1                	pop	af
+  1103  0202  f1                	pop	af
+  1104  0203  eb                	ex	de, hl
+  1105  0204  c1                	pop	bc
+  1106  0205  e1                	pop	hl
+  1107  0206  e5                	push	hl
+  1108  0207  73                	ld	(hl), e
+  1109  0208  23                	inc	hl
+  1110  0209  72                	ld	(hl), d
+  1111  020a  1811              	jr	l___internal_push_array_00112
+  1112                          l___internal_push_array_00109:
+  1113  020c  c5                	push	bc
+  1114  020d  21c600            	ld	hl,___str_8
+  1115  0210  e5                	push	hl
+  1116  0211  cd0000            	call	_puts
+  1117  0214  210100            	ld	hl,0x0001
+  1118  0217  e3                	ex	(sp),hl
+  1119  0218  cdc00b            	call	_exit_rocker
+  1120  021b  f1                	pop	af
+  1121  021c  c1                	pop	bc
+  1122                          l___internal_push_array_00112:
+  1123  021d  e1                	pop	hl
+  1124  021e  e5                	push	hl
+  1125  021f  5e                	ld	e, (hl)
+  1126  0220  23                	inc	hl
+  1127  0221  56                	ld	d, (hl)
+  1128  0222  dd71fc            	ld	(ix-4),c
+  1129  0225  dd70fd            	ld	(ix-3),b
+  1130  0228  dd73fe            	ld	(ix-2),e
+  1131  022b  dd72ff            	ld	(ix-1),d
+  1132  022e  7a                	ld	a, d
+  1133  022f  b3                	or	a, e
+  1134  0230  200f              	jr	NZ,l___internal_push_array_00129
+  1135  0232  21e500            	ld	hl,___str_10
+  1136  0235  e5                	push	hl
+  1137  0236  cd0000            	call	_puts
+  1138  0239  210100            	ld	hl,0x0001
+  1139  023c  e3                	ex	(sp),hl
+  1140  023d  cdc00b            	call	_exit_rocker
+  1141  0240  f1                	pop	af
+  1142                          l___internal_push_array_00129:
+  1143  0241  010000            	ld	bc,0x0000
+  1144                          l___internal_push_array_00117:
+  1145  0244  dd6efc            	ld	l,(ix-4)
+  1146  0247  dd66fd            	ld	h,(ix-3)
+  1147  024a  5e                	ld	e, (hl)
+  1148  024b  23                	inc	hl
+  1149  024c  56                	ld	d, (hl)
+  1150  024d  69                	ld	l, c
+  1151  024e  60                	ld	h, b
+  1152  024f  af                	xor	a, a
+  1153  0250  ed52              	sbc	hl, de
+  1154  0252  3016              	jr	NC,l___internal_push_array_00115
+  1155  0254  dd7efe            	ld	a,(ix-2)
+  1156  0257  81                	add	a, c
+  1157  0258  5f                	ld	e, a
+  1158  0259  dd7eff            	ld	a,(ix-1)
+  1159  025c  88                	adc	a, b
+  1160  025d  57                	ld	d, a
+  1161  025e  dd6e06            	ld	l,(ix+6)
+  1162  0261  dd6607            	ld	h,(ix+7)
+  1163  0264  09                	add	hl, bc
+  1164  0265  7e                	ld	a, (hl)
+  1165  0266  12                	ld	(de), a
+  1166  0267  03                	inc	bc
+  1167  0268  18da              	jr	l___internal_push_array_00117
+  1168                          l___internal_push_array_00115:
+  1169  026a  dd6efa            	ld	l,(ix-6)
+  1170  026d  dd66fb            	ld	h,(ix-5)
+  1171  0270  4e                	ld	c, (hl)
+  1172  0271  23                	inc	hl
+  1173  0272  46                	ld	b, (hl)
+  1174  0273  03                	inc	bc
+  1175  0274  dd6efa            	ld	l,(ix-6)
+  1176  0277  dd66fb            	ld	h,(ix-5)
+  1177  027a  71                	ld	(hl), c
+  1178  027b  23                	inc	hl
+  1179  027c  70                	ld	(hl), b
+  1180  027d  210000            	ld	hl,0x0000
+  1181  0280  ddf9              	ld	sp, ix
+  1182  0282  dde1              	pop	ix
+  1183  0284  c9                	ret
+  1184                          	SECTION rodata_compiler
+  1185                          ___str_3:
+  1186  003a  556e696e69746961  	DEFM "Uninitialized array !"
+              6c697a6564206172  
+              7261792021        
+  1187  004f  00                	DEFB 0x00
+  1188                          	SECTION rodata_compiler
+  1189                          ___str_5:
+  1190  0050  436f756c64206e6f  	DEFM "Could not push elem to dynamic array: BAD ELEM"
+              7420707573682065  
+              6c656d20746f2064  
+              796e616d69632061  
+              727261793a204241  
+              4420454c454d      
+  1191  007e  00                	DEFB 0x00
+  1192                          	SECTION rodata_compiler
+  1193                          ___str_6:
+  1194  007f  4572726f723a2043  	DEFM "Error: Cannot append to fixed-size array (capacity: %zu, len"
+              616e6e6f74206170  
+              70656e6420746f20  
+              66697865642d7369  
+              7a65206172726179  
+              2028636170616369  
+              74793a20257a752c  
+              206c656e          
+  1195  00bb  6774683a20257a75  	DEFM "gth: %zu)"
+              29                
+  1196  00c4  0a                	DEFB 0x0a
+  1197  00c5  00                	DEFB 0x00
+  1198                          	SECTION rodata_compiler
+  1199                          ___str_8:
+  1200  00c6  4572726f723a2041  	DEFM "Error: Array capacity exceeded"
+              7272617920636170  
+              6163697479206578  
+              636565646564      
+  1201  00e4  00                	DEFB 0x00
+  1202                          	SECTION rodata_compiler
+  1203                          ___str_10:
+  1204  00e5  436f756c64206e6f  	DEFM "Could not push elem to dynamic array: BAD ARRAY"
+              7420707573682065  
+              6c656d20746f2064  
+              796e616d69632061  
+              727261793a204241  
+              44204152524159    
+  1205  0114  00                	DEFB 0x00
+  1206                          	SECTION code_compiler
+  1207                          ;	---------------------------------
+  1208                          ; Function __internal_pop_array
+  1209                          ; ---------------------------------
+  1210                          ___internal_pop_array:
+  1211  0285  dde5              	push	ix
+  1212  0287  dd210000          	ld	ix,0
+  1213  028b  dd39              	add	ix,sp
+  1214  028d  f5                	push	af
+  1215  028e  f5                	push	af
+  1216  028f  dd7e04            	ld	a,(ix+4)
+  1217  0292  c602              	add	a,0x02
+  1218  0294  dd77fc            	ld	(ix-4),a
+  1219  0297  dd7e05            	ld	a,(ix+5)
+  1220  029a  ce00              	adc	a,0x00
+  1221  029c  dd77fd            	ld	(ix-3),a
+  1222  029f  e1                	pop	hl
+  1223  02a0  e5                	push	hl
+  1224  02a1  4e                	ld	c, (hl)
+  1225  02a2  23                	inc	hl
+  1226  02a3  7e                	ld	a, (hl)
+  1227  02a4  b1                	or	a, c
+  1228  02a5  200d              	jr	NZ,l___internal_pop_array_00102
+  1229  02a7  211501            	ld	hl,___str_12
+  1230  02aa  e5                	push	hl
+  1231  02ab  cd0000            	call	_puts
+  1232  02ae  f1                	pop	af
+  1233  02af  210000            	ld	hl,0x0000
+  1234  02b2  1858              	jr	l___internal_pop_array_00105
+  1235                          l___internal_pop_array_00102:
+  1236  02b4  dd7e04            	ld	a,(ix+4)
+  1237  02b7  c606              	add	a,0x06
+  1238  02b9  4f                	ld	c, a
+  1239  02ba  dd7e05            	ld	a,(ix+5)
+  1240  02bd  ce00              	adc	a,0x00
+  1241  02bf  47                	ld	b, a
+  1242  02c0  69                	ld	l, c
+  1243  02c1  60                	ld	h, b
+  1244  02c2  5e                	ld	e, (hl)
+  1245  02c3  23                	inc	hl
+  1246  02c4  56                	ld	d, (hl)
+  1247  02c5  7a                	ld	a, d
+  1248  02c6  b3                	or	a, e
+  1249  02c7  200d              	jr	NZ,l___internal_pop_array_00104
+  1250  02c9  214a01            	ld	hl,___str_14
+  1251  02cc  e5                	push	hl
+  1252  02cd  cd0000            	call	_puts
+  1253  02d0  f1                	pop	af
+  1254  02d1  210000            	ld	hl,0x0000
+  1255  02d4  1836              	jr	l___internal_pop_array_00105
+  1256                          l___internal_pop_array_00104:
+  1257  02d6  c5                	push	bc
+  1258  02d7  d5                	push	de
+  1259  02d8  cd0000            	call	_allocate_compiler_persistent
+  1260  02db  f1                	pop	af
+  1261  02dc  eb                	ex	de, hl
+  1262  02dd  c1                	pop	bc
+  1263  02de  dd6e04            	ld	l,(ix+4)
+  1264  02e1  dd6605            	ld	h,(ix+5)
+  1265  02e4  7e                	ld	a, (hl)
+  1266  02e5  dd77fe            	ld	(ix-2),a
+  1267  02e8  23                	inc	hl
+  1268  02e9  7e                	ld	a, (hl)
+  1269  02ea  dd77ff            	ld	(ix-1),a
+  1270  02ed  69                	ld	l, c
+  1271  02ee  60                	ld	h, b
+  1272  02ef  4e                	ld	c, (hl)
+  1273  02f0  23                	inc	hl
+  1274  02f1  46                	ld	b, (hl)
+  1275  02f2  d5                	push	de
+  1276  02f3  dd6efe            	ld	l,(ix-2)
+  1277  02f6  dd66ff            	ld	h,(ix-1)
+  1278  02f9  78                	ld	a, b
+  1279  02fa  b1                	or	a, c
+  1280  02fb  2802              	jr	Z,l___internal_pop_array_00121
+  1281  02fd  edb0              	ldir
+  1282                          l___internal_pop_array_00121:
+  1283  02ff  d1                	pop	de
+  1284  0300  e1                	pop	hl
+  1285  0301  e5                	push	hl
+  1286  0302  4e                	ld	c, (hl)
+  1287  0303  23                	inc	hl
+  1288  0304  46                	ld	b, (hl)
+  1289  0305  0b                	dec	bc
+  1290  0306  e1                	pop	hl
+  1291  0307  e5                	push	hl
+  1292  0308  71                	ld	(hl), c
+  1293  0309  23                	inc	hl
+  1294  030a  70                	ld	(hl), b
+  1295  030b  eb                	ex	de, hl
+  1296                          l___internal_pop_array_00105:
+  1297  030c  ddf9              	ld	sp, ix
+  1298  030e  dde1              	pop	ix
+  1299  0310  c9                	ret
+  1300                          	SECTION rodata_compiler
+  1301                          ___str_12:
+  1302  0115  436f756c64206e6f  	DEFM "Could not pop elem out of dynamic array: EMPTY ARRAY"
+              7420706f7020656c  
+              656d206f7574206f  
+              662064796e616d69  
+              632061727261793a  
+              20454d5054592041  
+              52524159          
+  1303  0149  00                	DEFB 0x00
+  1304                          	SECTION rodata_compiler
+  1305                          ___str_14:
+  1306  014a  436f756c64206e6f  	DEFM "Could not pop elem out of dynamic array: BAD ELEMENT SIZE"
+              7420706f7020656c  
+              656d206f7574206f  
+              662064796e616d69  
+              632061727261793a  
+              2042414420454c45  
+              4d454e542053495a  
+              45                
+  1307  0183  00                	DEFB 0x00
+  1308                          	SECTION code_compiler
+  1309                          ;	---------------------------------
+  1310                          ; Function __internal_get_elem
+  1311                          ; ---------------------------------
+  1312                          ___internal_get_elem:
+  1313  0311  dde5              	push	ix
+  1314  0313  dd210000          	ld	ix,0
+  1315  0317  dd39              	add	ix,sp
+  1316  0319  dd4e04            	ld	c,(ix+4)
+  1317  031c  dd4605            	ld	b,(ix+5)
+  1318  031f  59                	ld	e, c
+  1319  0320  50                	ld	d, b
+  1320  0321  210800            	ld	hl,8
+  1321  0324  19                	add	hl, de
+  1322  0325  5e                	ld	e, (hl)
+  1323  0326  23                	inc	hl
+  1324  0327  56                	ld	d, (hl)
+  1325  0328  7a                	ld	a, d
+  1326  0329  b3                	or	a, e
+  1327  032a  2007              	jr	NZ,l___internal_get_elem_00110
+  1328  032c  69                	ld	l, c
+  1329  032d  60                	ld	h, b
+  1330  032e  23                	inc	hl
+  1331  032f  23                	inc	hl
+  1332  0330  5e                	ld	e, (hl)
+  1333  0331  23                	inc	hl
+  1334  0332  56                	ld	d, (hl)
+  1335                          l___internal_get_elem_00110:
+  1336  0333  dd7e06            	ld	a,(ix+6)
+  1337  0336  93                	sub	a, e
+  1338  0337  dd7e07            	ld	a,(ix+7)
+  1339  033a  9a                	sbc	a, d
+  1340  033b  3819              	jr	C,l___internal_get_elem_00102
+  1341  033d  dd6e06            	ld	l,(ix+6)
+  1342  0340  dd6607            	ld	h,(ix+7)
+  1343  0343  e5                	push	hl
+  1344  0344  218401            	ld	hl,___str_15
+  1345  0347  e5                	push	hl
+  1346  0348  cd0000            	call	_printf
+  1347  034b  f1                	pop	af
+  1348  034c  f1                	pop	af
+  1349  034d  210300            	ld	hl,0x0003
+  1350  0350  220000            	ld	(0x0000), hl
+  1351  0353  6c                	ld	l, h
+  1352  0354  1826              	jr	l___internal_get_elem_00107
+  1353                          l___internal_get_elem_00102:
+  1354  0356  69                	ld	l, c
+  1355  0357  60                	ld	h, b
+  1356  0358  110700            	ld	de,0x0007
+  1357  035b  19                	add	hl, de
+  1358  035c  7e                	ld	a, (hl)
+  1359  035d  2b                	dec	hl
+  1360  035e  6e                	ld	l, (hl)
+  1361  035f  b5                	or	a, l
+  1362  0360  200d              	jr	NZ,l___internal_get_elem_00104
+  1363  0362  21c601            	ld	hl,___str_17
+  1364  0365  e5                	push	hl
+  1365  0366  cd0000            	call	_puts
+  1366  0369  f1                	pop	af
+  1367  036a  210000            	ld	hl,0x0000
+  1368  036d  180d              	jr	l___internal_get_elem_00107
+  1369                          l___internal_get_elem_00104:
+  1370  036f  69                	ld	l, c
+  1371  0370  60                	ld	h, b
+  1372  0371  4e                	ld	c, (hl)
+  1373  0372  23                	inc	hl
+  1374  0373  7e                	ld	a, (hl)
+  1375  0374  69                	ld	l, c
+  1376  0375  67                	ld	h, a
+  1377  0376  b1                	or	a, c
+  1378  0377  2003              	jr	NZ,l___internal_get_elem_00106
+  1379  0379  210000            	ld	hl,0x0000
+  1380                          l___internal_get_elem_00106:
+  1381                          l___internal_get_elem_00107:
+  1382  037c  dde1              	pop	ix
+  1383  037e  c9                	ret
+  1384                          	SECTION rodata_compiler
+  1385                          ___str_15:
+  1386  0184  436f756c64206e6f  	DEFM "Could not get elem from dynamic array: INDEX OUT OF BOUNDS ("
+              742067657420656c  
+              656d2066726f6d20  
+              64796e616d696320  
+              61727261793a2049  
+              4e444558204f5554  
+              204f4620424f554e  
+              44532028          
+  1387  01c0  256c6429          	DEFM "%ld)"
+  1388  01c4  0a                	DEFB 0x0a
+  1389  01c5  00                	DEFB 0x00
+  1390                          	SECTION rodata_compiler
+  1391                          ___str_17:
+  1392  01c6  436f756c64206e6f  	DEFM "Could not get elem from dynamic array: BAD ELEMENT SIZE"
+              742067657420656c  
+              656d2066726f6d20  
+              64796e616d696320  
+              61727261793a2042  
+              414420454c454d45  
+              4e542053495a45    
+  1393  01fd  00                	DEFB 0x00
+  1394                          	SECTION code_compiler
+  1395                          ;	---------------------------------
+  1396                          ; Function __internal_insert
+  1397                          ; ---------------------------------
+  1398                          ___internal_insert:
+  1399  037f  dde5              	push	ix
+  1400  0381  dd210000          	ld	ix,0
+  1401  0385  dd39              	add	ix,sp
+  1402  0387  21f6ff            	ld	hl, -10
+  1403  038a  39                	add	hl, sp
+  1404  038b  f9                	ld	sp, hl
+  1405  038c  dd4e04            	ld	c,(ix+4)
+  1406  038f  dd4605            	ld	b,(ix+5)
+  1407  0392  33                	inc	sp
+  1408  0393  33                	inc	sp
+  1409  0394  c5                	push	bc
+  1410  0395  e1                	pop	hl
+  1411  0396  e5                	push	hl
+  1412  0397  5e                	ld	e, (hl)
+  1413  0398  23                	inc	hl
+  1414  0399  7e                	ld	a, (hl)
+  1415  039a  b3                	or	a, e
+  1416  039b  2011              	jr	NZ,l___internal_insert_00102
+  1417  039d  c5                	push	bc
+  1418  039e  21fe01            	ld	hl,___str_19
+  1419  03a1  e5                	push	hl
+  1420  03a2  cd0000            	call	_puts
+  1421  03a5  210100            	ld	hl,0x0001
+  1422  03a8  e3                	ex	(sp),hl
+  1423  03a9  cdc00b            	call	_exit_rocker
+  1424  03ac  f1                	pop	af
+  1425  03ad  c1                	pop	bc
+  1426                          l___internal_insert_00102:
+  1427  03ae  dd7e09            	ld	a,(ix+9)
+  1428  03b1  ddb608            	or	a,(ix+8)
+  1429  03b4  2011              	jr	NZ,l___internal_insert_00104
+  1430  03b6  c5                	push	bc
+  1431  03b7  211302            	ld	hl,___str_21
+  1432  03ba  e5                	push	hl
+  1433  03bb  cd0000            	call	_puts
+  1434  03be  210100            	ld	hl,0x0001
+  1435  03c1  e3                	ex	(sp),hl
+  1436  03c2  cdc00b            	call	_exit_rocker
+  1437  03c5  f1                	pop	af
+  1438  03c6  c1                	pop	bc
+  1439                          l___internal_insert_00104:
+  1440  03c7  210600            	ld	hl,0x0006
+  1441  03ca  09                	add	hl, bc
+  1442  03cb  dd75f8            	ld	(ix-8),l
+  1443  03ce  dd74f9            	ld	(ix-7),h
+  1444  03d1  dd6ef8            	ld	l,(ix-8)
+  1445  03d4  dd66f9            	ld	h,(ix-7)
+  1446  03d7  5e                	ld	e, (hl)
+  1447  03d8  23                	inc	hl
+  1448  03d9  7e                	ld	a, (hl)
+  1449  03da  b3                	or	a, e
+  1450  03db  2011              	jr	NZ,l___internal_insert_00106
+  1451  03dd  c5                	push	bc
+  1452  03de  214602            	ld	hl,___str_23
+  1453  03e1  e5                	push	hl
+  1454  03e2  cd0000            	call	_puts
+  1455  03e5  210100            	ld	hl,0x0001
+  1456  03e8  e3                	ex	(sp),hl
+  1457  03e9  cdc00b            	call	_exit_rocker
+  1458  03ec  f1                	pop	af
+  1459  03ed  c1                	pop	bc
+  1460                          l___internal_insert_00106:
+  1461  03ee  210200            	ld	hl,0x0002
+  1462  03f1  09                	add	hl, bc
+  1463  03f2  dd75fa            	ld	(ix-6),l
+  1464  03f5  dd74fb            	ld	(ix-5),h
+  1465  03f8  dd6efa            	ld	l,(ix-6)
+  1466  03fb  dd66fb            	ld	h,(ix-5)
+  1467  03fe  5e                	ld	e, (hl)
+  1468  03ff  23                	inc	hl
+  1469  0400  56                	ld	d, (hl)
+  1470  0401  7b                	ld	a, e
+  1471  0402  dd9606            	sub	a,(ix+6)
+  1472  0405  7a                	ld	a, d
+  1473  0406  dd9e07            	sbc	a,(ix+7)
+  1474  0409  301b              	jr	NC,l___internal_insert_00108
+  1475  040b  c5                	push	bc
+  1476  040c  d5                	push	de
+  1477  040d  dd6e06            	ld	l,(ix+6)
+  1478  0410  dd6607            	ld	h,(ix+7)
+  1479  0413  e5                	push	hl
+  1480  0414  218102            	ld	hl,___str_24
+  1481  0417  e5                	push	hl
+  1482  0418  cd0000            	call	_printf
+  1483  041b  f1                	pop	af
+  1484  041c  f1                	pop	af
+  1485  041d  210100            	ld	hl,0x0001
+  1486  0420  e3                	ex	(sp),hl
+  1487  0421  cdc00b            	call	_exit_rocker
+  1488  0424  f1                	pop	af
+  1489  0425  c1                	pop	bc
+  1490                          l___internal_insert_00108:
+  1491  0426  dd6efa            	ld	l,(ix-6)
+  1492  0429  dd66fb            	ld	h,(ix-5)
+  1493  042c  7e                	ld	a, (hl)
+  1494  042d  dd77fc            	ld	(ix-4),a
+  1495  0430  23                	inc	hl
+  1496  0431  7e                	ld	a, (hl)
+  1497  0432  dd77fd            	ld	(ix-3),a
+  1498  0435  210400            	ld	hl,0x0004
+  1499  0438  09                	add	hl, bc
+  1500  0439  dd75fe            	ld	(ix-2),l
+  1501  043c  dd74ff            	ld	(ix-1),h
+  1502  043f  dd6efe            	ld	l,(ix-2)
+  1503  0442  dd66ff            	ld	h,(ix-1)
+  1504  0445  5e                	ld	e, (hl)
+  1505  0446  23                	inc	hl
+  1506  0447  56                	ld	d, (hl)
+  1507  0448  dd7efc            	ld	a,(ix-4)
+  1508  044b  93                	sub	a, e
+  1509  044c  dd7efd            	ld	a,(ix-3)
+  1510  044f  9a                	sbc	a, d
+  1511  0450  3848              	jr	C,l___internal_insert_00113
+  1512  0452  210800            	ld	hl,8
+  1513  0455  09                	add	hl, bc
+  1514  0456  4e                	ld	c, (hl)
+  1515  0457  23                	inc	hl
+  1516  0458  7e                	ld	a, (hl)
+  1517  0459  b1                	or	a, c
+  1518  045a  202f              	jr	NZ,l___internal_insert_00110
+  1519  045c  eb                	ex	de, hl
+  1520  045d  29                	add	hl, hl
+  1521  045e  eb                	ex	de, hl
+  1522  045f  dd6efe            	ld	l,(ix-2)
+  1523  0462  dd66ff            	ld	h,(ix-1)
+  1524  0465  73                	ld	(hl), e
+  1525  0466  23                	inc	hl
+  1526  0467  72                	ld	(hl), d
+  1527  0468  dd6ef8            	ld	l,(ix-8)
+  1528  046b  dd66f9            	ld	h,(ix-7)
+  1529  046e  4e                	ld	c, (hl)
+  1530  046f  23                	inc	hl
+  1531  0470  46                	ld	b, (hl)
+  1532  0471  c5                	push	bc
+  1533  0472  d5                	push	de
+  1534  0473  cd0000            	call	__mulint_callee
+  1535  0476  eb                	ex	de, hl
+  1536  0477  e1                	pop	hl
+  1537  0478  e5                	push	hl
+  1538  0479  4e                	ld	c, (hl)
+  1539  047a  23                	inc	hl
+  1540  047b  46                	ld	b, (hl)
+  1541  047c  d5                	push	de
+  1542  047d  c5                	push	bc
+  1543  047e  cd0000            	call	_reallocate_compiler_persistent
+  1544  0481  f1                	pop	af
+  1545  0482  f1                	pop	af
+  1546  0483  eb                	ex	de, hl
+  1547  0484  e1                	pop	hl
+  1548  0485  e5                	push	hl
+  1549  0486  73                	ld	(hl), e
+  1550  0487  23                	inc	hl
+  1551  0488  72                	ld	(hl), d
+  1552  0489  180f              	jr	l___internal_insert_00113
+  1553                          l___internal_insert_00110:
+  1554  048b  21c002            	ld	hl,___str_26
+  1555  048e  e5                	push	hl
+  1556  048f  cd0000            	call	_puts
+  1557  0492  210100            	ld	hl,0x0001
+  1558  0495  e3                	ex	(sp),hl
+  1559  0496  cdc00b            	call	_exit_rocker
+  1560  0499  f1                	pop	af
+  1561                          l___internal_insert_00113:
+  1562  049a  dd6efa            	ld	l,(ix-6)
+  1563  049d  dd66fb            	ld	h,(ix-5)
+  1564  04a0  4e                	ld	c, (hl)
+  1565  04a1  23                	inc	hl
+  1566  04a2  46                	ld	b, (hl)
+  1567                          l___internal_insert_00116:
+  1568  04a3  dd71fc            	ld	(ix-4),c
+  1569  04a6  dd70fd            	ld	(ix-3),b
+  1570  04a9  e1                	pop	hl
+  1571  04aa  e5                	push	hl
+  1572  04ab  5e                	ld	e, (hl)
+  1573  04ac  23                	inc	hl
+  1574  04ad  56                	ld	d, (hl)
+  1575  04ae  dd6ef8            	ld	l,(ix-8)
+  1576  04b1  dd66f9            	ld	h,(ix-7)
+  1577  04b4  7e                	ld	a, (hl)
+  1578  04b5  dd77fe            	ld	(ix-2),a
+  1579  04b8  23                	inc	hl
+  1580  04b9  7e                	ld	a, (hl)
+  1581  04ba  dd77ff            	ld	(ix-1),a
+  1582  04bd  dd7e06            	ld	a,(ix+6)
+  1583  04c0  dd96fc            	sub	a,(ix-4)
+  1584  04c3  dd7e07            	ld	a,(ix+7)
+  1585  04c6  dd9efd            	sbc	a,(ix-3)
+  1586  04c9  3013              	jr	NC,l___internal_insert_00114
+  1587  04cb  0b                	dec	bc
+  1588  04cc  6b                	ld	l, e
+  1589  04cd  62                	ld	h, d
+  1590  04ce  c5                	push	bc
+  1591  04cf  dd4efe            	ld	c,(ix-2)
+  1592  04d2  dd46ff            	ld	b,(ix-1)
+  1593  04d5  78                	ld	a, b
+  1594  04d6  b1                	or	a, c
+  1595  04d7  2802              	jr	Z,l___internal_insert_00176
+  1596  04d9  edb0              	ldir
+  1597                          l___internal_insert_00176:
+  1598  04db  c1                	pop	bc
+  1599  04dc  18c5              	jr	l___internal_insert_00116
+  1600                          l___internal_insert_00114:
+  1601  04de  dd6e08            	ld	l,(ix+8)
+  1602  04e1  dd6609            	ld	h,(ix+9)
+  1603  04e4  dd4efe            	ld	c,(ix-2)
+  1604  04e7  dd46ff            	ld	b,(ix-1)
+  1605  04ea  78                	ld	a, b
+  1606  04eb  b1                	or	a, c
+  1607  04ec  2802              	jr	Z,l___internal_insert_00177
+  1608  04ee  edb0              	ldir
+  1609                          l___internal_insert_00177:
+  1610  04f0  dd6efa            	ld	l,(ix-6)
+  1611  04f3  dd66fb            	ld	h,(ix-5)
+  1612  04f6  4e                	ld	c, (hl)
+  1613  04f7  23                	inc	hl
+  1614  04f8  46                	ld	b, (hl)
+  1615  04f9  03                	inc	bc
+  1616  04fa  dd6efa            	ld	l,(ix-6)
+  1617  04fd  dd66fb            	ld	h,(ix-5)
+  1618  0500  71                	ld	(hl), c
+  1619  0501  23                	inc	hl
+  1620  0502  70                	ld	(hl), b
+  1621  0503  ddf9              	ld	sp, ix
+  1622  0505  dde1              	pop	ix
+  1623  0507  c9                	ret
+  1624                          	SECTION rodata_compiler
+  1625                          ___str_19:
+  1626  01fe  556e696e69746961  	DEFM "Uninitialized array!"
+              6c697a6564206172  
+              72617921          
+  1627  0212  00                	DEFB 0x00
+  1628                          	SECTION rodata_compiler
+  1629                          ___str_21:
+  1630  0213  436f756c64206e6f  	DEFM "Could not insert elem into dynamic array: BAD ELEM"
+              7420696e73657274  
+              20656c656d20696e  
+              746f2064796e616d  
+              6963206172726179  
+              3a2042414420454c  
+              454d              
+  1631  0245  00                	DEFB 0x00
+  1632                          	SECTION rodata_compiler
+  1633                          ___str_23:
+  1634  0246  436f756c64206e6f  	DEFM "Could not insert elem into dynamic array: BAD ELEMENT SIZE"
+              7420696e73657274  
+              20656c656d20696e  
+              746f2064796e616d  
+              6963206172726179  
+              3a2042414420454c  
+              454d454e54205349  
+              5a45              
+  1635  0280  00                	DEFB 0x00
+  1636                          	SECTION rodata_compiler
+  1637                          ___str_24:
+  1638  0281  436f756c64206e6f  	DEFM "Could not insert elem: INDEX OUT OF BOUNDS (%zu, length: %zu"
+              7420696e73657274  
+              20656c656d3a2049  
+              4e444558204f5554  
+              204f4620424f554e  
+              44532028257a752c  
+              206c656e6774683a  
+              20257a75          
+  1639  02bd  29                	DEFM ")"
+  1640  02be  0a                	DEFB 0x0a
+  1641  02bf  00                	DEFB 0x00
+  1642                          	SECTION rodata_compiler
+  1643                          ___str_26:
+  1644  02c0  4572726f723a2041  	DEFM "Error: Array capacity exceeded, cannot insert"
+              7272617920636170  
+              6163697479206578  
+              6365656465642c20  
+              63616e6e6f742069  
+              6e73657274        
+  1645  02ed  00                	DEFB 0x00
+  1646                          	SECTION code_compiler
+  1647                          ;	---------------------------------
+  1648                          ; Function __internal_set_elem
+  1649                          ; ---------------------------------
+  1650                          ___internal_set_elem:
+  1651  0508  dde5              	push	ix
+  1652  050a  dd210000          	ld	ix,0
+  1653  050e  dd39              	add	ix,sp
+  1654  0510  f5                	push	af
+  1655  0511  f5                	push	af
+  1656  0512  dd4e04            	ld	c,(ix+4)
+  1657  0515  dd4605            	ld	b,(ix+5)
+  1658  0518  59                	ld	e, c
+  1659  0519  50                	ld	d, b
+  1660  051a  210800            	ld	hl,8
+  1661  051d  19                	add	hl, de
+  1662  051e  5e                	ld	e, (hl)
+  1663  051f  23                	inc	hl
+  1664  0520  56                	ld	d, (hl)
+  1665  0521  210200            	ld	hl,0x0002
+  1666  0524  09                	add	hl, bc
+  1667  0525  e3                	ex	(sp), hl
+  1668  0526  7a                	ld	a, d
+  1669  0527  b3                	or	a, e
+  1670  0528  2005              	jr	NZ,l___internal_set_elem_00112
+  1671  052a  e1                	pop	hl
+  1672  052b  e5                	push	hl
+  1673  052c  5e                	ld	e, (hl)
+  1674  052d  23                	inc	hl
+  1675  052e  56                	ld	d, (hl)
+  1676                          l___internal_set_elem_00112:
+  1677  052f  dd7e06            	ld	a,(ix+6)
+  1678  0532  93                	sub	a, e
+  1679  0533  dd7e07            	ld	a,(ix+7)
+  1680  0536  9a                	sbc	a, d
+  1681  0537  381b              	jr	C,l___internal_set_elem_00102
+  1682  0539  c5                	push	bc
+  1683  053a  d5                	push	de
+  1684  053b  dd6e06            	ld	l,(ix+6)
+  1685  053e  dd6607            	ld	h,(ix+7)
+  1686  0541  e5                	push	hl
+  1687  0542  21ee02            	ld	hl,___str_27
+  1688  0545  e5                	push	hl
+  1689  0546  cd0000            	call	_printf
+  1690  0549  f1                	pop	af
+  1691  054a  f1                	pop	af
+  1692  054b  210100            	ld	hl,0x0001
+  1693  054e  e3                	ex	(sp),hl
+  1694  054f  cdc00b            	call	_exit_rocker
+  1695  0552  f1                	pop	af
+  1696  0553  c1                	pop	bc
+  1697                          l___internal_set_elem_00102:
+  1698  0554  210600            	ld	hl,0x0006
+  1699  0557  09                	add	hl, bc
+  1700  0558  dd75fe            	ld	(ix-2),l
+  1701  055b  dd74ff            	ld	(ix-1),h
+  1702  055e  dd6efe            	ld	l,(ix-2)
+  1703  0561  dd66ff            	ld	h,(ix-1)
+  1704  0564  5e                	ld	e, (hl)
+  1705  0565  23                	inc	hl
+  1706  0566  7e                	ld	a, (hl)
+  1707  0567  b3                	or	a, e
+  1708  0568  2011              	jr	NZ,l___internal_set_elem_00104
+  1709  056a  c5                	push	bc
+  1710  056b  213a03            	ld	hl,___str_29
+  1711  056e  e5                	push	hl
+  1712  056f  cd0000            	call	_puts
+  1713  0572  210100            	ld	hl,0x0001
+  1714  0575  e3                	ex	(sp),hl
+  1715  0576  cdc00b            	call	_exit_rocker
+  1716  0579  f1                	pop	af
+  1717  057a  c1                	pop	bc
+  1718                          l___internal_set_elem_00104:
+  1719  057b  69                	ld	l, c
+  1720  057c  60                	ld	h, b
+  1721  057d  4e                	ld	c, (hl)
+  1722  057e  23                	inc	hl
+  1723  057f  7e                	ld	a, (hl)
+  1724  0580  59                	ld	e, c
+  1725  0581  57                	ld	d, a
+  1726  0582  b1                	or	a, c
+  1727  0583  2011              	jr	NZ,l___internal_set_elem_00106
+  1728  0585  017003            	ld	bc,___str_31
+  1729  0588  d5                	push	de
+  1730  0589  c5                	push	bc
+  1731  058a  cd0000            	call	_puts
+  1732  058d  210100            	ld	hl,0x0001
+  1733  0590  e3                	ex	(sp),hl
+  1734  0591  cdc00b            	call	_exit_rocker
+  1735  0594  f1                	pop	af
+  1736  0595  d1                	pop	de
+  1737                          l___internal_set_elem_00106:
+  1738  0596  dd6efe            	ld	l,(ix-2)
+  1739  0599  dd66ff            	ld	h,(ix-1)
+  1740  059c  4e                	ld	c, (hl)
+  1741  059d  23                	inc	hl
+  1742  059e  46                	ld	b, (hl)
+  1743  059f  dd6e08            	ld	l,(ix+8)
+  1744  05a2  dd6609            	ld	h,(ix+9)
+  1745  05a5  78                	ld	a, b
+  1746  05a6  b1                	or	a, c
+  1747  05a7  2802              	jr	Z,l___internal_set_elem_00148
+  1748  05a9  edb0              	ldir
+  1749                          l___internal_set_elem_00148:
+  1750  05ab  e1                	pop	hl
+  1751  05ac  e5                	push	hl
+  1752  05ad  4e                	ld	c, (hl)
+  1753  05ae  23                	inc	hl
+  1754  05af  46                	ld	b, (hl)
+  1755  05b0  dd7e06            	ld	a,(ix+6)
+  1756  05b3  91                	sub	a, c
+  1757  05b4  dd7e07            	ld	a,(ix+7)
+  1758  05b7  98                	sbc	a, b
+  1759  05b8  380c              	jr	C,l___internal_set_elem_00109
+  1760  05ba  dd4e06            	ld	c,(ix+6)
+  1761  05bd  dd4607            	ld	b,(ix+7)
+  1762  05c0  03                	inc	bc
+  1763  05c1  e1                	pop	hl
+  1764  05c2  e5                	push	hl
+  1765  05c3  71                	ld	(hl), c
+  1766  05c4  23                	inc	hl
+  1767  05c5  70                	ld	(hl), b
+  1768                          l___internal_set_elem_00109:
+  1769  05c6  ddf9              	ld	sp, ix
+  1770  05c8  dde1              	pop	ix
+  1771  05ca  c9                	ret
+  1772                          	SECTION rodata_compiler
+  1773                          ___str_27:
+  1774  02ee  436f756c64206e6f  	DEFM "Could not set elem in dynamic array: INDEX OUT OF BOUNDS (%z"
+              742073657420656c  
+              656d20696e206479  
+              6e616d6963206172  
+              7261793a20494e44  
+              4558204f5554204f  
+              4620424f554e4453  
+              2028257a          
+  1775  032a  752c206c696d6974  	DEFM "u, limit: %zu)"
+              3a20257a7529      
+  1776  0338  0a                	DEFB 0x0a
+  1777  0339  00                	DEFB 0x00
+  1778                          	SECTION rodata_compiler
+  1779                          ___str_29:
+  1780  033a  436f756c64206e6f  	DEFM "Could not set elem in dynamic array: BAD ELEMENT SIZE"
+              742073657420656c  
+              656d20696e206479  
+              6e616d6963206172  
+              7261793a20424144  
+              20454c454d454e54  
+              2053495a45        
+  1781  036f  00                	DEFB 0x00
+  1782                          	SECTION rodata_compiler
+  1783                          ___str_31:
+  1784  0370  436f756c64206e6f  	DEFM "Could not set elem in dynamic array: BAD ARRAY"
+              742073657420656c  
+              656d20696e206479  
+              6e616d6963206172  
+              7261793a20424144  
+              204152524159      
+  1785  039e  00                	DEFB 0x00
+  1786                          	SECTION code_compiler
+  1787                          ;	---------------------------------
+  1788                          ; Function __length_array
+  1789                          ; ---------------------------------
+  1790                          ___length_array:
+  1791  05cb  dde5              	push	ix
+  1792  05cd  dd210000          	ld	ix,0
+  1793  05d1  dd39              	add	ix,sp
+  1794  05d3  dd7e05            	ld	a,(ix+5)
+  1795  05d6  ddb604            	or	a,(ix+4)
+  1796  05d9  2005              	jr	NZ,l___length_array_00102
+  1797  05db  210000            	ld	hl,0x0000
+  1798  05de  180c              	jr	l___length_array_00103
+  1799                          l___length_array_00102:
+  1800  05e0  dd6e04            	ld	l,(ix+4)
+  1801  05e3  dd6605            	ld	h,(ix+5)
+  1802  05e6  23                	inc	hl
+  1803  05e7  23                	inc	hl
+  1804  05e8  7e                	ld	a, (hl)
+  1805  05e9  23                	inc	hl
+  1806  05ea  66                	ld	h, (hl)
+  1807  05eb  6f                	ld	l, a
+  1808                          l___length_array_00103:
+  1809  05ec  dde1              	pop	ix
+  1810  05ee  c9                	ret
+  1811                          ;	---------------------------------
+  1812                          ; Function __length_string
+  1813                          ; ---------------------------------
+  1814                          ___length_string:
+  1815  05ef  dde5              	push	ix
+  1816  05f1  dd210000          	ld	ix,0
+  1817  05f5  dd39              	add	ix,sp
+  1818  05f7  dd6e06            	ld	l,(ix+6)
+  1819  05fa  dd6607            	ld	h,(ix+7)
+  1820  05fd  dde1              	pop	ix
+  1821  05ff  c9                	ret
+  1822                          ;	---------------------------------
+  1823                          ; Function int_make_array
+  1824                          ; ---------------------------------
+  1825                          _int_make_array:
+  1826  0600  210000            	ld	hl,0x0000
+  1827  0603  e5                	push	hl
+  1828  0604  2e02              	ld	l,0x02
+  1829  0606  e5                	push	hl
+  1830  0607  cd5a00            	call	___internal_make_array
+  1831  060a  f1                	pop	af
+  1832  060b  f1                	pop	af
+  1833  060c  c9                	ret
+  1834                          ;	---------------------------------
+  1835                          ; Function int_push_array
+  1836                          ; ---------------------------------
+  1837                          _int_push_array:
+  1838  060d  dde5              	push	ix
+  1839  060f  dd210000          	ld	ix,0
+  1840  0613  dd39              	add	ix,sp
+  1841  0615  210600            	ld	hl,6
+  1842  0618  39                	add	hl, sp
+  1843  0619  e5                	push	hl
+  1844  061a  dd6e04            	ld	l,(ix+4)
+  1845  061d  dd6605            	ld	h,(ix+5)
+  1846  0620  e5                	push	hl
+  1847  0621  cdf500            	call	___internal_push_array
+  1848  0624  f1                	pop	af
+  1849  0625  f1                	pop	af
+  1850  0626  dde1              	pop	ix
+  1851  0628  c9                	ret
+  1852                          ;	---------------------------------
+  1853                          ; Function int_pop_array
+  1854                          ; ---------------------------------
+  1855                          _int_pop_array:
+  1856  0629  dde5              	push	ix
+  1857  062b  dd210000          	ld	ix,0
+  1858  062f  dd39              	add	ix,sp
+  1859  0631  dd6e04            	ld	l,(ix+4)
+  1860  0634  dd6605            	ld	h,(ix+5)
+  1861  0637  e5                	push	hl
+  1862  0638  cd8502            	call	___internal_pop_array
+  1863  063b  f1                	pop	af
+  1864  063c  7e                	ld	a, (hl)
+  1865  063d  23                	inc	hl
+  1866  063e  66                	ld	h, (hl)
+  1867  063f  6f                	ld	l, a
+  1868  0640  dde1              	pop	ix
+  1869  0642  c9                	ret
+  1870                          ;	---------------------------------
+  1871                          ; Function int_get_elem
+  1872                          ; ---------------------------------
+  1873                          _int_get_elem:
+  1874  0643  dde5              	push	ix
+  1875  0645  dd210000          	ld	ix,0
+  1876  0649  dd39              	add	ix,sp
+  1877  064b  dd6e06            	ld	l,(ix+6)
+  1878  064e  dd6607            	ld	h,(ix+7)
+  1879  0651  e5                	push	hl
+  1880  0652  dd6e04            	ld	l,(ix+4)
+  1881  0655  dd6605            	ld	h,(ix+5)
+  1882  0658  e5                	push	hl
+  1883  0659  cd1103            	call	___internal_get_elem
+  1884  065c  f1                	pop	af
+  1885  065d  f1                	pop	af
+  1886  065e  7e                	ld	a, (hl)
+  1887  065f  23                	inc	hl
+  1888  0660  66                	ld	h, (hl)
+  1889  0661  6f                	ld	l, a
+  1890  0662  dde1              	pop	ix
+  1891  0664  c9                	ret
+  1892                          ;	---------------------------------
+  1893                          ; Function int_set_elem
+  1894                          ; ---------------------------------
+  1895                          _int_set_elem:
+  1896  0665  dde5              	push	ix
+  1897  0667  dd210000          	ld	ix,0
+  1898  066b  dd39              	add	ix,sp
+  1899  066d  210800            	ld	hl,8
+  1900  0670  39                	add	hl, sp
+  1901  0671  e5                	push	hl
+  1902  0672  dd6e06            	ld	l,(ix+6)
+  1903  0675  dd6607            	ld	h,(ix+7)
+  1904  0678  e5                	push	hl
+  1905  0679  dd6e04            	ld	l,(ix+4)
+  1906  067c  dd6605            	ld	h,(ix+5)
+  1907  067f  e5                	push	hl
+  1908  0680  cd0805            	call	___internal_set_elem
+  1909  0683  f1                	pop	af
+  1910  0684  f1                	pop	af
+  1911  0685  f1                	pop	af
+  1912  0686  dde1              	pop	ix
+  1913  0688  c9                	ret
+  1914                          ;	---------------------------------
+  1915                          ; Function int_insert
+  1916                          ; ---------------------------------
+  1917                          _int_insert:
+  1918  0689  dde5              	push	ix
+  1919  068b  dd210000          	ld	ix,0
+  1920  068f  dd39              	add	ix,sp
+  1921  0691  210800            	ld	hl,8
+  1922  0694  39                	add	hl, sp
+  1923  0695  e5                	push	hl
+  1924  0696  dd6e06            	ld	l,(ix+6)
+  1925  0699  dd6607            	ld	h,(ix+7)
+  1926  069c  e5                	push	hl
+  1927  069d  dd6e04            	ld	l,(ix+4)
+  1928  06a0  dd6605            	ld	h,(ix+5)
+  1929  06a3  e5                	push	hl
+  1930  06a4  cd7f03            	call	___internal_insert
+  1931  06a7  f1                	pop	af
+  1932  06a8  f1                	pop	af
+  1933  06a9  f1                	pop	af
+  1934  06aa  dde1              	pop	ix
+  1935  06ac  c9                	ret
+  1936                          ;	---------------------------------
+  1937                          ; Function boolean_make_array
+  1938                          ; ---------------------------------
+  1939                          _boolean_make_array:
+  1940  06ad  210000            	ld	hl,0x0000
+  1941  06b0  e5                	push	hl
+  1942  06b1  2e01              	ld	l,0x01
+  1943  06b3  e5                	push	hl
+  1944  06b4  cd5a00            	call	___internal_make_array
+  1945  06b7  f1                	pop	af
+  1946  06b8  f1                	pop	af
+  1947  06b9  c9                	ret
+  1948                          ;	---------------------------------
+  1949                          ; Function boolean_push_array
+  1950                          ; ---------------------------------
+  1951                          _boolean_push_array:
+  1952  06ba  dde5              	push	ix
+  1953  06bc  dd210000          	ld	ix,0
+  1954  06c0  dd39              	add	ix,sp
+  1955  06c2  210600            	ld	hl,6
+  1956  06c5  39                	add	hl, sp
+  1957  06c6  e5                	push	hl
+  1958  06c7  dd6e04            	ld	l,(ix+4)
+  1959  06ca  dd6605            	ld	h,(ix+5)
+  1960  06cd  e5                	push	hl
+  1961  06ce  cdf500            	call	___internal_push_array
+  1962  06d1  f1                	pop	af
+  1963  06d2  f1                	pop	af
+  1964  06d3  dde1              	pop	ix
+  1965  06d5  c9                	ret
+  1966                          ;	---------------------------------
+  1967                          ; Function boolean_pop_array
+  1968                          ; ---------------------------------
+  1969                          _boolean_pop_array:
+  1970  06d6  dde5              	push	ix
+  1971  06d8  dd210000          	ld	ix,0
+  1972  06dc  dd39              	add	ix,sp
+  1973  06de  dd6e04            	ld	l,(ix+4)
+  1974  06e1  dd6605            	ld	h,(ix+5)
+  1975  06e4  e5                	push	hl
+  1976  06e5  cd8502            	call	___internal_pop_array
+  1977  06e8  f1                	pop	af
+  1978  06e9  6e                	ld	l, (hl)
+  1979  06ea  dde1              	pop	ix
+  1980  06ec  c9                	ret
+  1981                          ;	---------------------------------
+  1982                          ; Function boolean_get_elem
+  1983                          ; ---------------------------------
+  1984                          _boolean_get_elem:
+  1985  06ed  dde5              	push	ix
+  1986  06ef  dd210000          	ld	ix,0
+  1987  06f3  dd39              	add	ix,sp
+  1988  06f5  dd6e06            	ld	l,(ix+6)
+  1989  06f8  dd6607            	ld	h,(ix+7)
+  1990  06fb  e5                	push	hl
+  1991  06fc  dd6e04            	ld	l,(ix+4)
+  1992  06ff  dd6605            	ld	h,(ix+5)
+  1993  0702  e5                	push	hl
+  1994  0703  cd1103            	call	___internal_get_elem
+  1995  0706  f1                	pop	af
+  1996  0707  f1                	pop	af
+  1997  0708  6e                	ld	l, (hl)
+  1998  0709  dde1              	pop	ix
+  1999  070b  c9                	ret
+  2000                          ;	---------------------------------
+  2001                          ; Function boolean_set_elem
+  2002                          ; ---------------------------------
+  2003                          _boolean_set_elem:
+  2004  070c  dde5              	push	ix
+  2005  070e  dd210000          	ld	ix,0
+  2006  0712  dd39              	add	ix,sp
+  2007  0714  210800            	ld	hl,8
+  2008  0717  39                	add	hl, sp
+  2009  0718  e5                	push	hl
+  2010  0719  dd6e06            	ld	l,(ix+6)
+  2011  071c  dd6607            	ld	h,(ix+7)
+  2012  071f  e5                	push	hl
+  2013  0720  dd6e04            	ld	l,(ix+4)
+  2014  0723  dd6605            	ld	h,(ix+5)
+  2015  0726  e5                	push	hl
+  2016  0727  cd0805            	call	___internal_set_elem
+  2017  072a  f1                	pop	af
+  2018  072b  f1                	pop	af
+  2019  072c  f1                	pop	af
+  2020  072d  dde1              	pop	ix
+  2021  072f  c9                	ret
+  2022                          ;	---------------------------------
+  2023                          ; Function boolean_insert
+  2024                          ; ---------------------------------
+  2025                          _boolean_insert:
+  2026  0730  dde5              	push	ix
+  2027  0732  dd210000          	ld	ix,0
+  2028  0736  dd39              	add	ix,sp
+  2029  0738  210800            	ld	hl,8
+  2030  073b  39                	add	hl, sp
+  2031  073c  e5                	push	hl
+  2032  073d  dd6e06            	ld	l,(ix+6)
+  2033  0740  dd6607            	ld	h,(ix+7)
+  2034  0743  e5                	push	hl
+  2035  0744  dd6e04            	ld	l,(ix+4)
+  2036  0747  dd6605            	ld	h,(ix+5)
+  2037  074a  e5                	push	hl
+  2038  074b  cd7f03            	call	___internal_insert
+  2039  074e  f1                	pop	af
+  2040  074f  f1                	pop	af
+  2041  0750  f1                	pop	af
+  2042  0751  dde1              	pop	ix
+  2043  0753  c9                	ret
+  2044                          ;	---------------------------------
+  2045                          ; Function string_make_array
+  2046                          ; ---------------------------------
+  2047                          _string_make_array:
+  2048  0754  210000            	ld	hl,0x0000
+  2049  0757  e5                	push	hl
+  2050  0758  2e04              	ld	l,0x04
+  2051  075a  e5                	push	hl
+  2052  075b  cd5a00            	call	___internal_make_array
+  2053  075e  f1                	pop	af
+  2054  075f  f1                	pop	af
+  2055  0760  c9                	ret
+  2056                          ;	---------------------------------
+  2057                          ; Function string_push_array
+  2058                          ; ---------------------------------
+  2059                          _string_push_array:
+  2060  0761  dde5              	push	ix
+  2061  0763  dd210000          	ld	ix,0
+  2062  0767  dd39              	add	ix,sp
+  2063  0769  f5                	push	af
+  2064  076a  f5                	push	af
+  2065  076b  210d00            	ld	hl,10+1+1+1
+  2066  076e  39                	add	hl,sp
+  2067  076f  46                	ld	b, (hl)
+  2068  0770  2b                	dec	hl
+  2069  0771  4e                	ld	c, (hl)
+  2070  0772  c5                	push	bc
+  2071  0773  2b                	dec	hl
+  2072  0774  46                	ld	b, (hl)
+  2073  0775  2b                	dec	hl
+  2074  0776  4e                	ld	c, (hl)
+  2075  0777  c5                	push	bc
+  2076  0778  210400            	ld	hl,4
+  2077  077b  39                	add	hl, sp
+  2078  077c  e5                	push	hl
+  2079  077d  cd0000            	call	_new_string
+  2080  0780  f1                	pop	af
+  2081  0781  f1                	pop	af
+  2082  0782  f1                	pop	af
+  2083  0783  210000            	ld	hl,0
+  2084  0786  39                	add	hl, sp
+  2085  0787  e5                	push	hl
+  2086  0788  dd6e04            	ld	l,(ix+4)
+  2087  078b  dd6605            	ld	h,(ix+5)
+  2088  078e  e5                	push	hl
+  2089  078f  cdf500            	call	___internal_push_array
+  2090  0792  ddf9              	ld	sp,ix
+  2091  0794  dde1              	pop	ix
+  2092  0796  c9                	ret
+  2093                          ;	---------------------------------
+  2094                          ; Function string_pop_array
+  2095                          ; ---------------------------------
+  2096                          _string_pop_array:
+  2097  0797  dde5              	push	ix
+  2098  0799  dd210000          	ld	ix,0
+  2099  079d  dd39              	add	ix,sp
+  2100  079f  210000            	ld	hl,0x0000
+  2101  07a2  e5                	push	hl
+  2102  07a3  219f03            	ld	hl,___str_32
+  2103  07a6  e5                	push	hl
+  2104  07a7  dd6e04            	ld	l,(ix+4)
+  2105  07aa  dd6605            	ld	h,(ix+5)
+  2106  07ad  e5                	push	hl
+  2107  07ae  cd0000            	call	___rock_make_string
+  2108  07b1  f1                	pop	af
+  2109  07b2  f1                	pop	af
+  2110  07b3  f1                	pop	af
+  2111  07b4  dde1              	pop	ix
+  2112  07b6  c9                	ret
+  2113                          	SECTION rodata_compiler
+  2114                          ___str_32:
+  2115  039f  00                	DEFB 0x00
+  2116                          	SECTION code_compiler
+  2117                          ;	---------------------------------
+  2118                          ; Function string_get_elem
+  2119                          ; ---------------------------------
+  2120                          _string_get_elem:
+  2121  07b7  dde5              	push	ix
+  2122  07b9  dd210000          	ld	ix,0
+  2123  07bd  dd39              	add	ix,sp
+  2124  07bf  210000            	ld	hl,0x0000
+  2125  07c2  e5                	push	hl
+  2126  07c3  21a003            	ld	hl,___str_33
+  2127  07c6  e5                	push	hl
+  2128  07c7  dd6e04            	ld	l,(ix+4)
+  2129  07ca  dd6605            	ld	h,(ix+5)
+  2130  07cd  e5                	push	hl
+  2131  07ce  cd0000            	call	___rock_make_string
+  2132  07d1  f1                	pop	af
+  2133  07d2  f1                	pop	af
+  2134  07d3  f1                	pop	af
+  2135  07d4  dde1              	pop	ix
+  2136  07d6  c9                	ret
+  2137                          	SECTION rodata_compiler
+  2138                          ___str_33:
+  2139  03a0  00                	DEFB 0x00
+  2140                          	SECTION code_compiler
+  2141                          ;	---------------------------------
+  2142                          ; Function string_set_elem
+  2143                          ; ---------------------------------
+  2144                          _string_set_elem:
+  2145  07d7  dde5              	push	ix
+  2146  07d9  dd210000          	ld	ix,0
+  2147  07dd  dd39              	add	ix,sp
+  2148  07df  21f8ff            	ld	hl, -8
+  2149  07e2  39                	add	hl, sp
+  2150  07e3  f9                	ld	sp, hl
+  2151  07e4  dd6e06            	ld	l,(ix+6)
+  2152  07e7  dd6607            	ld	h,(ix+7)
+  2153  07ea  e5                	push	hl
+  2154  07eb  dd6e04            	ld	l,(ix+4)
+  2155  07ee  dd6605            	ld	h,(ix+5)
+  2156  07f1  e5                	push	hl
+  2157  07f2  210400            	ld	hl,4
+  2158  07f5  39                	add	hl, sp
+  2159  07f6  e5                	push	hl
+  2160  07f7  cdb707            	call	_string_get_elem
+  2161  07fa  f1                	pop	af
+  2162  07fb  f1                	pop	af
+  2163  07fc  f1                	pop	af
+  2164  07fd  211300            	ld	hl,16+1+1+1
+  2165  0800  39                	add	hl,sp
+  2166  0801  46                	ld	b, (hl)
+  2167  0802  2b                	dec	hl
+  2168  0803  4e                	ld	c, (hl)
+  2169  0804  c5                	push	bc
+  2170  0805  2b                	dec	hl
+  2171  0806  46                	ld	b, (hl)
+  2172  0807  2b                	dec	hl
+  2173  0808  4e                	ld	c, (hl)
+  2174  0809  c5                	push	bc
+  2175  080a  210800            	ld	hl,8
+  2176  080d  39                	add	hl, sp
+  2177  080e  e5                	push	hl
+  2178  080f  cd0000            	call	_new_string
+  2179  0812  f1                	pop	af
+  2180  0813  f1                	pop	af
+  2181  0814  f1                	pop	af
+  2182  0815  210400            	ld	hl,4
+  2183  0818  39                	add	hl, sp
+  2184  0819  e5                	push	hl
+  2185  081a  dd6e06            	ld	l,(ix+6)
+  2186  081d  dd6607            	ld	h,(ix+7)
+  2187  0820  e5                	push	hl
+  2188  0821  dd6e04            	ld	l,(ix+4)
+  2189  0824  dd6605            	ld	h,(ix+5)
+  2190  0827  e5                	push	hl
+  2191  0828  cd0805            	call	___internal_set_elem
+  2192  082b  ddf9              	ld	sp,ix
+  2193  082d  dde1              	pop	ix
+  2194  082f  c9                	ret
+  2195                          ;	---------------------------------
+  2196                          ; Function string_insert
+  2197                          ; ---------------------------------
+  2198                          _string_insert:
+  2199  0830  dde5              	push	ix
+  2200  0832  dd210000          	ld	ix,0
+  2201  0836  dd39              	add	ix,sp
+  2202  0838  210800            	ld	hl,8
+  2203  083b  39                	add	hl, sp
+  2204  083c  e5                	push	hl
+  2205  083d  dd6e06            	ld	l,(ix+6)
+  2206  0840  dd6607            	ld	h,(ix+7)
+  2207  0843  e5                	push	hl
+  2208  0844  dd6e04            	ld	l,(ix+4)
+  2209  0847  dd6605            	ld	h,(ix+5)
+  2210  084a  e5                	push	hl
+  2211  084b  cd7f03            	call	___internal_insert
+  2212  084e  f1                	pop	af
+  2213  084f  f1                	pop	af
+  2214  0850  f1                	pop	af
+  2215  0851  dde1              	pop	ix
+  2216  0853  c9                	ret
+  2217                          ;	---------------------------------
+  2218                          ; Function char_make_array
+  2219                          ; ---------------------------------
+  2220                          _char_make_array:
+  2221  0854  210000            	ld	hl,0x0000
+  2222  0857  e5                	push	hl
+  2223  0858  2e01              	ld	l,0x01
+  2224  085a  e5                	push	hl
+  2225  085b  cd5a00            	call	___internal_make_array
+  2226  085e  f1                	pop	af
+  2227  085f  f1                	pop	af
+  2228  0860  c9                	ret
+  2229                          ;	---------------------------------
+  2230                          ; Function char_push_array
+  2231                          ; ---------------------------------
+  2232                          _char_push_array:
+  2233  0861  dde5              	push	ix
+  2234  0863  dd210000          	ld	ix,0
+  2235  0867  dd39              	add	ix,sp
+  2236  0869  210600            	ld	hl,6
+  2237  086c  39                	add	hl, sp
+  2238  086d  e5                	push	hl
+  2239  086e  dd6e04            	ld	l,(ix+4)
+  2240  0871  dd6605            	ld	h,(ix+5)
+  2241  0874  e5                	push	hl
+  2242  0875  cdf500            	call	___internal_push_array
+  2243  0878  f1                	pop	af
+  2244  0879  f1                	pop	af
+  2245  087a  dde1              	pop	ix
+  2246  087c  c9                	ret
+  2247                          ;	---------------------------------
+  2248                          ; Function char_pop_array
+  2249                          ; ---------------------------------
+  2250                          _char_pop_array:
+  2251  087d  dde5              	push	ix
+  2252  087f  dd210000          	ld	ix,0
+  2253  0883  dd39              	add	ix,sp
+  2254  0885  dd6e04            	ld	l,(ix+4)
+  2255  0888  dd6605            	ld	h,(ix+5)
+  2256  088b  e5                	push	hl
+  2257  088c  cd8502            	call	___internal_pop_array
+  2258  088f  f1                	pop	af
+  2259  0890  6e                	ld	l, (hl)
+  2260  0891  dde1              	pop	ix
+  2261  0893  c9                	ret
+  2262                          ;	---------------------------------
+  2263                          ; Function char_get_elem
+  2264                          ; ---------------------------------
+  2265                          _char_get_elem:
+  2266  0894  dde5              	push	ix
+  2267  0896  dd210000          	ld	ix,0
+  2268  089a  dd39              	add	ix,sp
+  2269  089c  dd6e06            	ld	l,(ix+6)
+  2270  089f  dd6607            	ld	h,(ix+7)
+  2271  08a2  e5                	push	hl
+  2272  08a3  dd6e04            	ld	l,(ix+4)
+  2273  08a6  dd6605            	ld	h,(ix+5)
+  2274  08a9  e5                	push	hl
+  2275  08aa  cd1103            	call	___internal_get_elem
+  2276  08ad  f1                	pop	af
+  2277  08ae  f1                	pop	af
+  2278  08af  6e                	ld	l, (hl)
+  2279  08b0  dde1              	pop	ix
+  2280  08b2  c9                	ret
+  2281                          ;	---------------------------------
+  2282                          ; Function char_set_elem
+  2283                          ; ---------------------------------
+  2284                          _char_set_elem:
+  2285  08b3  dde5              	push	ix
+  2286  08b5  dd210000          	ld	ix,0
+  2287  08b9  dd39              	add	ix,sp
+  2288  08bb  210800            	ld	hl,8
+  2289  08be  39                	add	hl, sp
+  2290  08bf  e5                	push	hl
+  2291  08c0  dd6e06            	ld	l,(ix+6)
+  2292  08c3  dd6607            	ld	h,(ix+7)
+  2293  08c6  e5                	push	hl
+  2294  08c7  dd6e04            	ld	l,(ix+4)
+  2295  08ca  dd6605            	ld	h,(ix+5)
+  2296  08cd  e5                	push	hl
+  2297  08ce  cd0805            	call	___internal_set_elem
+  2298  08d1  f1                	pop	af
+  2299  08d2  f1                	pop	af
+  2300  08d3  f1                	pop	af
+  2301  08d4  dde1              	pop	ix
+  2302  08d6  c9                	ret
+  2303                          ;	---------------------------------
+  2304                          ; Function char_insert
+  2305                          ; ---------------------------------
+  2306                          _char_insert:
+  2307  08d7  dde5              	push	ix
+  2308  08d9  dd210000          	ld	ix,0
+  2309  08dd  dd39              	add	ix,sp
+  2310  08df  210800            	ld	hl,8
+  2311  08e2  39                	add	hl, sp
+  2312  08e3  e5                	push	hl
+  2313  08e4  dd6e06            	ld	l,(ix+6)
+  2314  08e7  dd6607            	ld	h,(ix+7)
+  2315  08ea  e5                	push	hl
+  2316  08eb  dd6e04            	ld	l,(ix+4)
+  2317  08ee  dd6605            	ld	h,(ix+5)
+  2318  08f1  e5                	push	hl
+  2319  08f2  cd7f03            	call	___internal_insert
+  2320  08f5  f1                	pop	af
+  2321  08f6  f1                	pop	af
+  2322  08f7  f1                	pop	af
+  2323  08f8  dde1              	pop	ix
+  2324  08fa  c9                	ret
+  2325                          ;	---------------------------------
+  2326                          ; Function byte_make_array
+  2327                          ; ---------------------------------
+  2328                          _byte_make_array:
+  2329  08fb  210000            	ld	hl,0x0000
+  2330  08fe  e5                	push	hl
+  2331  08ff  2e01              	ld	l,0x01
+  2332  0901  e5                	push	hl
+  2333  0902  cd5a00            	call	___internal_make_array
+  2334  0905  f1                	pop	af
+  2335  0906  f1                	pop	af
+  2336  0907  c9                	ret
+  2337                          ;	---------------------------------
+  2338                          ; Function byte_push_array
+  2339                          ; ---------------------------------
+  2340                          _byte_push_array:
+  2341  0908  dde5              	push	ix
+  2342  090a  dd210000          	ld	ix,0
+  2343  090e  dd39              	add	ix,sp
+  2344  0910  210600            	ld	hl,6
+  2345  0913  39                	add	hl, sp
+  2346  0914  e5                	push	hl
+  2347  0915  dd6e04            	ld	l,(ix+4)
+  2348  0918  dd6605            	ld	h,(ix+5)
+  2349  091b  e5                	push	hl
+  2350  091c  cdf500            	call	___internal_push_array
+  2351  091f  f1                	pop	af
+  2352  0920  f1                	pop	af
+  2353  0921  dde1              	pop	ix
+  2354  0923  c9                	ret
+  2355                          ;	---------------------------------
+  2356                          ; Function byte_pop_array
+  2357                          ; ---------------------------------
+  2358                          _byte_pop_array:
+  2359  0924  dde5              	push	ix
+  2360  0926  dd210000          	ld	ix,0
+  2361  092a  dd39              	add	ix,sp
+  2362  092c  dd6e04            	ld	l,(ix+4)
+  2363  092f  dd6605            	ld	h,(ix+5)
+  2364  0932  e5                	push	hl
+  2365  0933  cd8502            	call	___internal_pop_array
+  2366  0936  f1                	pop	af
+  2367  0937  6e                	ld	l, (hl)
+  2368  0938  dde1              	pop	ix
+  2369  093a  c9                	ret
+  2370                          ;	---------------------------------
+  2371                          ; Function byte_get_elem
+  2372                          ; ---------------------------------
+  2373                          _byte_get_elem:
+  2374  093b  dde5              	push	ix
+  2375  093d  dd210000          	ld	ix,0
+  2376  0941  dd39              	add	ix,sp
+  2377  0943  dd6e06            	ld	l,(ix+6)
+  2378  0946  dd6607            	ld	h,(ix+7)
+  2379  0949  e5                	push	hl
+  2380  094a  dd6e04            	ld	l,(ix+4)
+  2381  094d  dd6605            	ld	h,(ix+5)
+  2382  0950  e5                	push	hl
+  2383  0951  cd1103            	call	___internal_get_elem
+  2384  0954  f1                	pop	af
+  2385  0955  f1                	pop	af
+  2386  0956  6e                	ld	l, (hl)
+  2387  0957  dde1              	pop	ix
+  2388  0959  c9                	ret
+  2389                          ;	---------------------------------
+  2390                          ; Function byte_set_elem
+  2391                          ; ---------------------------------
+  2392                          _byte_set_elem:
+  2393  095a  dde5              	push	ix
+  2394  095c  dd210000          	ld	ix,0
+  2395  0960  dd39              	add	ix,sp
+  2396  0962  210800            	ld	hl,8
+  2397  0965  39                	add	hl, sp
+  2398  0966  e5                	push	hl
+  2399  0967  dd6e06            	ld	l,(ix+6)
+  2400  096a  dd6607            	ld	h,(ix+7)
+  2401  096d  e5                	push	hl
+  2402  096e  dd6e04            	ld	l,(ix+4)
+  2403  0971  dd6605            	ld	h,(ix+5)
+  2404  0974  e5                	push	hl
+  2405  0975  cd0805            	call	___internal_set_elem
+  2406  0978  f1                	pop	af
+  2407  0979  f1                	pop	af
+  2408  097a  f1                	pop	af
+  2409  097b  dde1              	pop	ix
+  2410  097d  c9                	ret
+  2411                          ;	---------------------------------
+  2412                          ; Function byte_insert
+  2413                          ; ---------------------------------
+  2414                          _byte_insert:
+  2415  097e  dde5              	push	ix
+  2416  0980  dd210000          	ld	ix,0
+  2417  0984  dd39              	add	ix,sp
+  2418  0986  210800            	ld	hl,8
+  2419  0989  39                	add	hl, sp
+  2420  098a  e5                	push	hl
+  2421  098b  dd6e06            	ld	l,(ix+6)
+  2422  098e  dd6607            	ld	h,(ix+7)
+  2423  0991  e5                	push	hl
+  2424  0992  dd6e04            	ld	l,(ix+4)
+  2425  0995  dd6605            	ld	h,(ix+5)
+  2426  0998  e5                	push	hl
+  2427  0999  cd7f03            	call	___internal_insert
+  2428  099c  f1                	pop	af
+  2429  099d  f1                	pop	af
+  2430  099e  f1                	pop	af
+  2431  099f  dde1              	pop	ix
+  2432  09a1  c9                	ret
+  2433                          ;	---------------------------------
+  2434                          ; Function word_make_array
+  2435                          ; ---------------------------------
+  2436                          _word_make_array:
+  2437  09a2  210000            	ld	hl,0x0000
+  2438  09a5  e5                	push	hl
+  2439  09a6  2e02              	ld	l,0x02
+  2440  09a8  e5                	push	hl
+  2441  09a9  cd5a00            	call	___internal_make_array
+  2442  09ac  f1                	pop	af
+  2443  09ad  f1                	pop	af
+  2444  09ae  c9                	ret
+  2445                          ;	---------------------------------
+  2446                          ; Function word_push_array
+  2447                          ; ---------------------------------
+  2448                          _word_push_array:
+  2449  09af  dde5              	push	ix
+  2450  09b1  dd210000          	ld	ix,0
+  2451  09b5  dd39              	add	ix,sp
+  2452  09b7  210600            	ld	hl,6
+  2453  09ba  39                	add	hl, sp
+  2454  09bb  e5                	push	hl
+  2455  09bc  dd6e04            	ld	l,(ix+4)
+  2456  09bf  dd6605            	ld	h,(ix+5)
+  2457  09c2  e5                	push	hl
+  2458  09c3  cdf500            	call	___internal_push_array
+  2459  09c6  f1                	pop	af
+  2460  09c7  f1                	pop	af
+  2461  09c8  dde1              	pop	ix
+  2462  09ca  c9                	ret
+  2463                          ;	---------------------------------
+  2464                          ; Function word_pop_array
+  2465                          ; ---------------------------------
+  2466                          _word_pop_array:
+  2467  09cb  dde5              	push	ix
+  2468  09cd  dd210000          	ld	ix,0
+  2469  09d1  dd39              	add	ix,sp
+  2470  09d3  dd6e04            	ld	l,(ix+4)
+  2471  09d6  dd6605            	ld	h,(ix+5)
+  2472  09d9  e5                	push	hl
+  2473  09da  cd8502            	call	___internal_pop_array
+  2474  09dd  f1                	pop	af
+  2475  09de  7e                	ld	a, (hl)
+  2476  09df  23                	inc	hl
+  2477  09e0  66                	ld	h, (hl)
+  2478  09e1  6f                	ld	l, a
+  2479  09e2  dde1              	pop	ix
+  2480  09e4  c9                	ret
+  2481                          ;	---------------------------------
+  2482                          ; Function word_get_elem
+  2483                          ; ---------------------------------
+  2484                          _word_get_elem:
+  2485  09e5  dde5              	push	ix
+  2486  09e7  dd210000          	ld	ix,0
+  2487  09eb  dd39              	add	ix,sp
+  2488  09ed  dd6e06            	ld	l,(ix+6)
+  2489  09f0  dd6607            	ld	h,(ix+7)
+  2490  09f3  e5                	push	hl
+  2491  09f4  dd6e04            	ld	l,(ix+4)
+  2492  09f7  dd6605            	ld	h,(ix+5)
+  2493  09fa  e5                	push	hl
+  2494  09fb  cd1103            	call	___internal_get_elem
+  2495  09fe  f1                	pop	af
+  2496  09ff  f1                	pop	af
+  2497  0a00  7e                	ld	a, (hl)
+  2498  0a01  23                	inc	hl
+  2499  0a02  66                	ld	h, (hl)
+  2500  0a03  6f                	ld	l, a
+  2501  0a04  dde1              	pop	ix
+  2502  0a06  c9                	ret
+  2503                          ;	---------------------------------
+  2504                          ; Function word_set_elem
+  2505                          ; ---------------------------------
+  2506                          _word_set_elem:
+  2507  0a07  dde5              	push	ix
+  2508  0a09  dd210000          	ld	ix,0
+  2509  0a0d  dd39              	add	ix,sp
+  2510  0a0f  210800            	ld	hl,8
+  2511  0a12  39                	add	hl, sp
+  2512  0a13  e5                	push	hl
+  2513  0a14  dd6e06            	ld	l,(ix+6)
+  2514  0a17  dd6607            	ld	h,(ix+7)
+  2515  0a1a  e5                	push	hl
+  2516  0a1b  dd6e04            	ld	l,(ix+4)
+  2517  0a1e  dd6605            	ld	h,(ix+5)
+  2518  0a21  e5                	push	hl
+  2519  0a22  cd0805            	call	___internal_set_elem
+  2520  0a25  f1                	pop	af
+  2521  0a26  f1                	pop	af
+  2522  0a27  f1                	pop	af
+  2523  0a28  dde1              	pop	ix
+  2524  0a2a  c9                	ret
+  2525                          ;	---------------------------------
+  2526                          ; Function word_insert
+  2527                          ; ---------------------------------
+  2528                          _word_insert:
+  2529  0a2b  dde5              	push	ix
+  2530  0a2d  dd210000          	ld	ix,0
+  2531  0a31  dd39              	add	ix,sp
+  2532  0a33  210800            	ld	hl,8
+  2533  0a36  39                	add	hl, sp
+  2534  0a37  e5                	push	hl
+  2535  0a38  dd6e06            	ld	l,(ix+6)
+  2536  0a3b  dd6607            	ld	h,(ix+7)
+  2537  0a3e  e5                	push	hl
+  2538  0a3f  dd6e04            	ld	l,(ix+4)
+  2539  0a42  dd6605            	ld	h,(ix+5)
+  2540  0a45  e5                	push	hl
+  2541  0a46  cd7f03            	call	___internal_insert
+  2542  0a49  f1                	pop	af
+  2543  0a4a  f1                	pop	af
+  2544  0a4b  f1                	pop	af
+  2545  0a4c  dde1              	pop	ix
+  2546  0a4e  c9                	ret
+  2547                          ;	---------------------------------
+  2548                          ; Function dword_make_array
+  2549                          ; ---------------------------------
+  2550                          _dword_make_array:
+  2551  0a4f  210000            	ld	hl,0x0000
+  2552  0a52  e5                	push	hl
+  2553  0a53  2e04              	ld	l,0x04
+  2554  0a55  e5                	push	hl
+  2555  0a56  cd5a00            	call	___internal_make_array
+  2556  0a59  f1                	pop	af
+  2557  0a5a  f1                	pop	af
+  2558  0a5b  c9                	ret
+  2559                          ;	---------------------------------
+  2560                          ; Function dword_push_array
+  2561                          ; ---------------------------------
+  2562                          _dword_push_array:
+  2563  0a5c  dde5              	push	ix
+  2564  0a5e  dd210000          	ld	ix,0
+  2565  0a62  dd39              	add	ix,sp
+  2566  0a64  210600            	ld	hl,6
+  2567  0a67  39                	add	hl, sp
+  2568  0a68  e5                	push	hl
+  2569  0a69  dd6e04            	ld	l,(ix+4)
+  2570  0a6c  dd6605            	ld	h,(ix+5)
+  2571  0a6f  e5                	push	hl
+  2572  0a70  cdf500            	call	___internal_push_array
+  2573  0a73  f1                	pop	af
+  2574  0a74  f1                	pop	af
+  2575  0a75  dde1              	pop	ix
+  2576  0a77  c9                	ret
+  2577                          ;	---------------------------------
+  2578                          ; Function dword_pop_array
+  2579                          ; ---------------------------------
+  2580                          _dword_pop_array:
+  2581  0a78  dde5              	push	ix
+  2582  0a7a  dd210000          	ld	ix,0
+  2583  0a7e  dd39              	add	ix,sp
+  2584  0a80  dd6e04            	ld	l,(ix+4)
+  2585  0a83  dd6605            	ld	h,(ix+5)
+  2586  0a86  e5                	push	hl
+  2587  0a87  cd8502            	call	___internal_pop_array
+  2588  0a8a  f1                	pop	af
+  2589  0a8b  4e                	ld	c, (hl)
+  2590  0a8c  23                	inc	hl
+  2591  0a8d  46                	ld	b, (hl)
+  2592  0a8e  23                	inc	hl
+  2593  0a8f  5e                	ld	e, (hl)
+  2594  0a90  23                	inc	hl
+  2595  0a91  56                	ld	d, (hl)
+  2596  0a92  69                	ld	l, c
+  2597  0a93  60                	ld	h, b
+  2598  0a94  dde1              	pop	ix
+  2599  0a96  c9                	ret
+  2600                          ;	---------------------------------
+  2601                          ; Function dword_get_elem
+  2602                          ; ---------------------------------
+  2603                          _dword_get_elem:
+  2604  0a97  dde5              	push	ix
+  2605  0a99  dd210000          	ld	ix,0
+  2606  0a9d  dd39              	add	ix,sp
+  2607  0a9f  dd6e06            	ld	l,(ix+6)
+  2608  0aa2  dd6607            	ld	h,(ix+7)
+  2609  0aa5  e5                	push	hl
+  2610  0aa6  dd6e04            	ld	l,(ix+4)
+  2611  0aa9  dd6605            	ld	h,(ix+5)
+  2612  0aac  e5                	push	hl
+  2613  0aad  cd1103            	call	___internal_get_elem
+  2614  0ab0  f1                	pop	af
+  2615  0ab1  f1                	pop	af
+  2616  0ab2  4e                	ld	c, (hl)
+  2617  0ab3  23                	inc	hl
+  2618  0ab4  46                	ld	b, (hl)
+  2619  0ab5  23                	inc	hl
+  2620  0ab6  5e                	ld	e, (hl)
+  2621  0ab7  23                	inc	hl
+  2622  0ab8  56                	ld	d, (hl)
+  2623  0ab9  69                	ld	l, c
+  2624  0aba  60                	ld	h, b
+  2625  0abb  dde1              	pop	ix
+  2626  0abd  c9                	ret
+  2627                          ;	---------------------------------
+  2628                          ; Function dword_set_elem
+  2629                          ; ---------------------------------
+  2630                          _dword_set_elem:
+  2631  0abe  dde5              	push	ix
+  2632  0ac0  dd210000          	ld	ix,0
+  2633  0ac4  dd39              	add	ix,sp
+  2634  0ac6  210800            	ld	hl,8
+  2635  0ac9  39                	add	hl, sp
+  2636  0aca  e5                	push	hl
+  2637  0acb  dd6e06            	ld	l,(ix+6)
+  2638  0ace  dd6607            	ld	h,(ix+7)
+  2639  0ad1  e5                	push	hl
+  2640  0ad2  dd6e04            	ld	l,(ix+4)
+  2641  0ad5  dd6605            	ld	h,(ix+5)
+  2642  0ad8  e5                	push	hl
+  2643  0ad9  cd0805            	call	___internal_set_elem
+  2644  0adc  f1                	pop	af
+  2645  0add  f1                	pop	af
+  2646  0ade  f1                	pop	af
+  2647  0adf  dde1              	pop	ix
+  2648  0ae1  c9                	ret
+  2649                          ;	---------------------------------
+  2650                          ; Function dword_insert
+  2651                          ; ---------------------------------
+  2652                          _dword_insert:
+  2653  0ae2  dde5              	push	ix
+  2654  0ae4  dd210000          	ld	ix,0
+  2655  0ae8  dd39              	add	ix,sp
+  2656  0aea  210800            	ld	hl,8
+  2657  0aed  39                	add	hl, sp
+  2658  0aee  e5                	push	hl
+  2659  0aef  dd6e06            	ld	l,(ix+6)
+  2660  0af2  dd6607            	ld	h,(ix+7)
+  2661  0af5  e5                	push	hl
+  2662  0af6  dd6e04            	ld	l,(ix+4)
+  2663  0af9  dd6605            	ld	h,(ix+5)
+  2664  0afc  e5                	push	hl
+  2665  0afd  cd7f03            	call	___internal_insert
+  2666  0b00  f1                	pop	af
+  2667  0b01  f1                	pop	af
+  2668  0b02  f1                	pop	af
+  2669  0b03  dde1              	pop	ix
+  2670  0b05  c9                	ret
+  2671                          ;	---------------------------------
+  2672                          ; Function fill_cmd_args
+  2673                          ; ---------------------------------
+  2674                          _fill_cmd_args:
+  2675  0b06  dde5              	push	ix
+  2676  0b08  dd210000          	ld	ix,0
+  2677  0b0c  dd39              	add	ix,sp
+  2678  0b0e  dd7e04            	ld	a,(ix+4)
+  2679  0b11  210000            	ld	hl,_global_argc
+  2680  0b14  77                	ld	(hl), a
+  2681  0b15  dd7e05            	ld	a,(ix+5)
+  2682  0b18  23                	inc	hl
+  2683  0b19  77                	ld	(hl), a
+  2684  0b1a  dd7e06            	ld	a,(ix+6)
+  2685  0b1d  210200            	ld	hl,_global_argv
+  2686  0b20  77                	ld	(hl), a
+  2687  0b21  dd7e07            	ld	a,(ix+7)
+  2688  0b24  23                	inc	hl
+  2689  0b25  77                	ld	(hl), a
+  2690  0b26  dde1              	pop	ix
+  2691  0b28  c9                	ret
+  2692                          ;	---------------------------------
+  2693                          ; Function get_args
+  2694                          ; ---------------------------------
+  2695                          _get_args:
+  2696  0b29  dde5              	push	ix
+  2697  0b2b  dd210000          	ld	ix,0
+  2698  0b2f  dd39              	add	ix,sp
+  2699  0b31  21faff            	ld	hl, -6
+  2700  0b34  39                	add	hl, sp
+  2701  0b35  f9                	ld	sp, hl
+  2702  0b36  cd5407            	call	_string_make_array
+  2703  0b39  dd75fe            	ld	(ix-2),l
+  2704  0b3c  dd74ff            	ld	(ix-1),h
+  2705  0b3f  110000            	ld	de,0x0000
+  2706                          l_get_args_00103:
+  2707  0b42  7b                	ld	a, e
+  2708  0b43  210000            	ld	hl,_global_argc
+  2709  0b46  96                	sub	a, (hl)
+  2710  0b47  7a                	ld	a, d
+  2711  0b48  23                	inc	hl
+  2712  0b49  9e                	sbc	a, (hl)
+  2713  0b4a  e24f0b            	jp	PO, l_get_args_00122
+  2714  0b4d  ee80              	xor	a,0x80
+  2715                          l_get_args_00122:
+  2716  0b4f  f2910b            	jp	P, l_get_args_00101
+  2717  0b52  4b                	ld	c, e
+  2718  0b53  42                	ld	b, d
+  2719  0b54  cb21              	sla	c
+  2720  0b56  cb10              	rl	b
+  2721  0b58  210200            	ld	hl,_global_argv
+  2722  0b5b  7e                	ld	a, (hl)
+  2723  0b5c  81                	add	a, c
+  2724  0b5d  4f                	ld	c, a
+  2725  0b5e  23                	inc	hl
+  2726  0b5f  7e                	ld	a, (hl)
+  2727  0b60  88                	adc	a, b
+  2728  0b61  47                	ld	b, a
+  2729  0b62  69                	ld	l, c
+  2730  0b63  60                	ld	h, b
+  2731  0b64  4e                	ld	c, (hl)
+  2732  0b65  23                	inc	hl
+  2733  0b66  46                	ld	b, (hl)
+  2734  0b67  d5                	push	de
+  2735  0b68  c5                	push	bc
+  2736  0b69  210400            	ld	hl,4
+  2737  0b6c  39                	add	hl, sp
+  2738  0b6d  e5                	push	hl
+  2739  0b6e  cd0000            	call	_cstr_to_string
+  2740  0b71  f1                	pop	af
+  2741  0b72  f1                	pop	af
+  2742  0b73  210500            	ld	hl,2+1+1+1
+  2743  0b76  39                	add	hl,sp
+  2744  0b77  46                	ld	b, (hl)
+  2745  0b78  2b                	dec	hl
+  2746  0b79  4e                	ld	c, (hl)
+  2747  0b7a  c5                	push	bc
+  2748  0b7b  2b                	dec	hl
+  2749  0b7c  46                	ld	b, (hl)
+  2750  0b7d  2b                	dec	hl
+  2751  0b7e  4e                	ld	c, (hl)
+  2752  0b7f  c5                	push	bc
+  2753  0b80  dd6efe            	ld	l,(ix-2)
+  2754  0b83  dd66ff            	ld	h,(ix-1)
+  2755  0b86  e5                	push	hl
+  2756  0b87  cd6107            	call	_string_push_array
+  2757  0b8a  f1                	pop	af
+  2758  0b8b  f1                	pop	af
+  2759  0b8c  f1                	pop	af
+  2760  0b8d  d1                	pop	de
+  2761  0b8e  13                	inc	de
+  2762  0b8f  18b1              	jr	l_get_args_00103
+  2763                          l_get_args_00101:
+  2764  0b91  dd6efe            	ld	l,(ix-2)
+  2765  0b94  dd66ff            	ld	h,(ix-1)
+  2766  0b97  ddf9              	ld	sp, ix
+  2767  0b99  dde1              	pop	ix
+  2768  0b9b  c9                	ret
+  2769                          ;	---------------------------------
+  2770                          ; Function init_rocker
+  2771                          ; ---------------------------------
+  2772                          _init_rocker:
+  2773  0b9c  dde5              	push	ix
+  2774  0b9e  dd210000          	ld	ix,0
+  2775  0ba2  dd39              	add	ix,sp
+  2776  0ba4  cd0000            	call	_init_compiler_stack
+  2777  0ba7  dd6e06            	ld	l,(ix+6)
+  2778  0baa  dd6607            	ld	h,(ix+7)
+  2779  0bad  e5                	push	hl
+  2780  0bae  dd6e04            	ld	l,(ix+4)
+  2781  0bb1  dd6605            	ld	h,(ix+5)
+  2782  0bb4  e5                	push	hl
+  2783  0bb5  cd060b            	call	_fill_cmd_args
+  2784  0bb8  f1                	pop	af
+  2785  0bb9  f1                	pop	af
+  2786  0bba  dde1              	pop	ix
+  2787  0bbc  c9                	ret
+  2788                          ;	---------------------------------
+  2789                          ; Function end_rocker
+  2790                          ; ---------------------------------
+  2791                          _end_rocker:
+  2792  0bbd  c30000            	jp	_kill_compiler_stack
+  2793                          ;	---------------------------------
+  2794                          ; Function exit_rocker
+  2795                          ; ---------------------------------
+  2796                          _exit_rocker:
+  2797  0bc0  dde5              	push	ix
+  2798  0bc2  dd210000          	ld	ix,0
+  2799  0bc6  dd39              	add	ix,sp
+  2800  0bc8  cdbd0b            	call	_end_rocker
+  2801  0bcb  dd6e04            	ld	l,(ix+4)
+  2802  0bce  dd6605            	ld	h,(ix+5)
+  2803  0bd1  dde1              	pop	ix
+  2804  0bd3  c30000            	jp	_exit_fastcall
+  2805                          	SECTION IGNORE
+  2806                          

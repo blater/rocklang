@@ -1,5 +1,5 @@
 #include "name_table.h"
-#include "alloc.h"
+#include "lib/alloc.h"
 #include <stdio.h>
 #include <string.h>
 

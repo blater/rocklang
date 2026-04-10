@@ -7,6 +7,9 @@ TMP=/tmp/rock$$
 TESTS=./test
 COMPILER=./rock
 testcnt=0
+totalpass=0;
+totalfail=0;
+totalabort=0;
 
 fatal() {
   echo "❌ GENERAL FAILURE $*"
@@ -30,7 +33,7 @@ getTests() {
   if [ "$1" != "" ]; then
     ls -1 "$1" || fatal "file $1 not found"
   else
-    ls -1 $TESTS/*.rkr | grep -v "Assert.rkr"
+    ls -1 $TESTS/*.rkr | grep -v "Assert.rkr" | grep -v "Mod.rkr"
   fi
 }
 
@@ -40,6 +43,8 @@ report() {
   let testcnt=$testcnt+$passed
   let testcnt=$testcnt+$failed
   let passcnt=$testcnt+$passed
+  let totalpass=$totalpass+$passed
+  let totalfail=$totalfail+$failed
   if [ $failed -eq 0 ]; then
     echo "✅ $gName. PASSED ALL $passed tests"
   else
@@ -64,6 +69,7 @@ for test in $FILES; do
   $COMPILER $test $EXE 2>&1 >$TMP
   if [ $? -ne 0 ]; then
     # its a fail if it doesnt compile
+    let totalabort=$totalabort+1
     echo "❌ COMPILE ERRORS FOR $test "
     cat $TMP
   else
@@ -71,6 +77,7 @@ for test in $FILES; do
     ${EXE} 2>&1 >$TMP
     if [ $? -ne 0 ]; then
       echo "❌ EXECUTABLE WILL NOT RUN FOR TEST $test "
+      let totalabort=$totalabort+1
       cat $TMP
     else
       # the test ran.  Check it
@@ -92,5 +99,9 @@ for test in $FILES; do
     fi # check test ran
   fi # check test compiled
 done
+
+echo "-----------------------------------------------------"
+echo "Total tests passed: $totalpass  failed: $totalfail  fatal-errors: $totalabort"
+echo
 
 rm -f $TMP

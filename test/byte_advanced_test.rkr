@@ -1,53 +1,52 @@
-include "test/Assert.rkr"
+include "Assert.rkr"
+Assert a;
 
 sub main() {
   // Test 1: Mixed arithmetic expressions
-  dim b1: byte := to_byte(10);
-  dim i1: int := 20;
-  dim result: int := to_int(b1) + i1;
-  AssertEQ("Mixed Types: to_int(10) + 20 = ", 30, result);
+  byte b1 := to_byte(10);
+  int i1 := 20;
+  int result := to_int(b1) + i1;
+  a.AssertEQ("Mixed Types: to_int(10) + 20 = ", 30, result);
 
-  dim b2: byte := to_byte(50);
-  dim result2: int := to_int(b2) * 2;
-  AssertEQ("Mixed Types: to_int(50) * 2 = ", 100, result2);
+  byte b2 := to_byte(50);
+  int result2 := to_int(b2) * 2;
+  a.AssertEQ("Mixed Types: to_int(50) * 2 = ", 100, result2);
 
   // Test 2: Byte comparisons
-  dim b3: byte := to_byte(100);
-  dim b4: byte := to_byte(50);
-  dim i3: int := to_int(b3); // 100
-  dim i4: int := to_int(b4); // 50
+  byte b3 := to_byte(100);
+  byte b4 := to_byte(50);
+  int i3 := to_int(b3); // 100
+  int i4 := to_int(b4); // 50
+  a.AssertTrue("Byte Comparison i3>i4", i3 > i4 );
+  a.AssertTrue("Byte Comparison i4<i3", i4 < i3 );
 
-  AssertTrue("Byte Comparison i3>i4", i3 > i4 );
-  AssertTrue("Byte Comparison i4<i3", i4 < i3 );
+  byte b5 := to_byte(10);
+  byte b6 := to_byte(20);
+  a.AssertEQ("Byte multiplication ", 200, b5 * b6 );
 
-
-  dim b5: byte := to_byte(10);
-  dim b6: byte := to_byte(20);
-  AssertEQ("Byte multiplication ", 200, b5 * b6 );
-
-  dim large: int := 1000;
-  dim b_trunc: byte := to_byte(large);
+  int large := 1000;
+  byte b_trunc := to_byte(large);
   // because 1000 mod 256 = 232...
-  AssertEQ("truncation in expressions", 232, b_trunc);
+  a.AssertEQ("truncation in expressions", 232, b_trunc);
 
-  dim b65: byte := to_byte(65);
-  dim s1: string := "Value: ";
-  dim s2: string := concat(s1, to_string(b65));
-  AssertEquals("byte to string in concatination", "Value: 65", s2);
+  byte b65 := to_byte(65);
+  string s1 := "Value: ";
+  string s2 := concat(s1, to_string(b65));
+  a.AssertEquals("byte to string in concatination", "Value: 65", s2);
 
 
-  dim b42: byte := to_byte(42);
-  dim i42: int := to_int(b42);
-  dim b50: byte := to_byte(i42 + 8);
-  AssertEquals("type conversions in chain", "50", to_string(b50));
+  byte b42 := to_byte(42);
+  int i42 := to_int(b42);
+  byte b50 := to_byte(i42 + 8);
+  a.AssertEquals("type conversions in chain", "50", to_string(b50));
 
-  dim b_zero: byte := to_byte(0);
-  dim b_max: byte := to_byte(255);
-  AssertEquals("Boundary value 0", "0", to_string(b_zero));
-  AssertEquals("Boundary value 255", "255", to_string(b_max));
+  byte b_zero := to_byte(0);
+  byte b_max := to_byte(255);
+  a.AssertEquals("Boundary value 0", "0", to_string(b_zero));
+  a.AssertEquals("Boundary value 255", "255", to_string(b_max));
 
-  dim b_almost_max: byte := to_byte(250);
-  dim b_add_result: byte := to_byte(to_int(b_almost_max) + 10);
-  AssertEQ("Byte wrap around (260 wraps to 4)", 4, b_add_result);
+  byte b_almost_max := to_byte(250);
+  byte b_add_result := to_byte(to_int(b_almost_max) + 10);
+  a.AssertEQ("Byte wrap around (260 wraps to 4)", 4, b_add_result);
 
 }

@@ -1,0 +1,83 @@
+module Test;
+
+int TRUE := 1;
+int FALSE := 0;
+
+sub printPass(desc: string) {
+    printf("PASS: ");
+    printf(desc);
+    printf("\n");
+}
+
+sub printFail(desc: string, expected: string, actual: string) {
+    printf("FAIL: ");
+    printf(desc);
+    printf(" (expected:");
+    printf(expected);
+    printf(" actual:");
+    printf(actual);
+    printf(")\n");
+}
+
+sub printResult(res: int, desc: string, expected: string, actual: string): int {
+  if (res = 1) {
+    printPass(desc);
+  } else {
+    printFail(desc, expected, actual);
+  }
+  return res;
+}
+
+sub printIntResult(res: int, desc: string, expected: int, actual: int): int {
+  return printResult(res, desc, to_string(expected), to_string(actual));
+}
+
+sub Test.assertFalse(desc: string, value: int): int {
+  if (value = 1) {
+    printFail(desc, "False(0)", to_string(value));
+    return 0;
+  } else {
+    printPass(desc);
+    return 1;
+  }
+}
+
+sub Test.assertTrue(desc: string, value: int): int {
+  if (value = 0) {
+    printFail(desc, "TRUE(1)", to_string(value));
+    return 0;
+  } else {
+    printPass(desc);
+    return 1;
+  }
+}
+
+sub Test.assertEQ(desc: string, expected: int, actual: int): int {
+  return printIntResult((expected = actual), desc, expected, actual);
+}
+
+sub Test.assertNEQ(desc: string, expected: int, actual: int): int {
+  return printIntResult((expected != actual), desc, expected, actual);
+}
+
+sub Test.assertEquals(desc: string, expected: string, actual: string): int {
+  return printResult(str_eq(expected, actual)!=0, desc, expected, actual);
+}
+
+sub Test.assertNotEquals(desc: string, expected: string, actual: string): int {
+  return printResult(str_eq(expected, actual)=0, desc, expected, actual);
+}
+
+sub testRkrUnit() {
+  Test a;
+  a.assertEQ("values are equal", 2, 2);
+  a.assertNEQ("values are not equal", 1, 2);
+  a.assertTrue("true is true", 1);
+  a.assertFalse("false is false", 0);
+  a.assertEquals("strings match", "some-string", "some-string");
+  a.assertNotEquals("strings differ", "some-string", "some-other-string");
+}
+
+sub main() {
+  testRkrUnit();
+}

@@ -1,32 +1,35 @@
 #include "token.h"
-#include "alloc.h"
+#include "lib/alloc.h"
 #include "stringview.h"
 #include <assert.h>
 #include <stdio.h>
 
 static string_view lexemes[TOK_COUNT] = {
     SV_Static(""),        SV_Static(""),       SV_Static(""),
-    SV_Static(""),        SV_Static("let"),    SV_Static("dim"),    SV_Static(":"),
-    SV_Static(","),       SV_Static("->"),     SV_Static("=>"),
-    SV_Static("{"),       SV_Static("}"),      SV_Static("("),
-    SV_Static(")"),       SV_Static("if"),     SV_Static("then"),
-    SV_Static("else"),    SV_Static("record"),  SV_Static("pro"),
-    SV_Static("match"),   SV_Static("return"), SV_Static("*"),
-    SV_Static("-"),       SV_Static("+"),      SV_Static("/"),
-    SV_Static("%"),       SV_Static("||"),     SV_Static("&&"),
-    SV_Static("|"),       SV_Static("^"),      SV_Static("&"),
-    SV_Static("<"),       SV_Static("<="),     SV_Static(">"),
-    SV_Static(">="),      SV_Static("="),      SV_Static("!="),
-    SV_Static(":="),      SV_Static("_"),      SV_Static("."),
-    SV_Static("::"),
+    SV_Static(""),        SV_Static(":"),      SV_Static(","),
+    SV_Static("->"),      SV_Static("=>"),     SV_Static("{"),
+    SV_Static("}"),       SV_Static("("),      SV_Static(")"),
+    SV_Static("if"),      SV_Static("then"),   SV_Static("else"),
+    SV_Static("record"),  SV_Static("pro"),    SV_Static("match"),
+    SV_Static("return"),  SV_Static("*"),      SV_Static("-"),
+    SV_Static("+"),       SV_Static("/"),      SV_Static("%"),
+    SV_Static("||"),      SV_Static("&&"),     SV_Static("|"),
+    SV_Static("^"),       SV_Static("&"),      SV_Static("<"),
+    SV_Static("<="),      SV_Static(">"),      SV_Static(">="),
+    SV_Static("="),       SV_Static("!="),     SV_Static(":="),
+    SV_Static("_"),       SV_Static("."),      SV_Static("::"),
     SV_Static(";"),       SV_Static("loop"),   SV_Static("while"),
     SV_Static("do"),      SV_Static("iter"),   SV_Static("include"),
-    SV_Static("enum"),    SV_Static("[]"),     SV_Static("["),      SV_Static("]"),      SV_Static("sub"),    SV_Static("for"),    SV_Static("to"),     SV_Static("in"),     SV_Static("@embed"), SV_Static("@end"),   SV_Static("<embed body>"), SV_Static("<EOF>") };
+    SV_Static("enum"),    SV_Static("[]"),     SV_Static("["),
+    SV_Static("]"),       SV_Static("sub"),    SV_Static("for"),
+    SV_Static("to"),      SV_Static("in"),     SV_Static("@embed"),
+    SV_Static("@end"),    SV_Static("<embed body>"), SV_Static("module"),
+    SV_Static("<EOF>") };
 
 static token_type_t keywords[] = {
     TOK_MATCH, TOK_PRO,     TOK_REC,     TOK_WILDCARD, TOK_RETURN,
-    TOK_LET,   TOK_DIM,     TOK_IF,      TOK_THEN,    TOK_ELSE,     TOK_LOOP,   TOK_WHILE,
-    TOK_DO,    TOK_ITER,    TOK_INCLUDE, TOK_ENUM,     TOK_ARR_DECL, TOK_SUB, TOK_FOR, TOK_TO, TOK_IN};
+    TOK_IF,    TOK_THEN,    TOK_ELSE,    TOK_LOOP,    TOK_WHILE,
+    TOK_DO,    TOK_ITER,    TOK_INCLUDE, TOK_ENUM,     TOK_ARR_DECL, TOK_SUB, TOK_FOR, TOK_TO, TOK_IN, TOK_MODULE};
 
 static token_type_t operators[] = {
     TOK_STAR,   TOK_MINUS,   TOK_PLUS,   TOK_DIV,     TOK_MODULO, TOK_LOG_AND,

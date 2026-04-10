@@ -1,8 +1,9 @@
-include "test/Assert.rkr"
+include "Assert.rkr"
 
 sub main(): void {
-  let x: string := "hello";
-  AssertEquals("test_simple", "hello", x);
+  Assert a;
+  string x := "hello";
+  a.AssertEquals("test_simple", "hello", x);
 
   
 }

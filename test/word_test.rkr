@@ -1,26 +1,27 @@
-include "test/Assert.rkr"
+include "Assert.rkr"
 
 sub main() {
-  dim w: word := 1000;
-  AssertEQ("basic word", 1000, w);
+  Assert a;
+  word w := 1000;
+  a.AssertEQ("basic word", 1000, w);
 
-  dim n: int := to_int(w);
-  AssertEQ("to int", 1000, n);
+  int n := to_int(w);
+  a.AssertEQ("to int", 1000, n);
 
-  dim w2: word := to_word(60000);
-  AssertEQ("to word", 60000, w2);
+  word w2 := to_word(60000);
+  a.AssertEQ("to word", 60000, w2);
 
   // Silent truncation: 70000 mod 65536 = 4464
-  dim w3: word := to_word(70000);
-  AssertEQ("max value wrap around", 4464, w3);
+  word w3 := to_word(70000);
+  a.AssertEQ("max value wrap around", 4464, w3);
 
-  dim sum: int := to_int(w) + to_int(w2);
-  AssertEQ("arithmetic via int promotion", 61000, sum);
+  int sum := to_int(w) + to_int(w2);
+  a.AssertEQ("arithmetic via int promotion", 61000, sum);
 
-  dim arr: word[] := [];
+  word[] arr := [];
   append(arr, to_word(100));
   append(arr, to_word(200));
   append(arr, to_word(300));
-  AssertEQ("word arrays len", 3, length(arr));
-  AssertEQ("word arrays val", 200, get(arr,1));
+  a.AssertEQ("word arrays len", 3, length(arr));
+  a.AssertEQ("word arrays val", 200, get(arr,1));
 }

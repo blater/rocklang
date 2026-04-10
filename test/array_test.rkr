@@ -1,30 +1,31 @@
-include "test/Assert.rkr"
+include "Assert.rkr"
+Assert as;
 
 sub dynamicIntTest(){
-    dim arr : int [];
-    loop i := 0 to 10 {
-      append(arr, i);
-    }
-    loop i := 0 to length(arr) -1 {
-      dim n: int := get(arr, i);
-      AssertEQ("dynamic int test", i, n);
-    }
+  int [] arr;
+  for i := 0 to 10 {
+    append(arr, i);
+  }
+  for i := 0 to length(arr) -1 {
+    int n := get(arr, i);
+    as.AssertEQ("dynamic int test", i, n);
+  }
 }
 
 record array_wrapper {
-  Items: int [],
-  Names: string [],
+  int[] Items,      // new syntax
+  Names : string[], // old deprecated syntax
 }
 
-
 sub wrapFn(): array_wrapper {
-  dim a: array_wrapper => {
-    Items => NULL,
-    Names => NULL,
+  array_wrapper a := {
+    Items := NULL,
+    Names := NULL,
   };
-  dim items: int [];
+  int [] items;
   a.Items := items;
-  dim names: string [];
+
+  string [] names;
   a.Names := names;
   append(a.Items, 1);
   append(names, "First");
@@ -39,36 +40,34 @@ sub wrapFn(): array_wrapper {
 sub main() {
   dynamicIntTest();
 
-  dim pople: int [2];
+  int[2] pople;
   pople[0] := 99;
-  AssertEQ("int fixed size array assignment", 99, get(pople,0));
+  as.AssertEQ("int fixed size array assignment", 99, get(pople,0));
 
-  dim fixed: string[3];
+  string[3] fixed;
   fixed[0] := "hello";
   fixed[1] := "world";
-  AssertEquals("string fixed size array assignment", "world", get(fixed,1));
+  as.AssertEquals("string fixed size array assignment", "world", get(fixed,1));
 
-  dim strings: string[];
+  string[] strings;
   append(strings, "A");
   append(strings, "B B");
   append(strings, "C C C");
+  as.AssertEquals("string dynamic assign A", "A", get(strings,0));
+  as.AssertEquals("string dynamic assign B", "B B", get(strings,1));
+  as.AssertEquals("string dynamic assign C", "C C C", get(strings,2));
 
-  AssertEquals("string dynamic assign A", "A", get(strings,0));
-  AssertEquals("string dynamic assign B", "B B", get(strings,1));
-  AssertEquals("string dynamic assign C", "C C C", get(strings,2));
-
-  dim a: array_wrapper := wrapFn();
+  array_wrapper a := wrapFn();
   // For the moment, you must bind them by name to use them
-  dim names: string [] := a.Names;
+  string [] names := a.Names;
+  as.AssertEquals("wrapped assign 1", "First", get(names,0));
+  as.AssertEquals("wrapped assign 2", "Second", get(names,1));
+  as.AssertEquals("wrapped assign 3", "Third", get(names,2));
 
-  AssertEquals("wrapped assign 1", "First", get(names,0));
-  AssertEquals("wrapped assign 2", "Second", get(names,1));
-  AssertEquals("wrapped assign 3", "Third", get(names,2));
-
-  dim new_arr: array_wrapper := {
-    Items => [],
-    Names => []
+  array_wrapper new_arr := {
+    Items := [],
+    Names := []
   };
-  AssertEQ("empty array size", 0, length(new_arr.Items));
+  as.AssertEQ("empty array size", 0, length(new_arr.Items));
 }
 

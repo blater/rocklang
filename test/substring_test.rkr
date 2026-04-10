@@ -1,18 +1,19 @@
-include "test/Assert.rkr"
+include "Assert.rkr"
 
 sub main() {
-  dim s: string := "Hello World";
+  Assert a;
+  string s := "Hello World";
 
-  AssertEquals("index to end A",   "Hello World", substring(s, 1));
-  AssertEquals("index to end B",   "World",       substring(s, 7));
-  AssertEquals("index to end C",   " World",      substring(s, 6));
+  a.AssertEquals("index to end A",   "Hello World", substring(s, 1));
+  a.AssertEquals("index to end B",   "World",       substring(s, 7));
+  a.AssertEquals("index to end C",   " World",      substring(s, 6));
 
-  AssertEquals("inclusive range A", "Hello",   substring(s, 1, 5)); 
-  AssertEquals("inclusive range B", "World",   substring(s, 7, 11));
-  AssertEquals("inclusive range C", " ",       substring(s, 6, 6));
+  a.AssertEquals("inclusive range A", "Hello",   substring(s, 1, 5)); 
+  a.AssertEquals("inclusive range B", "World",   substring(s, 7, 11));
+  a.AssertEquals("inclusive range C", " ",       substring(s, 6, 6));
 
-  AssertEquals("indexed from end (negative index) A", "World", substring(s, -5));
-  AssertEquals("indexed from end (negative index) B", "ld", substring(s, -2));  
-  AssertEquals("indexed from end (negative index) C", "World", substring(s, -5, -1));
+  a.AssertEquals("indexed from end (negative index) A", "World", substring(s, -5));
+  a.AssertEquals("indexed from end (negative index) B", "ld", substring(s, -2));  
+  a.AssertEquals("indexed from end (negative index) C", "World", substring(s, -5, -1));
 
 }
