@@ -91,8 +91,6 @@ Colour c := Red;
 if c = Blue then print("blue");
 ```
 
-**Known limitation:** `enum` generates a syntax that is incompatible with SDCC on the ZXN target (`enum_test.rkr` fails on ZXN). All enum tests pass on the host target.
-
 ## module
 
 A `module` declares a named singleton struct type. Instance fields are declared as ordinary type-first variables immediately following the `module Name;` declaration within the same file.

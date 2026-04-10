@@ -87,7 +87,7 @@ At the top of every generated C file, `transpile()` emits runtime includes:
 #include "typedefs.h"
 ```
 
-The compiler driver (`rock`) passes `-I "$ROCK_ROOT/src/lib"` for both host and ZXN builds so these includes resolve against the runtime library headers. The generator no longer embeds absolute repository paths into emitted C.
+The compiler driver (`rock`) passes `-I "$ROCK_ROOT/src/lib"` for both host and ZXN builds so these includes resolve against the runtime library directory.
 
 ## Type Mapping
 

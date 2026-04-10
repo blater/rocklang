@@ -149,3 +149,12 @@ Issues fixed: removed stale claims that host builds emit absolute runtime includ
 Remaining issues: none found for the targeted misconception scan.
 TODOs filed: none.
 
+
+## [2026-04-10] lint | neutralise wiki review-tone and fix host target toolchain docs
+
+Changed files: 10
+
+Issues fixed: corrected the host target toolchain table so rock and rockc roles match the code; removed defensive wording about copied headers and old absolute-include behaviour; removed review-oriented phrasing such as "pre-existing, not a regression"; simplified syntax and overview pages to state current behaviour directly.
+Remaining issues: none found in the targeted neutral-tone sweep across the touched pages.
+TODOs filed: none.
+

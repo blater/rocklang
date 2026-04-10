@@ -15,9 +15,9 @@ The **host target** compiles Rock programs to native binaries on Linux or macOS 
 
 | Tool | Purpose |
 |------|---------|
-| `rock` | Rock → C transpiler |
+| `rock` | Driver script: runs `rockc`, then invokes `gcc` |
 | `gcc` | C → native binary |
-| `rockc` | Shell script driving both steps |
+| `rockc` | Rock → C transpiler binary |
 
 ## Invocation
 
@@ -44,7 +44,7 @@ The generator emits **relative runtime header names**:
 #include "typedefs.h"
 ```
 
-The `rock` driver invokes `gcc` with `-I "$ROCK_ROOT/src/lib"` so those headers resolve against the runtime library directory. Host builds no longer depend on absolute repository paths embedded into generated C.
+The `rock` driver invokes `gcc` with `-I "$ROCK_ROOT/src/lib"` so those headers resolve against the runtime library directory.
 
 ## Compilation Command
 
@@ -77,7 +77,7 @@ All Rock language features are supported on the host target:
 - Records, product types, enums, modules
 - Inline C embed blocks (`@embed c … @end c`)
 - Include system
-- peek / poke (memory access — useful for testing but not meaningful on host)
+- peek / poke (supported on host as direct memory access helpers)
 
 ## Debugging
 

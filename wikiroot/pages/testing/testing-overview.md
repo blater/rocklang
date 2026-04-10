@@ -75,7 +75,7 @@ Tests nested below `test/` are not auto-discovered by `run_tests.sh`; run them e
 ## Test Status (as of 2026-04-10)
 
 - **Host (gcc):** 38/38 auto-discovered tests passing
-- **ZXN:** Most tests pass; `enum_test.rkr` fails due to SDCC enum syntax incompatibility (pre-existing, not a regression)
+- **ZXN:** Most tests pass; `enum_test.rkr` currently fails due to SDCC enum syntax incompatibility
 
 ## Adding a New Test
 

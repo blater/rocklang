@@ -60,7 +60,7 @@ Use `@embed asm` for ZXN-specific low-level code. Assembly is passed through to 
 @end asm
 ```
 
-**Note:** Inline assembly is only meaningful when targeting ZXN. On the host target the C compiler will reject it.
+**Note:** Inline assembly targets ZXN. Host builds reject it.
 
 ## Lexer Handling
 

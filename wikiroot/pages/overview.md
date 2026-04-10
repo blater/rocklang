@@ -64,8 +64,8 @@ rock <input.rkr> [output.exe] [--target=gcc|--target=zxn] [--debug]
 
 ### ZXN (ZX Spectrum Next / Z80)
 - Generates C output compiled by Z88DK's SDCC frontend (`zcc +zxn -clib=sdcc_iy`)
-- Includes use relative paths (SDCC limitation)
-- The `rock` driver passes `-I"$ROCK_ROOT/src/lib"` so runtime headers resolve without copying
+- Generated C includes runtime headers by relative name
+- The `rock` driver passes `-I"$ROCK_ROOT/src/lib"`
 - Statement splitting: complex expressions written to a `pre_f` buffer then emitted before the statement that uses them
 - `zpragma_zxn.inc` configures memory bank layout
 
@@ -101,6 +101,6 @@ Included files must begin with `module Name;`. The parser splices the included f
 - **Persistent allocator** — simplifies lifetime management at the cost of peak memory usage.
 - **Flat name table** with scope tags — simple to implement, adequate for the language's scope depth.
 - **Type-specific array wrappers** synthesised by generator — avoids generics in C whilst maintaining type safety.
-- **Statement splitting (pre_f)** for ZXN — works around SDCC limitations without forking the generator.
+- **Statement splitting (pre_f)** for ZXN — emits setup statements before the statement that uses them.
 
 See [[domain-model]] for bounded context map and [[ubiquitous-language]] for term definitions.

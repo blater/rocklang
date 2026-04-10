@@ -1,7 +1,7 @@
 ---
 title: Compilation Pipeline
 category: concepts
-tags: [pipeline, main, argv, lib-path, include-resolution, arena]
+tags: [pipeline, main, argv, include-resolution, arena]
 sources: []
 updated: 2026-04-10
 status: current

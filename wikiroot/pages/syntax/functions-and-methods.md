@@ -100,7 +100,7 @@ Methods are emitted as free C functions with mangled names:
 | `sub Foo.bar(x: int)` | `void Foo_bar(Foo this, int x)` |
 | `sub Foo[].baz()` | `void Foo_array_baz(Foo_array this)` |
 
-The `this` parameter is always the first C parameter, matching standard C OOP patterns.
+The `this` parameter is the first generated C parameter.
 
 ## Scope and Visibility
 

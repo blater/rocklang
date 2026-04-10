@@ -36,13 +36,13 @@ Z88DK's `zcc` frontend can use either `sccz80` or `SDCC` as the backend. Rock us
 
 ## Include Strategy
 
-The generator emits **relative header names**:
+The generator emits **relative runtime header names**:
 ```c
 #include "alloc.h"
 #include "fundefs_internal.h"
 ```
 
-This keeps the generated C portable across checkout locations and also avoids SDCC issues with absolute generated include paths. The `rock` driver does not copy headers into the working directory; it invokes `zcc` with `-I"$ROCK_ROOT/src/lib"` so those includes resolve against the runtime library headers.
+The `rock` driver invokes `zcc` with `-I"$ROCK_ROOT/src/lib"` so those headers resolve against the runtime library directory.
 
 ## Compilation Command
 
@@ -65,7 +65,7 @@ The `zpragma_zxn.inc` file configures memory bank mapping for the ZX Spectrum Ne
 - Heap placement
 - Bank configuration
 
-The pragma file is passed to `zcc` via an absolute project-root path from the `rock` driver.
+The `rock` driver passes the pragma file path directly to `zcc`.
 
 ## Statement Splitting (pre_f)
 
@@ -125,7 +125,7 @@ The Next hardware is documented in a dedicated hierarchy under `pages/targets/zx
 
 | Feature | Status |
 |---------|--------|
-| `enum_test.rkr` | Fails on ZXN — SDCC enum syntax incompatibility (pre-existing, not a regression) |
+| `enum_test.rkr` | Currently fails on ZXN due to SDCC enum syntax incompatibility |
 | Inline assembly | Supported but requires Z88DK's `__asm` / `__endasm` syntax |
 | Dynamic memory | Arena allocator works; SDCC heap is limited on Z80 |
 
