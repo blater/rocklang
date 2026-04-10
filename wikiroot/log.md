@@ -131,3 +131,12 @@ Issues fixed: corrected parser_t field descriptions, updated include resolution 
 Remaining issues: none in the touched page from this pass.
 TODOs filed: none
 
+
+## [2026-04-10] lint | refresh syntax docs after declaration and array-field changes
+
+Changed files: 15
+
+Issues fixed: removed stale let/dim syntax from language pages, updated parser docs for type-first declarations and generic postfix chains, documented record-field arrays and expression receivers, corrected module examples and ZXN header-resolution notes, and refreshed testing docs to match the current harness and top-level suite.
+Remaining issues: one intentional parser note still mentions removed let/dim syntax only to state that they are no longer accepted; broader wiki lint coverage outside syntax/build topics remains for a later pass.
+TODOs filed: none
+

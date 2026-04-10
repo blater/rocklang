@@ -3,7 +3,7 @@ title: Syntax Index
 category: syntax
 tags: [syntax, index, keywords]
 sources: []
-updated: 2026-04-09
+updated: 2026-04-10
 status: current
 ---
 
@@ -15,7 +15,7 @@ Quick reference index for Rock language syntax. Each topic has a dedicated page.
 → [[syntax/types]] — scalar types, arrays, string, char, boolean, type-first declarations
 
 ## Variables and Binding
-→ [[syntax/types]] — `let`, `dim`, type-first style, default values
+→ [[syntax/types]] — type-first declarations, default values
 
 ## Functions and Methods
 → [[syntax/functions-and-methods]] — `sub`, parameter lists, return types, method syntax
@@ -48,8 +48,6 @@ Quick reference index for Rock language syntax. Each topic has a dedicated page.
 | Keyword | Purpose |
 |---------|---------|
 | `sub` | Function / method definition |
-| `let` | Immutable variable binding |
-| `dim` | Mutable variable declaration |
 | `if` / `then` / `else` | Conditional |
 | `while` / `do` | While loop |
 | `for` / `to` / `in` | Counter loop / iterator loop |

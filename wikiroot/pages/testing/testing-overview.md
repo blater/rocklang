@@ -3,7 +3,7 @@ title: Testing Overview
 category: testing
 tags: [testing, test-suite, assertions, rkr]
 sources: []
-updated: 2026-04-09
+updated: 2026-04-10
 status: current
 ---
 
@@ -13,18 +13,18 @@ Rock uses a file-based test suite. Each test is a `.rkr` Rock source file in `te
 
 ## Test Harness
 
-`test/Assert.rkr` provides the assertion helper used by all tests:
+`test/Assert.rkr` provides the assertion helper used by most tests:
 
 ```rock
-include "test/Assert.rkr"
+include "Assert.rkr"
 ```
 
 `Assert.rkr` defines:
-- `assertTrue(cond: boolean, msg: string)` — print pass/fail, increment counters
-- `assertEqual(a, b, msg: string)` — various overloads for int, string, char, byte, word, dword
-- `printResults()` — print final pass/fail counts; exits non-zero if any assertion failed
+- `AssertTrue(desc, value)` — print pass/fail for a truthy condition
+- `AssertEQ(desc, expected, actual)` — integer equality assertion
+- `AssertEquals(desc, expected, actual)` — string equality assertion
 
-Tests include `Assert.rkr`, call assertion functions in named test sub-functions, call `printResults()` in `main`, and exit with failure if any assertion failed.
+Tests print `PASS:` / `FAIL:` lines directly, and `run_tests.sh` parses those markers from program output.
 
 ## Running Tests
 
@@ -35,7 +35,7 @@ Tests include `Assert.rkr`, call assertion functions in named test sub-functions
 
 The script uses `./rock` to compile each test, runs the resulting binary, and reports PASS / FAIL per test. ZXN tests must be compiled and run manually — `run_tests.sh` has no `--target` option.
 
-## Test Suite (27 tests)
+## Test Suite (38 auto-discovered tests)
 
 | Test file | Features covered |
 |-----------|-----------------|
@@ -43,7 +43,9 @@ The script uses `./rock` to compile each test, runs the resulting binary, and re
 | `array_test.rkr` | Dynamic arrays, `append`, `get`, `length`, fixed-size arrays |
 | `array_insert_test.rkr` | `insert()` at beginning, middle, end; multiple sequential inserts |
 | `assign_test.rkr` | Variable assignment, reassignment |
-| `assignment_default_test.rkr` | Default initialisation for all types (`dim x: int` → `0`, etc.) |
+| `assignment_default_test.rkr` | Default initialisation for all types (`int x;` → `0`, etc.) |
+| `array_field_expr_receiver_test.rkr` | Field access on postfix expression receivers such as `make_wrapper().Names` |
+| `array_field_direct_index_test.rkr` | Direct indexing and assignment through record array fields |
 | `byte_test.rkr` | `byte` type arithmetic and casting |
 | `byte_advanced_test.rkr` | Advanced byte operations, overflow |
 | `word_test.rkr` | `word` type (uint16) |
@@ -68,32 +70,30 @@ The script uses `./rock` to compile each test, runs the resulting binary, and re
 | `embed_inline_test.rkr` | Inline embed usage |
 | `get_args_test.rkr` | `get_args()` — command-line argument access |
 
-## Test Status (as of 2026-04-09)
+Tests nested below `test/` are not auto-discovered by `run_tests.sh`; run them explicitly by path when needed. For example, `test/arrays/array_field_test.rkr` is a focused exploratory regression outside the default top-level sweep.
 
-- **Host (gcc):** 27/27 passing
+## Test Status (as of 2026-04-10)
+
+- **Host (gcc):** 38/38 auto-discovered tests passing
 - **ZXN:** Most tests pass; `enum_test.rkr` fails due to SDCC enum syntax incompatibility (pre-existing, not a regression)
 
 ## Adding a New Test
 
 1. Create `test/my_test.rkr`
-2. `include "test/Assert.rkr"`
-3. Write test sub-functions calling `assert*` helpers
-4. Call test functions + `printResults()` from `main`
-5. Add to `run_tests.sh` test list
+2. `include "Assert.rkr"` for top-level tests under `test/`
+3. Write test code that prints `PASS:` / `FAIL:` via the assertion helpers
+4. Run it with `./run_tests.sh test/my_test.rkr`
+5. Put the file directly under `test/` if you want auto-discovery
 
 ## Assert.rkr Pattern
 
 ```rock
-include "test/Assert.rkr"
-
-sub testAddition(): void {
-  let result: int := 1 + 2;
-  assertEqual(result, 3, "1 + 2 should be 3");
-}
+include "Assert.rkr"
 
 sub main(): void {
-  testAddition();
-  printResults();
+  Assert a;
+  int result := 1 + 2;
+  a.AssertEQ("1 + 2 should be 3", 3, result);
 }
 ```
 

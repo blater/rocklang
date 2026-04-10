@@ -3,7 +3,7 @@ title: Generator Overview
 category: generator
 tags: [generator, code-generation, transpile, c-output, pre_f, string-temporaries, array-wrappers]
 sources: []
-updated: 2026-04-09
+updated: 2026-04-10
 status: current
 ---
 
@@ -124,7 +124,7 @@ void T_set_elem(__internal_dynamic_array_t *arr, int idx, T elem) { ... }
 void T_insert(__internal_dynamic_array_t *arr, int idx, T elem) { ... }
 ```
 
-Element type is inferred from the array expression via `get_array_element_type()` and `infer_expr_type()`.
+Element type is inferred from the array expression via `get_array_element_type()` and `infer_expr_type()`. This includes field-derived array expressions such as `a.Items`, nested paths such as `h.Data.Names`, and postfix receivers such as `make_wrapper().Names`.
 
 ## Method Call Mangling
 
@@ -156,7 +156,7 @@ The generator recognises these names in `generate_funcall()` and routes them to 
 
 ## Module Initialisation
 
-When a module instance variable is declared (e.g. `dim state: GameState;`), the generator defers emitting the `GameState_new()` initialisation call until the synthesised `main()` function, ensuring all global state is initialised before program code runs.
+When a module instance variable is declared (e.g. `GameState state;`), the generator defers emitting the `GameState_new()` initialisation call until the synthesised `main()` function, ensuring all global state is initialised before program code runs.
 
 ## ZXN-Specific Behaviour
 

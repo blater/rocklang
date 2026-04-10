@@ -94,15 +94,15 @@ The compiler phase that walks the AST and emits C source. Implemented in `genera
 ---
 
 ### Host Target
-Compilation target for standard POSIX/Linux/macOS systems. C output compiled with `gcc`. Includes use absolute paths.
+Compilation target. This could be a standard POSIX/Linux/macOS systems, or small system or retro system. Modern systems use C output compiled with `gcc`. The zx next target uses z88dk as its C compiler.
 
 **Domain:** Targets  
-**See also:** [[targets/host-gcc]], [[overview]]
+**See also:** [[targets/host-gcc]], [[targets/zxn-z80.md]], [[overview]]
 
 ---
 
 ### Include
-A `include "path/to/file.rkr"` directive. The included file's tokens are spliced into the parent token stream at parse time. Included files must begin with `module Name;`.
+A `include "path/to/file.rkr"` directive. The included file's tokens are spliced into the parent token stream at parse time. Included files must begin with `module Name;`.  File paths are relative to the including file.
 
 **Domain:** Parser  
 **See also:** [[parser/parser-overview]]

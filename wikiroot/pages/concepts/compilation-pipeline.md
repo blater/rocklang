@@ -3,7 +3,7 @@ title: Compilation Pipeline
 category: concepts
 tags: [pipeline, main, argv, lib-path, include-resolution, arena]
 sources: []
-updated: 2026-04-09
+updated: 2026-04-10
 status: current
 ---
 
@@ -57,7 +57,7 @@ ast_t program = parse_program(&p);
 ```
 Consumes tokens, resolves includes (recursively lexing + splicing), builds the AST.
 
-`project_root` is the parent directory of the input file. Include paths resolve relative to this.
+Included file paths resolve relative to the including file's directory.
 
 ### 6. Code Generation
 ```c
@@ -78,12 +78,13 @@ Frees the entire arena. All strings, AST nodes, and tables are freed in one call
 Include resolution happens inside the parser during step 5:
 
 ```
-parse_include():
-  resolve "path/to/file.rkr" relative to project_root
+parse_program():
+  resolve "path/to/file.rkr" relative to the including file's directory
   check circular-include set (error if already included)
   new_lexer(resolved_path) → lex_program() → token_array_t
-  splice new tokens into parent token array at current cursor
-  continue parsing from splice point
+  require included stream to begin with `module Name;`
+  splice new tokens into the parent token array at the current cursor
+  continue parsing from the splice point
 ```
 
 Included files are lexed in their entirety before being spliced. The parser sees a seamless flat token stream.

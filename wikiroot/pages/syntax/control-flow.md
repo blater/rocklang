@@ -3,7 +3,7 @@ title: Control Flow
 category: syntax
 tags: [control-flow, if, while, for, match, loop, iter]
 sources: []
-updated: 2026-04-09
+updated: 2026-04-10
 status: current
 ---
 
@@ -47,7 +47,7 @@ while condition do statement
 `do` is optional syntactic sugar.
 
 ```rock
-dim i: int := 0;
+int i := 0;
 while i < 10 do {
   print(to_string(i));
   i := i + 1;
@@ -80,7 +80,7 @@ iter x := arr statement    -- alternate syntax, same behaviour
 Iterates over all elements of array `arr`. `x` takes the value of each element in turn.
 
 ```rock
-dim nums: int[] := [];
+int[] nums := [];
 append(nums, 10);
 append(nums, 20);
 append(nums, 30);
@@ -154,8 +154,9 @@ Assignment is a statement, not an expression. Cannot be nested inside another ex
 
 Low-level memory access, primarily useful on ZXN:
 ```rock
-let val: byte := peek(0x5c00);   -- read byte from address
-poke(0x5c00, 42);                -- write byte to address
+word addr := to_word(23552);
+byte val := peek(addr);   -- read byte from address
+poke(addr, to_byte(42));  -- write byte to address
 ```
 
 See [[targets/zxn-z80]] for ZXN context and [[syntax/syntax-index]] for full built-in function reference.

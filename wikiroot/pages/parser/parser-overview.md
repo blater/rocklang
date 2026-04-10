@@ -30,7 +30,7 @@ typedef struct parser_t {
 program       — root; contains array of top-level nodes
 fundef        — function/method definition
 funcall       — function call
-vardef        — variable declaration (let/dim/type-first style)
+vardef        — variable declaration (type-first style)
 assign        — assignment statement
 ret           — return statement
 op            — binary operator expression
@@ -52,23 +52,21 @@ type          — type reference node
 arr_index     — array index expression arr[i]
 embed         — @embed … @end block
 method_call   — receiver.method(args)
-sub           — sub keyword (used in parser, merged into fundef)
+sub           — field access / postfix member access chain
 ```
 
 ## Key Functions
 
 | Function | Responsibility |
 |----------|---------------|
-| `parse_program(parser_t*)` | Top-level entry; loops calling `parse_top_level_item()` until EOF |
-| `parse_top_level_item()` | Dispatch: `sub`, type defs, `include`, `embed` |
+| `parse_program(parser_t*)` | Top-level entry; handles `include` splicing and loops calling `parse_statement()` until EOF |
 | `parse_statement()` | Dispatch for in-body statements: `if`, `while`, `for`, `return`, `match`, expressions |
 | `parse_expression(min_prec)` | Precedence-climbing binary expression parser |
 | `parse_primary()` | Atoms: literals, identifiers, parenthesised expressions, unary minus |
 | `parse_funcall()` | Parse `name(arg, arg, …)` |
-| `parse_vardef()` | Handle `let`/`dim`/type-first variable declarations |
+| `parse_new_style_var_def()` | Handle `type name [:= expr];` declarations |
 | `parse_type()` | Parse a type annotation: scalar, `Type[]`, `Type[N]` |
 | `parse_fundef()` | Parse `sub name(params): rettype { body }` and method variants |
-| `parse_include()` | Resolve, lex and splice the included file's tokens |
 
 ## Grammar Summary
 
@@ -87,8 +85,7 @@ embed         ::= TOK_EMBED   (captured by lexer, body verbatim)
 ```
 statement     ::= vardef | assign | ifstmt | while_loop | loop | iter_loop
                 | match | return | funcall ';' | method_call ';' | embed
-vardef        ::= ('let' | 'dim') name ':' type [(':=' | '=>') expr] ';'
-              |   type name [':=' expr] ';'            -- type-first style
+vardef        ::= type name [':=' expr] ';'
 assign        ::= name ':=' expr ';'
                 | arr_index ':=' expr ';'
                 | receiver '.' field ':=' expr ';'
@@ -107,9 +104,8 @@ compound      ::= '{' statement* '}'
 expr          ::= unary | binary
 unary         ::= '-' primary
 binary        ::= primary (op primary)* -- precedence-climbing
-primary       ::= literal | identifier | '(' expr ')' | funcall | arr_index | method_chain
-arr_index     ::= primary '[' expr ']'
-method_chain  ::= primary ('.' method_call)*
+atom          ::= literal | identifier | '(' expr ')' | funcall
+primary       ::= atom (('.' field_or_method) | ('::' field) | ('[' expr ']'))*
 ```
 
 ## Precedence Climbing
@@ -121,22 +117,17 @@ method_chain  ::= primary ('.' method_call)*
 
 Operator precedences are provided by `get_precedence()` in the lexer. See [[lexer/lexer-overview]] for the table.
 
-## Variable Declaration Styles
+## Variable Declarations
 
-Rock supports two syntaxes for variable declarations:
+Rock uses C-like type-first declarations:
 
-**Classic style:**
-```rock
-let x: int := 10;    -- immutable binding
-dim s: string;       -- mutable, defaults to ""
-```
-
-**Type-first style (C-like):**
 ```rock
 int x := 10;
 string s;            -- defaults to ""
 int[] arr;           -- defaults to empty array
 ```
+
+Legacy `let` / `dim` declarations are no longer recognised by the parser.
 
 Default initialisation values when no expression is given:
 - `int`, `byte`, `word`, `dword` → `0`
@@ -148,7 +139,7 @@ Default initialisation values when no expression is given:
 ## Include Resolution
 
 ```
-parse_include():
+parse_program():
   1. Resolve the included path relative to the including file's directory
   2. Check circular include set — error if already included
   3. Lex the included file → new token_array_t
@@ -168,6 +159,16 @@ sub Type[].method(param: type): rettype { body }   -- array method
 Both forms create a `fundef` node with `is_method = 1` (or `is_array_method = 1`) and an implicit first parameter `this: Type` (or `this: Type[]`).
 
 Generated C name: `TypeName_methodName` or `TypeName_array_methodName`.
+
+## Postfix Chains
+
+Field access, method calls, and indexing now share one postfix parser path. That means the parser accepts chains such as:
+
+```rock
+make_wrapper().Names
+h.Data.Items[1]
+get(make_wrapper().Names, 0)
+```
 
 ## Known Limitations / TODOs
 

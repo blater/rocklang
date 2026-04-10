@@ -59,8 +59,8 @@ sub string.shout(): string {
   return concat(this, "!");
 }
 
-let s: string := "hello";
-let loud: string := s.shout();   -- "hello!"
+string s := "hello";
+string loud := s.shout();   -- "hello!"
 ```
 
 ### Array method (on a typed array)
@@ -72,7 +72,7 @@ sub TypeName[].methodName(param: type): returnType {
 
 ```rock
 sub int[].sum(): int {
-  dim total: int := 0;
+  int total := 0;
   for n in this {
     total := total + n;
   }
@@ -118,11 +118,11 @@ Direct recursion is supported. Forward declarations are not needed within a sing
 record Point { x: int, y: int }
 
 sub Point.translate(dx: int, dy: int): Point {
-  return record { x := this.x + dx, y := this.y + dy };
+  return { x := this.x + dx, y := this.y + dy };
 }
 
-dim p: Point := record { x := 1, y := 2 };
-dim q: Point := p.translate(3, 4);
+Point p := { x := 1, y := 2 };
+Point q := p.translate(3, 4);
 ```
 
 See [[syntax/types]] for type syntax, [[syntax/modules-and-records]] for record/module definitions, and [[syntax/arrays]] for array method patterns.

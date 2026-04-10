@@ -3,7 +3,7 @@ title: Arrays
 category: syntax
 tags: [arrays, dynamic-array, fixed-array, append, insert, get, set, pop, length]
 sources: []
-updated: 2026-04-09
+updated: 2026-04-10
 status: current
 ---
 
@@ -17,9 +17,9 @@ string[10] -- fixed-size array of 10 strings (capacity capped)
 ```
 
 ```rock
-dim nums: int[] := [];       -- empty dynamic array
-dim strs: string[5];         -- fixed-size, default-initialised
-int[] xs := [];              -- type-first style
+int[] nums := [];       -- empty dynamic array
+string[5] strs;         -- fixed-size, default-initialised
+int[] xs := [];
 ```
 
 ## Built-in Array Operations
@@ -31,7 +31,7 @@ append(arr, value)
 Add `value` to the end of `arr`. For dynamic arrays, capacity doubles if needed. For fixed-size arrays, halts if at capacity.
 
 ```rock
-dim nums: int[] := [];
+int[] nums := [];
 append(nums, 1);
 append(nums, 2);
 append(nums, 3);
@@ -94,6 +94,17 @@ int n := length(nums);
 ```rock
 arr[idx]         -- read element at idx (same as get)
 arr[idx] := val  -- set element at idx (same as set)
+```
+
+Array expressions can come from record fields or other postfix expressions, not just plain variables:
+
+```rock
+record Buffer { int[] Items }
+
+Buffer b := { Items := [] };
+append(b.Items, 10);
+int first := b.Items[0];
+int alsoFirst := get(b.Items, 0);
 ```
 
 ## Iterator Loop

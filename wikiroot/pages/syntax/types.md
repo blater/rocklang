@@ -1,9 +1,9 @@
 ---
 title: Types and Variable Declarations
 category: syntax
-tags: [types, variables, let, dim, declaration, default-values]
+tags: [types, variables, declaration, default-values]
 sources: []
-updated: 2026-04-09
+updated: 2026-04-10
 status: current
 ---
 
@@ -33,23 +33,16 @@ All arrays are represented as `__internal_dynamic_array_t` at runtime. Fixed-siz
 
 ## Variable Declarations
 
-Rock supports two syntaxes:
+Rock uses a single declaration syntax:
 
-### Classic style
 ```rock
-let x: int := 10;       -- immutable binding (value can't be reassigned)
-dim y: string := "hi";  -- mutable declaration
-dim z: int;             -- mutable, default value (0)
+int x := 10;
+string s;
+int[] arr;
+Point p := { x := 3, y := 4 };
 ```
 
-### Type-first style
-```rock
-int x := 10;            -- equivalent to dim x: int := 10
-string s;               -- mutable, defaults to ""
-int[] arr;              -- mutable, defaults to empty array
-```
-
-`let` and `dim` are functionally equivalent in the current implementation — the distinction is for readability/intent. `:=` and `=>` are both accepted as assignment operators in `let` bindings.
+The variable name follows the type. `:=` introduces an initial value; omitting it requests a type-appropriate default.
 
 ## Default Initialisation Values
 
@@ -69,11 +62,11 @@ When a variable is declared without an explicit initial value, it receives a typ
 Built-in conversion functions:
 
 ```rock
-let n: int   := to_int(some_byte);
-let b: byte  := to_byte(some_int);
-let w: word  := to_word(some_int);
-let d: dword := to_dword(some_int);
-let s: string := to_string(42);      -- "42"
+int n := to_int(some_byte);
+byte b := to_byte(some_int);
+word w := to_word(some_int);
+dword d := to_dword(some_int);
+string s := to_string(42);      -- "42"
 ```
 
 ## Literals

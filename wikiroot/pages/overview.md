@@ -3,7 +3,7 @@ title: Rock Transpiler — Architecture Overview
 category: overview
 tags: [architecture, transpiler, pipeline, host, zxn]
 sources: []
-updated: 2026-04-09
+updated: 2026-04-10
 status: current
 ---
 
@@ -65,7 +65,7 @@ rock <input.rkr> [output.exe] [--target=gcc|--target=zxn] [--debug]
 ### ZXN (ZX Spectrum Next / Z80)
 - Generates C output compiled by Z88DK's SDCC frontend (`zcc +zxn -clib=sdcc_iy`)
 - Includes use relative paths (SDCC limitation)
-- Headers copied to working directory before compilation
+- The `rock` driver passes `-I"$ROCK_ROOT/src/lib"` so runtime headers resolve without copying
 - Statement splitting: complex expressions written to a `pre_f` buffer then emitted before the statement that uses them
 - `zpragma_zxn.inc` configures memory bank layout
 

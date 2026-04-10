@@ -3,7 +3,7 @@ title: String Operations
 category: syntax
 tags: [string, concat, substring, to_string, char]
 sources: []
-updated: 2026-04-09
+updated: 2026-04-10
 status: current
 ---
 
@@ -21,8 +21,8 @@ Strings are null-terminated (for C interop) but length is also tracked. See [[co
 ## Literals
 
 ```rock
-let greeting: string := "Hello, World!";
-let empty: string := "";
+string greeting := "Hello, World!";
+string empty := "";
 ```
 
 String literals are initialised via `__rock_make_string()` at runtime. The generator emits setup code into the `pre_f` buffer.
@@ -36,8 +36,8 @@ concat(s1, s2)
 Concatenate two strings (or a string and a char). Returns a new string.
 
 ```rock
-let s: string := concat("Hello, ", "World!");
-let s2: string := concat("Score: ", to_string(42));
+string s := concat("Hello, ", "World!");
+string s2 := concat("Score: ", to_string(42));
 ```
 
 The generator infers whether the second argument is a `char` or `string` and calls `__concat_char` or `__concat_str` accordingly.
@@ -50,9 +50,9 @@ substring(s, from, length)   -- from index, given length
 ```
 
 ```rock
-let s: string := "Hello, World!";
-let world: string := substring(s, 7);       -- "World!"
-let hello: string := substring(s, 0, 5);   -- "Hello"
+string s := "Hello, World!";
+string world := substring(s, 8);      -- "World!"
+string hello := substring(s, 1, 5);   -- "Hello"
 ```
 
 ## to_string
@@ -62,8 +62,8 @@ to_string(n)   -- works for int, byte, word, dword
 ```
 
 ```rock
-let s: string := to_string(42);    -- "42"
-let b: string := to_string(255b);  -- "255"
+string s := to_string(42);            -- "42"
+string b := to_string(to_byte(255));  -- "255"
 ```
 
 ## get_nth_char / set_nth_char
@@ -74,7 +74,7 @@ set_nth_char(s, index, c)       -- mutate char at index
 ```
 
 ```rock
-let c: char := get_nth_char("hello", 0);   -- 'h'
+char c := get_nth_char("hello", 0);   -- 'h'
 ```
 
 ## get_string_length
@@ -97,7 +97,7 @@ printf("fmt %d", n)  -- C-style format print
 ## Char Type
 
 ```rock
-let c: char := 'A';
+char c := 'A';
 ```
 
 Single characters use single quotes. Concatenating a char with a string uses `__concat_char()`.

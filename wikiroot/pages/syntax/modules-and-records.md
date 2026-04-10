@@ -3,7 +3,7 @@ title: Records, Product Types, Enums, and Modules
 category: syntax
 tags: [record, pro, enum, module, composite-types, tdef]
 sources: []
-updated: 2026-04-09
+updated: 2026-04-10
 status: current
 ---
 
@@ -18,10 +18,19 @@ record Point { x: int, y: int }
 record Person { name: string, age: int }
 ```
 
+Record fields support both the original `name: type` form and the newer type-first form:
+
+```rock
+record Pair {
+  left: int,
+  string right,
+}
+```
+
 ### Instantiation
 
 ```rock
-dim p: Point := record { x := 3, y := 4 };
+Point p := { x := 3, y := 4 };
 ```
 
 All fields must be initialised explicitly. There is no default initialisation for records.
@@ -29,7 +38,7 @@ All fields must be initialised explicitly. There is no default initialisation fo
 ### Field Access
 
 ```rock
-let px: int := p.x;
+int px := p.x;
 p.y := 10;
 ```
 
@@ -52,8 +61,8 @@ pro Shape { Circle: int, Rectangle: int }
 
 Constructors without a payload use `null`:
 ```rock
-let empty: Optional := None;
-let full: Optional := Some(42);
+Optional empty := None;
+Optional full := Some(42);
 ```
 
 `match` is typically used to inspect a `pro` value:
@@ -78,7 +87,7 @@ enum Direction { North, South, East, West }
 Enum values map to C integers (0, 1, 2, …).
 
 ```rock
-dim c: Colour := Red;
+Colour c := Red;
 if c = Blue then print("blue");
 ```
 
@@ -86,20 +95,20 @@ if c = Blue then print("blue");
 
 ## module
 
-A `module` declares a named singleton struct type. Instance fields are declared as `dim` variables immediately following the `module Name;` declaration within the same file.
+A `module` declares a named singleton struct type. Instance fields are declared as ordinary type-first variables immediately following the `module Name;` declaration within the same file.
 
 ```rock
 module GameState;
 
-dim score: int;
-dim lives: byte;
-dim playerName: string;
+int score;
+byte lives;
+string playerName;
 ```
 
 The generator synthesises a `GameState_new()` constructor that zero-initialises all fields. Module instance variables declared in code are initialised with a `GameState_new()` call, deferred to `main()` to ensure all globals are ready.
 
 ```rock
-dim state: GameState;
+GameState state;
 -- state.score, state.lives, state.playerName are initialised
 state.score := 100;
 ```

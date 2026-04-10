@@ -3,7 +3,7 @@ title: String Representation
 category: concepts
 tags: [string, rock_string, string-temporary, pre_f, string-literal]
 sources: []
-updated: 2026-04-09
+updated: 2026-04-10
 status: current
 ---
 
@@ -27,7 +27,7 @@ Strings are both null-terminated (for C interop with `printf` and similar) and l
 In generated C, string literals cannot be assigned directly to `rock_string`. The generator emits setup code into the `pre_f` buffer:
 
 ```c
-// For:   let s: string := "hello";
+// For:   string s := "hello";
 // pre_f:
 rock_string __strtmp_0;
 __rock_make_string(&__strtmp_0, "hello");
