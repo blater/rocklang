@@ -2,7 +2,7 @@
 title: ZXN Target (ZX Spectrum Next / Z80)
 category: targets
 tags: [zxn, z80, spectrum-next, z88dk, sdcc, embedded, target]
-sources: []
+sources: [zx-z88dk-startupcrt.md]
 updated: 2026-04-11
 status: current
 ---
@@ -33,6 +33,12 @@ The normal entry point is `rock`, which emits `output.c`, builds the ZXN binary,
 Z88DK's `zcc` frontend can use either `sccz80` or `SDCC` as the backend. Rock uses **SDCC** (via `-clib=sdcc_iy`) because:
 - SDCC handles struct return values correctly (required by `fundefs_internal.c`)
 - `sccz80` crashed on struct returns in earlier versions
+
+## Startup CRT and Output Drivers
+
+Z88DK's **startup CRT** is selected with `-startup=n` and controls the runtime setup before `main()`, including which standard I/O drivers are present. Rock currently uses `-startup=1`, which corresponds to a 32x24 text output driver with control-code handling in the Z88DK startup notes.
+
+Other startup values trade capability for size: `-startup=0` uses 32x24 output without control codes, `-startup=4`/`5` select 64x24 fixed-width output, `-startup=8`/`9` select FZX proportional output, and `-startup=31` removes stdin/stdout/stderr for minimal programs. See [[targets/zxn/zx-z88dk-startupcrt-summary]].
 
 ## Include Strategy
 

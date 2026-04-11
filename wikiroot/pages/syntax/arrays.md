@@ -3,7 +3,7 @@ title: Arrays
 category: syntax
 tags: [arrays, dynamic-array, fixed-array, append, insert, get, set, pop, length]
 sources: []
-updated: 2026-04-10
+updated: 2026-04-11
 status: current
 ---
 
@@ -12,13 +12,13 @@ status: current
 ## Declaration
 
 ```rock
-int[]      -- dynamic array of int (grows automatically)
-string[10] -- fixed-size array of 10 strings (capacity capped)
+int[]      // dynamic array of int (grows automatically)
+string[10] // fixed-size array of 10 strings (capacity capped)
 ```
 
 ```rock
-int[] nums := [];       -- empty dynamic array
-string[5] strs;         -- fixed-size, default-initialised
+int[] nums := [];       // empty dynamic array
+string[5] strs;         // fixed-size, default-initialised
 int[] xs := [];
 ```
 
@@ -35,7 +35,7 @@ int[] nums := [];
 append(nums, 1);
 append(nums, 2);
 append(nums, 3);
--- nums is now [1, 2, 3]
+// nums is now [1, 2, 3]
 ```
 
 ### get
@@ -45,7 +45,7 @@ get(arr, index)
 Return the element at zero-based `index`. Out-of-bounds access prints an error and exits.
 
 ```rock
-int first := get(nums, 0);   -- 1
+int first := get(nums, 0);   // 1
 ```
 
 ### set
@@ -55,7 +55,7 @@ set(arr, index, value)
 Replace the element at `index` with `value`.
 
 ```rock
-set(nums, 1, 99);   -- nums is now [1, 99, 3]
+set(nums, 1, 99);   // nums is now [1, 99, 3]
 ```
 
 ### pop
@@ -65,7 +65,7 @@ pop(arr)
 Remove and return the last element. Decrements length.
 
 ```rock
-int last := pop(nums);   -- returns 3, nums is now [1, 99]
+int last := pop(nums);   // returns 3, nums is now [1, 99]
 ```
 
 ### insert
@@ -75,8 +75,8 @@ insert(arr, index, value)
 Insert `value` at `index`, shifting all elements from `index` onwards one position to the right. Length increases by 1.
 
 ```rock
-insert(nums, 0, 42);   -- [42, 1, 99]
-insert(nums, 2, 55);   -- [42, 1, 55, 99]
+insert(nums, 0, 42);   // [42, 1, 99]
+insert(nums, 2, 55);   // [42, 1, 55, 99]
 ```
 
 ### length
@@ -92,8 +92,8 @@ int n := length(nums);
 ## Array Indexing (direct)
 
 ```rock
-arr[idx]         -- read element at idx (same as get)
-arr[idx] := val  -- set element at idx (same as set)
+arr[idx]         // read element at idx (same as get)
+arr[idx] := val  // set element at idx (same as set)
 ```
 
 Array expressions can come from record fields or other postfix expressions, not just plain variables:
@@ -111,7 +111,7 @@ int alsoFirst := get(b.Items, 0);
 
 ```rock
 for elem in arr {
-  -- use elem
+  // use elem
 }
 ```
 
@@ -125,13 +125,13 @@ String arrays deep-copy strings on insert and push to prevent aliasing:
 string[] words := [];
 append(words, "hello");
 append(words, "world");
-string w := get(words, 0);   -- "hello"
+string w := get(words, 0);   // "hello"
 ```
 
 ## Fixed-Size Arrays
 
 ```rock
-int[5] data;   -- exactly 5 ints, default 0
+int[5] data;   // exactly 5 ints, default 0
 ```
 
 Fixed-size arrays use the same `__internal_dynamic_array_t` struct as dynamic arrays but with `max_capacity` set. Attempting to `append` or `insert` beyond capacity prints an error and halts.

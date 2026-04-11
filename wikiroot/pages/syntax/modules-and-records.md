@@ -3,7 +3,7 @@ title: Records, Product Types, Enums, and Modules
 category: syntax
 tags: [record, pro, enum, module, composite-types, tdef]
 sources: []
-updated: 2026-04-10
+updated: 2026-04-11
 status: current
 ---
 
@@ -55,15 +55,11 @@ sub Point.magnitude(): int {
 A `pro` is a tagged-union-like construct. It declares a type with named constructors, each carrying a value.
 
 ```rock
-pro Optional { Some: int, None }
+pro Optional { Some: int, None: void }
 pro Shape { Circle: int, Rectangle: int }
 ```
 
-Constructors without a payload use `null`:
-```rock
-Optional empty := None;
-Optional full := Some(42);
-```
+The parser requires every product constructor to name a payload type. Use `void` for a constructor with no payload.
 
 `match` is typically used to inspect a `pro` value:
 ```rock
@@ -72,6 +68,8 @@ match opt {
   -> None print("empty")
 }
 ```
+
+The generator emits the product type as a C struct with a `tag` enum and `data` union. `match` parsing exists, but `generate_statement()` still asserts for `match`, so product matching is not implemented yet.
 
 > **TODO:** The exact match semantics for `pro` types need clarification from the source and tests.
 
@@ -107,7 +105,7 @@ The generator synthesises a `GameState_new()` constructor that zero-initialises 
 
 ```rock
 GameState state;
--- state.score, state.lives, state.playerName are initialised
+// state.score, state.lives, state.playerName are initialised
 state.score := 100;
 ```
 

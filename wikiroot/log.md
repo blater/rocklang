@@ -275,3 +275,14 @@ Remaining issues: content TODOs remain open for pro match semantics, nested sub 
 Validation: verified new/ has no pending files, glossary ordering has no out-of-order pairs, and wiki links/frontmatter/index coverage remain clean.
 TODOs filed: 1 — nested sub definitions unimplemented.
 
+
+## [2026-04-11] ingest | syntax coverage and Z88DK startup CRT
+
+Changed files: 15
+
+Summary: Ingested the Z88DK startup CRT note and updated the ZXN target pages with source-backed startup profile details. Audited docs/SYNTAX.md against lexer.c, parser.c, generator.c, and src/lib runtime headers, then expanded the syntax wiki so it has equivalent or better coverage without carrying stale claims.
+Pages created: pages/targets/zxn/zx-z88dk-startupcrt-summary.md, pages/syntax/builtins-and-io.md, pages/syntax/comments-and-includes.md
+Pages updated: pages/targets/zxn-z80.md, pages/ubiquitous-language.md, pages/syntax/types.md, pages/syntax/strings.md, pages/syntax/modules-and-records.md, pages/syntax/functions-and-methods.md, pages/syntax/control-flow.md, pages/syntax/arrays.md, pages/syntax/syntax-index.md, index.md
+Review/lint: verified 51 pages, 435 wiki links, 51 index links, sorted glossary, and no pending sources. Excluded stale SYNTAX.md claims about dim/let declarations, bool, slash-only comments, loop keyword use, and substring length semantics because source does not support them as written.
+TODOs filed: none.
+

@@ -3,7 +3,7 @@ title: String Operations
 category: syntax
 tags: [string, concat, substring, to_string, char]
 sources: []
-updated: 2026-04-10
+updated: 2026-04-11
 status: current
 ---
 
@@ -45,54 +45,62 @@ The generator infers whether the second argument is a `char` or `string` and cal
 ## substring
 
 ```rock
-substring(s, from)           -- from index to end
-substring(s, from, length)   -- from index, given length
+substring(s, from)           // from index to end
+substring(s, from, end)      // inclusive range
 ```
 
 ```rock
 string s := "Hello, World!";
-string world := substring(s, 8);      -- "World!"
-string hello := substring(s, 1, 5);   -- "Hello"
+string world := substring(s, 8);      // "World!"
+string hello := substring(s, 1, 5);   // "Hello"
+string tail := substring(s, -6, -1);  // "World!"
 ```
+
+Substring indexes are 1-based by default and negative indexes count back from the end. `set_string_index_base(0)` changes substring indexing to zero-based at runtime. The three-argument form passes `start` and inclusive `end` through to `__substring_range()`.
 
 ## to_string
 
 ```rock
-to_string(n)   -- works for int, byte, word, dword
+to_string(n)   // works for int, byte, word, dword
+toString(n)    // alias
 ```
 
 ```rock
-string s := to_string(42);            -- "42"
-string b := to_string(to_byte(255));  -- "255"
+string s := to_string(42);            // "42"
+string b := to_string(to_byte(255));  // "255"
 ```
 
 ## get_nth_char / set_nth_char
 
 ```rock
-get_nth_char(s, index)          -- returns char at index
-set_nth_char(s, index, c)       -- mutate char at index
+get_nth_char(s, index)          // returns char at index
+set_nth_char(s, index, c)       // mutate char at index
 ```
 
 ```rock
-char c := get_nth_char("hello", 0);   -- 'h'
+char c := get_nth_char("hello", 0);   // 'h'
 ```
 
 ## get_string_length
 
 ```rock
-get_string_length(s)   -- returns int length
+get_string_length(s)   // returns int length
 ```
 
-Equivalent to `length(s)` when `s` is a string.
+On host builds, `length(s)` dispatches to string length through `_Generic`. On SDCC builds, `length` falls back to array length only, so use `get_string_length(s)` for target-neutral string length.
 
 ## print / printf
 
 ```rock
-print(s)          -- print a Rock string
-printf("fmt %d", n)  -- C-style format print
+print(s)          // print a Rock string
+printf("fmt %d", n)  // C-style format print
 ```
 
-`print` maps to `printf("%s", s.data)` in generated C. `printf` is forwarded directly to C's `printf`.
+`print` writes each character in the Rock string and flushes stdout. `printf` accepts one expression in Rock source: string expressions are emitted as `printf("%s", string_to_cstr(expr))`, while non-string expressions are forwarded to C's `printf`.
+
+## C String Interop
+
+`string_to_cstr`, `cstr_to_string`, and `new_string` exist in the runtime for C interop and explicit string copying. `string_to_cstr` is used by the generator when a Rock string expression has to be passed to C `printf`. `cstr_to_string` and `new_string` are C out-parameter helpers today; they are runtime support functions rather than polished Rock expression syntax.
 
 ## Char Type
 
@@ -102,4 +110,4 @@ char c := 'A';
 
 Single characters use single quotes. Concatenating a char with a string uses `__concat_char()`.
 
-See [[syntax/types]] for type declarations, [[syntax/arrays]] for string arrays, and [[concepts/string-representation]] for the runtime struct.
+See [[syntax/types]] for type declarations, [[syntax/arrays]] for string arrays, [[syntax/builtins-and-io]] for the complete built-in list, and [[concepts/string-representation]] for the runtime struct.

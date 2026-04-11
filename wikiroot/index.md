@@ -35,6 +35,7 @@ Organised by category. Each entry: `page-name — one-line description`.
 - [[targets/host-gcc]] — Host target: gcc compilation, absolute includes, test coverage
 - [[targets/zxn-z80]] — ZXN target: Z88DK/SDCC, memory layout, statement splitting, Z80 interop
 - [[targets/zxn-hardware]] — ZXN hardware overview: layer stack, port access patterns, subsystem index
+- [[targets/zxn/zx-z88dk-startupcrt-summary]] — Z88DK startup CRT profiles and output-driver implications
 - [[targets/zxn/zxn-sample-programs]] — ZXN sample-program hub linking concrete sjasmplus code to hardware pages
 
 ### ZXN Hardware Subsystems
@@ -79,11 +80,13 @@ Organised by category. Each entry: `page-name — one-line description`.
 ## Syntax
 
 - [[syntax/syntax-index]] — Keyword and built-in function quick reference
+- [[syntax/comments-and-includes]] — Comment forms, include splicing, and module requirement
 - [[syntax/types]] — Scalar types, arrays, variable declaration styles, default values, conversions
 - [[syntax/control-flow]] — if/then/else, while, for counter loop, for-in iterator, match, operators
 - [[syntax/functions-and-methods]] — sub, parameters, return, method syntax, name mangling
 - [[syntax/arrays]] — Declaration, append/get/set/pop/insert/length, iteration, fixed vs dynamic
 - [[syntax/strings]] — concat, substring, to_string, get_nth_char, print, char type
+- [[syntax/builtins-and-io]] — Output, file I/O, command-line args, conversions, peek/poke
 - [[syntax/modules-and-records]] — record, pro (product type), enum, module singleton
 - [[syntax/embed]] — @embed c / @embed asm inline blocks
 

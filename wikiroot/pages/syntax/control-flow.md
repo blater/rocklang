@@ -3,7 +3,7 @@ title: Control Flow
 category: syntax
 tags: [control-flow, if, while, for, match, loop, iter]
 sources: []
-updated: 2026-04-10
+updated: 2026-04-11
 status: current
 ---
 
@@ -74,7 +74,7 @@ Generates C: `for(int i = 0; i <= 9; i++) { ... }`
 
 ```rock
 for x in arr statement
-iter x := arr statement    -- alternate syntax, same behaviour
+iter x := arr statement    // alternate syntax, same behaviour
 ```
 
 Iterates over all elements of array `arr`. `x` takes the value of each element in turn.
@@ -99,7 +99,7 @@ match expr {
 }
 ```
 
-Pattern-matches `expr` against each `->` case. Falls through to the first matching case. No default case syntax yet — unmatched values are silent.
+The parser accepts `match`, but code generation is not implemented: `generate_statement()` asserts when it sees a `match` node. Keep `match` examples as parser-facing syntax until generator semantics are added.
 
 ```rock
 match colour {
@@ -137,15 +137,15 @@ a & b    a | b    a ^ b
 
 ### Unary
 ```rock
--a    -- numeric negation
+-a    // numeric negation
 ```
 
 ## Assignment
 
 ```rock
-name := expr;              -- variable assignment
-arr[idx] := expr;          -- array element assignment
-record.field := expr;      -- field assignment
+name := expr;              // variable assignment
+arr[idx] := expr;          // array element assignment
+record.field := expr;      // field assignment
 ```
 
 Assignment is a statement, not an expression. Cannot be nested inside another expression.
@@ -155,8 +155,8 @@ Assignment is a statement, not an expression. Cannot be nested inside another ex
 Low-level memory access, primarily useful on ZXN:
 ```rock
 word addr := to_word(23552);
-byte val := peek(addr);   -- read byte from address
-poke(addr, to_byte(42));  -- write byte to address
+byte val := peek(addr);   // read byte from address
+poke(addr, to_byte(42));  // write byte to address
 ```
 
 See [[targets/zxn-z80]] for ZXN context and [[syntax/syntax-index]] for full built-in function reference.

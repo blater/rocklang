@@ -321,6 +321,13 @@ Pixel data for one hardware sprite image. In 8-bit mode each 16x16 pattern uses 
 **See also:** [[targets/zxn/zxn-sprites]], [[targets/zxn/samples/zxn-sprite-sample-summary]]
 ---
 
+### Startup CRT
+Z88DK runtime startup profile selected with `-startup=n`. It controls runtime initialisation before `main()`, including stdout/stderr driver setup, control-code support, and minimal no-stdio builds.
+
+**Domain:** Targets  
+**See also:** [[targets/zxn-z80]], [[targets/zxn/zx-z88dk-startupcrt-summary]]
+---
+
 ### Statement Splitting
 The technique of separating complex expression setup from the statement that uses it, writing setup into `pre_f` and the main expression into `f`. Required to satisfy C grammar constraints on ZXN/SDCC.
 

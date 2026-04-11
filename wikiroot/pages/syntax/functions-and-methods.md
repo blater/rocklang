@@ -3,7 +3,7 @@ title: Functions and Methods
 category: syntax
 tags: [functions, methods, sub, return, method-call, this]
 sources: []
-updated: 2026-04-10
+updated: 2026-04-11
 status: current
 ---
 
@@ -13,13 +13,13 @@ status: current
 
 ```rock
 sub name(param1: type1, param2: type2): returnType {
-  -- body
+  // body
   return value;
 }
 ```
 
 - `sub` introduces a function.
-- Parameters require explicit type annotations.
+- Parameters require explicit type annotations. Both `name: type` and type-first `type name` forms are accepted.
 - Return type follows `:` after the closing `)`.
 - If return type is omitted, it defaults to `void`.
 - `return expr;` exits the function with a value.
@@ -27,6 +27,10 @@ sub name(param1: type1, param2: type2): returnType {
 ```rock
 sub add(a: int, b: int): int {
   return a + b;
+}
+
+sub multiply(int a, int b): int {
+  return a * b;
 }
 
 sub greet(name: string): void {
@@ -48,7 +52,7 @@ Arguments are passed positionally. No named parameters.
 ### Instance method (on a type)
 ```rock
 sub TypeName.methodName(param: type): returnType {
-  -- 'this' refers to the receiver
+  // 'this' refers to the receiver
 }
 ```
 
@@ -60,13 +64,13 @@ sub string.shout(): string {
 }
 
 string s := "hello";
-string loud := s.shout();   -- "hello!"
+string loud := s.shout();   // "hello!"
 ```
 
 ### Array method (on a typed array)
 ```rock
 sub TypeName[].methodName(param: type): returnType {
-  -- 'this' refers to the array
+  // 'this' refers to the array
 }
 ```
 

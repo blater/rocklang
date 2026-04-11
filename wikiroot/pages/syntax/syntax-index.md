@@ -1,9 +1,9 @@
 ---
 title: Syntax Index
 category: syntax
-tags: [syntax, index, keywords]
+tags: [syntax, index, keywords, builtins]
 sources: []
-updated: 2026-04-10
+updated: 2026-04-11
 status: current
 ---
 
@@ -16,6 +16,9 @@ Quick reference index for Rock language syntax. Each topic has a dedicated page.
 
 ## Variables and Binding
 → [[syntax/types]] — type-first declarations, default values
+
+## Comments and Includes
+→ [[syntax/comments-and-includes]] — `//`, `/* ... */`, and `include "file.rkr"`
 
 ## Functions and Methods
 → [[syntax/functions-and-methods]] — `sub`, parameter lists, return types, method syntax
@@ -31,6 +34,9 @@ Quick reference index for Rock language syntax. Each topic has a dedicated page.
 
 ## String Operations
 → [[syntax/strings]] — `concat`, `substring`, `to_string`, `get_nth_char`, `set_nth_char`, `get_string_length`
+
+## Built-ins and I/O
+→ [[syntax/builtins-and-io]] — output, file I/O, program args, conversions, `peek` / `poke`
 
 ## Embed Blocks
 → [[syntax/embed]] — `@embed c … @end c`, `@embed asm … @end asm`
@@ -73,13 +79,23 @@ Quick reference index for Rock language syntax. Each topic has a dedicated page.
 | `length(arr\|str)` | Length of array or string |
 | `concat(s1, s2)` | Concatenate two strings (or string+char) |
 | `substring(s, from)` | Substring from index to end |
-| `substring(s, from, len)` | Substring of given length |
-| `to_string(n)` | Convert number to string |
+| `substring(s, from, end)` | Substring through inclusive end index |
+| `to_string(n)` / `toString(n)` | Convert number to string |
 | `get_nth_char(s, i)` | Get character at index |
 | `set_nth_char(s, i, c)` | Set character at index |
 | `get_string_length(s)` | String length |
+| `str_eq(a, b)` | String equality |
+| `string_to_cstr(s)` | Runtime helper for backing C string pointer |
+| `cstr_to_string(cstr)` | Runtime out-parameter helper for C strings |
+| `new_string(s)` | Runtime out-parameter helper for string copies |
+| `set_string_index_base(base)` | Set substring index base |
 | `print(s)` | Print string |
 | `printf(fmt)` | C-style printf |
+| `putchar(c)` | Print a single character |
+| `exit(code)` | Exit program |
+| `read_file(path)` | Host file read |
+| `write_string_to_file(s, path)` | Host file write |
+| `get_abs_path(path)` | Host absolute path resolution |
 | `peek(addr)` | Read byte from memory address |
 | `poke(addr, val)` | Write byte to memory address |
 | `get_args()` | Get command-line arguments as `string[]` |
