@@ -2,8 +2,8 @@
 title: ZXN Layer 2
 category: targets
 tags: [zxn, layer2, graphics, framebuffer, 256x192, 320x256, 640x256, banking]
-sources: [zxnext_guide.md]
-updated: 2026-04-10
+sources: [zxnext_guide.md, samples/layer2-256x192/main.asm, samples/layer2-320x256/main.asm, samples/layer2-640x256/main.asm]
+updated: 2026-04-11
 status: current
 ---
 
@@ -65,45 +65,49 @@ Each pixel = 1 byte (8BPP) or 4 bits (4BPP). The value is a palette index.
 
 ### 256×192 Addressing
 
-3 horizontal banks. Bank = `Y >> 6`; address within bank:
+The framebuffer is 48KB: three 16K Layer 2 banks or six 8K MMU banks. When drawing through slot 6 (`$C000-$DFFF`), page one 8K bank at a time:
 ```
-offset = ((Y & 63) << 8) | X
+eight_k_bank = START_8K_BANK + (Y >> 5)
+offset = ((Y & 31) << 8) | X
 ```
 Swap the correct 8K bank into slot 6, then write to `$C000 + offset`:
 ```asm
 ; draw pixel at (X, Y) with colour C
 LD A, Y
-RRCA
-RRCA            ; A = bank offset (0-2 × 2 for 8K banks)
-ADD A, 18       ; 16K bank 9 = 8K banks 18,19; bank 0 → 8K 18
-NEXTREG $56, A  ; swap bank into slot 6
-LD HL, $C000
+AND %11100000
+RLCA
+RLCA
+RLCA
+ADD A, START_8K_BANK
+NEXTREG $56, A  ; swap 8K bank into slot 6
 LD A, Y
-AND $3F
-RRCA
-LD H, A
+AND %00011111
 OR $C0
-LD H, A         ; H = $C0 | (Y&63 >> 1)... use full formula
-; ... write C to (HL+X)
+LD D, A
+LD E, X         ; D:E now addresses $C000 + ((Y & 31) << 8) + X
 ```
 
 ![256×192 bank layout](../../../raw/images/zxnext_guide_p088_f1.png)
 
 ### 320×256 Addressing
 
-5 vertical banks. Each bank = 64 columns. Pixels stored **top-to-bottom within a column** (X and Y axes transposed vs 256×192).
+80KB framebuffer: five 16K banks or ten 8K MMU banks. With slot 6, each 8K bank covers 32 columns by 256 rows. Pixels are stored **top-to-bottom within a column** (X and Y axes transposed vs 256×192).
 
 ```
-bank_offset = X >> 6     (which 64-column bank)
-offset = ((X & 63) << 8) | Y
+eight_k_bank = START_8K_BANK + (X >> 5)
+offset = ((X & 31) << 8) | Y
 ```
 Enable with `NEXTREG $70, %00010000`.
 
 ### 640×256 Addressing
 
-5 vertical banks, 128 columns per bank. 1 byte = 2 pixels (upper nibble = left, lower nibble = right). Address as 320×256 but memory X = screen X / 2.
+80KB framebuffer: five 16K banks or ten 8K MMU banks. 1 byte = 2 pixels (upper nibble = left, lower nibble = right). Address as 320×256 but memory X = screen X / 2, so each 8K bank covers 32 byte-columns or 64 screen pixels.
 
 Enable with `NEXTREG $70, %00100000`.
+
+## Sample Implementation Patterns
+
+The Layer 2 samples in [[targets/zxn/samples/zxn-layer2-samples]] provide concrete fill loops for all three modes. They show how `$12` selects the 16K start bank, while `$56` pages the current 8K drawing bank into slot 6. The wide-mode samples also demonstrate clip-window setup through `$1C` and `$18`.
 
 ## Effects
 
@@ -172,6 +176,7 @@ Read: current indices (bits 7–0 = Tilemap/ULA/Sprite/Layer2)
 ## See Also
 
 - [[targets/zxn-hardware]] — layer priority and compositing
+- [[targets/zxn/samples/zxn-layer2-samples]] — worked Layer 2 mode samples
 - [[targets/zxn/zxn-palette]] — Layer 2 palette and per-pixel priority flag
 - [[targets/zxn/zxn-memory-paging]] — MMU slot paging used for Layer 2 access
 - [[targets/zxn/zxn-dma]] — bulk fill/copy of Layer 2 banks

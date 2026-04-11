@@ -62,6 +62,10 @@ Organised by category. Each entry: `page-name — one-line description`.
 - [[targets/zxn/samples/zxn-sprite-sample-summary]] — Sprite sample using DMA pattern upload and unified relative groups
 - [[targets/zxn/samples/zxn-sound-sample-summary]] — Sound sample using Turbo Sound setup and AY register playback
 - [[targets/zxn/samples/zxn-tilemap-sample-summary]] — Tilemap sample using map/tile/palette assets and offset shake
+- [[targets/zxn/samples/zxn-layer2-samples]] — Comparison of 256x192, 320x256, and 640x256 Layer 2 drawing samples
+- [[targets/zxn/samples/zxn-layer2-256x192-sample-summary]] — Layer 2 256x192 sample using six 8K row banks
+- [[targets/zxn/samples/zxn-layer2-320x256-sample-summary]] — Layer 2 320x256 sample using ten 8K column banks
+- [[targets/zxn/samples/zxn-layer2-640x256-sample-summary]] — Layer 2 640x256 sample using packed 4bpp byte columns
 
 ---
 

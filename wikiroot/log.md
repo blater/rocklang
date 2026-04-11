@@ -218,3 +218,14 @@ Pages updated: zxn-sample-programs, zxn-tilemap, ubiquitous-language, index.
 Review/lint: verified touched wiki links and raw asset links; checked asset sizes/hashes; drained the tilemap pending directory including its build .gitignore.
 TODOs filed: none.
 
+
+## [2026-04-11] ingest | ZXN Layer 2 samples
+
+Changed files: 15
+
+Summary: Ingested the three Layer 2 graphics samples for 256x192, 320x256, and 640x256 modes. Added a comparison page and per-mode summaries, and corrected the Layer 2 reference to show practical 8K slot-6 addressing formulas.
+Pages created: zxn-layer2-samples, zxn-layer2-256x192-sample-summary, zxn-layer2-320x256-sample-summary, zxn-layer2-640x256-sample-summary.
+Pages updated: zxn-sample-programs, zxn-layer2, ubiquitous-language, index.
+Review/lint: verified touched wiki links and raw source links; checked source moves and patch-marker cleanup. Non-source .DS_Store metadata remains pending for final cleanup/reporting.
+TODOs filed: none.
+

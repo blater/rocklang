@@ -2,7 +2,7 @@
 title: Ubiquitous Language — Rock Compiler Glossary
 category: overview
 tags: [glossary, domain-language]
-sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm, samples/sprites/main.asm, samples/sound/main.asm, samples/tilemap/main.asm]
+sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm, samples/sprites/main.asm, samples/sound/main.asm, samples/tilemap/main.asm, samples/layer2-256x192/main.asm, samples/layer2-320x256/main.asm, samples/layer2-640x256/main.asm]
 updated: 2026-04-11
 status: current
 ---
@@ -306,6 +306,14 @@ A hardware co-processor on the ZX Spectrum Next that executes a program of WAIT/
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-copper]]
+
+---
+
+### Clip Window
+Layer-specific visible rectangle controlled by sequential Next register writes. Layer 2 uses `$18` for X1/X2/Y1/Y2 and `$1C` bit 1 to reset the write index; wide Layer 2 modes scale X values before storing them.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-layer2]], [[targets/zxn/samples/zxn-layer2-samples]]
 
 ---
 
