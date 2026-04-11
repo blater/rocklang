@@ -2,8 +2,8 @@
 title: Rock Transpiler — Architecture Overview
 category: overview
 tags: [architecture, transpiler, pipeline, host, zxn]
-sources: []
-updated: 2026-04-10
+sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm]
+updated: 2026-04-11
 status: current
 ---
 
@@ -70,6 +70,8 @@ rock <input.rkr> [output.exe] [--target=gcc|--target=zxn] [--debug]
 - `zpragma_zxn.inc` configures memory bank layout
 
 See [[targets/host-gcc]] and [[targets/zxn-z80]] for platform detail. The ZXN target has a comprehensive hardware reference starting at [[targets/zxn-hardware]], covering all Next subsystems (ports/registers, memory paging, DMA, palette, ULA, Layer 2, Tilemap, Sprites, Copper, Sound, Keyboard, Interrupts).
+
+Worked ZXN sample programs are catalogued at [[targets/zxn/zxn-sample-programs]]. They show concrete sjasmplus setup sequences for hardware features that Rock may expose through runtime helpers or inline assembly.
 
 ## Memory Model
 

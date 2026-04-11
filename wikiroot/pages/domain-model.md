@@ -2,8 +2,8 @@
 title: Domain Model — Bounded Contexts
 category: overview
 tags: [domain-model, architecture, bounded-contexts]
-sources: []
-updated: 2026-04-09
+sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm]
+updated: 2026-04-11
 status: current
 ---
 
@@ -44,6 +44,10 @@ graph TD
         INT[Interrupts\nIM1/IM2/HW-IM2]
     end
 
+    subgraph References["Reference Sources"]
+        SAMP[ZXN Sample Programs\nsjasmplus .asm / assets]
+    end
+
     SRC[Rock Source .rkr] --> LEX
     LEX --> PAR
     PAR --> GEN
@@ -57,6 +61,7 @@ graph TD
     ZXN --> FUND
     ZXN --> ASM
     ZXN --> ZXNHardware
+    SAMP --> ZXNHardware
     MEM --> GFX
     DMA --> GFX
     COP --> GFX
@@ -105,6 +110,12 @@ graph TD
 **Key subsystems:** Memory/MMU paging, ULA, Layer 2, Tilemap, Sprites, Palette, Copper, DMA, AY sound, Keyboard, Interrupts.  
 **Reference:** [[targets/zxn-hardware]] hub → individual subsystem pages in `pages/targets/zxn/`.
 
+### ZXN Sample Program Context
+**Owns:** Concrete sjasmplus assembly examples, binary sample assets, setup order, and observed subsystem idioms.  
+**Invariant:** Sample pages describe what the sample does and link back to immutable files in `raw/samples/`; hardware reference pages remain the canonical register reference.  
+**Exports:** Worked patterns for runtime helpers, inline assembly examples, and testable setup sequences for hardware features.  
+**Reference:** [[targets/zxn/zxn-sample-programs]].
+
 ### Target Context
 **Owns:** Platform-specific include strategy, compiler flags, memory layout (`zpragma_zxn.inc`).  
 **Invariant:** Target is fixed at transpile time (set by `--target=zxn` flag).  
@@ -121,6 +132,7 @@ graph TD
 | Generator → Name Table | `push_nt()` / `get_ref()` | Called during AST traversal for every definition and lookup |
 | Generator → Target | `generator.target` flag | Determines include path style, statement splitting, Z80 pragmas |
 | Runtime → Generator | Header contracts | Generator emits calls matching runtime function signatures |
+| ZXN Sample Programs → ZXN Hardware | Worked assembly programs | Validate setup order and expose practical use of registers, memory placement, and assets |
 
 ---
 

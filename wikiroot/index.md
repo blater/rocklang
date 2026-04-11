@@ -35,6 +35,7 @@ Organised by category. Each entry: `page-name — one-line description`.
 - [[targets/host-gcc]] — Host target: gcc compilation, absolute includes, test coverage
 - [[targets/zxn-z80]] — ZXN target: Z88DK/SDCC, memory layout, statement splitting, Z80 interop
 - [[targets/zxn-hardware]] — ZXN hardware overview: layer stack, port access patterns, subsystem index
+- [[targets/zxn/zxn-sample-programs]] — ZXN sample-program hub linking concrete sjasmplus code to hardware pages
 
 ### ZXN Hardware Subsystems
 
@@ -50,6 +51,14 @@ Organised by category. Each entry: `page-name — one-line description`.
 - [[targets/zxn/zxn-sound]] — 3× AY-3-8912 (Turbo Sound), 9 channels, envelope, DAC
 - [[targets/zxn/zxn-keyboard]] — 8×5 key matrix (port `$xxFE`) and 10 extended keys (`$B0`/`$B1`)
 - [[targets/zxn/zxn-interrupts]] — IM1/IM2/Hardware IM2, 14 vectored sources, line interrupt, CTC
+
+### ZXN Sample Program Walkthroughs
+
+- [[targets/zxn/samples/zxn-interrupt-samples]] — Comparison of IM1, legacy IM2, safe IM2, and Hardware IM2 setup samples
+- [[targets/zxn/samples/zxn-im1-sample-summary]] — IM1 sample using bank paging to place a handler at `$0038`
+- [[targets/zxn/samples/zxn-im2-sample-summary]] — Legacy IM2 sample using a 128-entry vector table
+- [[targets/zxn/samples/zxn-im2hw-sample-summary]] — Hardware IM2 sample using the Next vectored interrupt registers
+- [[targets/zxn/samples/zxn-im2safe-sample-summary]] — Bus-safe IM2 sample with a 257-byte table and `$F0F0` handler
 
 ---
 

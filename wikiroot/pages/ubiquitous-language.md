@@ -2,8 +2,8 @@
 title: Ubiquitous Language — Rock Compiler Glossary
 category: overview
 tags: [glossary, domain-language]
-sources: []
-updated: 2026-04-10
+sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm]
+updated: 2026-04-11
 status: current
 ---
 
@@ -97,7 +97,31 @@ The compiler phase that walks the AST and emits C source. Implemented in `genera
 Compilation target. This could be a standard POSIX/Linux/macOS systems, or small system or retro system. Modern systems use C output compiled with `gcc`. The zx next target uses z88dk as its C compiler.
 
 **Domain:** Targets  
-**See also:** [[targets/host-gcc]], [[targets/zxn-z80.md]], [[overview]]
+**See also:** [[targets/host-gcc]], [[targets/zxn-z80]], [[overview]]
+
+---
+
+### Hardware IM2
+ZX Spectrum Next extension of IM2 that uses a 32-byte aligned vector table and Next interrupt-control registers to route named interrupt sources such as line, ULA, CTC, and UART events.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-interrupts]], [[targets/zxn/samples/zxn-im2hw-sample-summary]]
+
+---
+
+### IM1
+Z80 interrupt mode 1. On the ZX Spectrum Next, the regular frame interrupt jumps to address `$0038`, so custom IM1 code normally requires paging RAM over the ROM area that contains that address.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-interrupts]], [[targets/zxn/samples/zxn-im1-sample-summary]]
+
+---
+
+### IM2
+Z80 interrupt mode 2. The `I` register supplies the high byte of a vector table address, and the data bus supplies the low byte. Robust setups use a 257-byte vector table and a handler address whose high and low bytes match.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-interrupts]], [[targets/zxn/samples/zxn-im2safe-sample-summary]]
 
 ---
 
@@ -106,6 +130,22 @@ A `include "path/to/file.rkr"` directive. The included file's tokens are spliced
 
 **Domain:** Parser  
 **See also:** [[parser/parser-overview]]
+
+---
+
+### Interrupt Handler
+Routine entered by the CPU when a maskable interrupt is accepted. A reusable ZXN handler must preserve any registers it uses, perform source-specific acknowledgement when required, and return with `RETI`.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-interrupts]], [[targets/zxn/samples/zxn-interrupt-samples]]
+
+---
+
+### Interrupt Vector Table
+Memory table used by IM2-style interrupts to resolve an interrupt event to a handler address. Legacy IM2 uses a 256-byte aligned table; Hardware IM2 uses a 32-byte aligned table with one word per source.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-interrupts]], [[targets/zxn/samples/zxn-interrupt-samples]]
 
 ---
 
@@ -186,6 +226,14 @@ A lexical nesting level in the name table. Scope 0 = top-level / global. Functio
 
 **Domain:** Compiler infrastructure  
 **See also:** [[concepts/name-table]]
+
+---
+
+### sjasmplus
+Assembler used by the ZXN sample programs. It supports `DEVICE ZXSPECTRUMNEXT`, `NEXTREG`, bank/page directives, `INCBIN`, and `SAVENEX` output generation.
+
+**Domain:** Targets  
+**See also:** [[targets/zxn/zxn-sample-programs]]
 
 ---
 
@@ -277,6 +325,14 @@ One of eight 8K regions in the Z80's 64K address space, managed by the Next MMU 
 
 ---
 
+### NEX File
+Executable file format used by the ZX Spectrum Next. sjasmplus samples produce it with `SAVENEX`; Rock's ZXN driver produces it through `zcc +zxn -subtype=nex`.
+
+**Domain:** Targets  
+**See also:** [[targets/zxn-z80]], [[targets/zxn/zxn-sample-programs]]
+
+---
+
 ### Next Register
 A hardware control register on the ZX Spectrum Next, accessed via ports `$243B` (select) and `$253B` (read/write), or the Z80N `NEXTREG` instruction. There are ~130 registers (`$00`–`$FF`) controlling all hardware subsystems.
 
@@ -330,6 +386,14 @@ The original ZX Spectrum display chip. Provides a 256×192 pixel display using 1
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-ula]]
+
+---
+
+### ZXN Sample Program
+A small sjasmplus assembly program used as an executable reference for one ZX Spectrum Next hardware feature. Sample pages link each program to the subsystem pages it exercises.
+
+**Domain:** Targets  
+**See also:** [[targets/zxn/zxn-sample-programs]]
 
 ---
 

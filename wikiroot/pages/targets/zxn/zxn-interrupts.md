@@ -2,8 +2,8 @@
 title: ZXN Interrupts
 category: targets
 tags: [zxn, interrupts, im1, im2, hardware-im2, nmi, isr, line-interrupt, ctc]
-sources: [zxnext_guide.md]
-updated: 2026-04-10
+sources: [zxnext_guide.md, samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm]
+updated: 2026-04-11
 status: current
 ---
 
@@ -25,15 +25,19 @@ EI
 ; Handler at address $0038 in bank 28 — assembled with ORG $0038
 ```
 
+The IM1 sample assembles the handler into an 8K bank while that bank is visible at slot 6 (`ORG $C038`), then maps the same bank into slot 0 with `$50`. The code therefore executes at `$0038` after paging, even though the source is assembled at `$C038`. See [[targets/zxn/samples/zxn-im1-sample-summary]].
+
 ### IM2 — Legacy Vectored
 
 Vector table base: address stored in `I` register (high byte). LSB comes from the data bus (typically random, so make it safe).
 
 Setup rules:
 - Table must be on a 256-byte boundary
-- All 128 entries should point to the same handler
+- A simple table can hold 128 16-bit entries pointing to the same handler
 - Handler address should have equal high and low bytes (e.g. `$8989`) to be safe if bus LSB is `$FF`
 - Table must be 257 bytes long to cover the `$FF` bus value
+
+The plain IM2 sample shows the readable 128-entry form; the IM2-safe sample shows the 257-byte defensive form with a handler at `$F0F0`. See [[targets/zxn/samples/zxn-im2-sample-summary]] and [[targets/zxn/samples/zxn-im2safe-sample-summary]].
 
 ### Hardware IM2 — Next Extended
 
@@ -73,6 +77,19 @@ LD I, A
 IM 2
 EI
 ```
+
+The Hardware IM2 sample uses one handler label for the line interrupt, one for the ULA interrupt, and shared handlers for the remaining entries. It clears line/ULA status bits through `$C8` before jumping to the shared counter increment routine. See [[targets/zxn/samples/zxn-im2hw-sample-summary]].
+
+## Sample Implementation Patterns
+
+The interrupt samples in [[targets/zxn/samples/zxn-interrupt-samples]] add a practical comparison layer:
+
+| Sample | Practical lesson |
+|--------|------------------|
+| [[targets/zxn/samples/zxn-im1-sample-summary]] | IM1 can be demonstrated by paging a custom bank into slot 0, but this hides ROM. |
+| [[targets/zxn/samples/zxn-im2-sample-summary]] | Legacy IM2 setup is easiest to read as 128 explicit handler-address entries. |
+| [[targets/zxn/samples/zxn-im2safe-sample-summary]] | Robust legacy IM2 uses a 257-byte table and a byte-symmetric handler address. |
+| [[targets/zxn/samples/zxn-im2hw-sample-summary]] | Hardware IM2 provides per-source vectors and explicit status clearing. |
 
 ## Line Interrupt
 
@@ -164,6 +181,8 @@ Note: Rx half full overrides Rx available.
 ## See Also
 
 - [[targets/zxn-hardware]] — hardware overview
+- [[targets/zxn/zxn-sample-programs]] — sample-program hub
+- [[targets/zxn/samples/zxn-interrupt-samples]] — worked interrupt samples
 - [[targets/zxn/zxn-dma]] — DMA interrupt interaction
 - [[targets/zxn/zxn-copper]] — alternative to line interrupt for raster effects
 - [[targets/zxn/zxn-ports-registers]] — full register index

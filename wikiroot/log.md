@@ -158,3 +158,14 @@ Issues fixed: corrected the host target toolchain table so rock and rockc roles 
 Remaining issues: none found in the targeted neutral-tone sweep across the touched pages.
 TODOs filed: none.
 
+
+## [2026-04-11] ingest | ZXN interrupt samples
+
+Changed files: 16
+
+Summary: Ingested the IM1, legacy IM2, Hardware IM2, and bus-safe IM2 assembly samples. Added a ZXN sample-program hub, an interrupt topic overview, and per-source summaries that explain setup order, memory placement, vector-table shape, and runtime implications.
+Pages created: zxn-sample-programs, zxn-interrupt-samples, zxn-im1-sample-summary, zxn-im2-sample-summary, zxn-im2hw-sample-summary, zxn-im2safe-sample-summary.
+Pages updated: zxn-interrupts, domain-model, overview, ubiquitous-language, index.
+Review/lint: verified touched wiki links and raw source links; fixed a pre-existing glossary link typo while updating glossary terms.
+TODOs filed: none.
+
