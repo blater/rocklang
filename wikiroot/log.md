@@ -247,3 +247,14 @@ Pages updated: zxn-sample-programs, zxn-copper, zxn-dma, ubiquitous-language, in
 Review/lint: verified touched wiki links and raw source links; drained the copper pending directory including its build .gitignore.
 TODOs filed: 1 — confirm whether the Layer 2 clear loop intentionally clears seven 8K banks.
 
+
+## [2026-04-11] ingest | ZXN sample support scaffolds
+
+Changed files: 6
+
+Summary: Moved remaining sample support .gitignore scaffold files from new/ to raw/. These files preserve build/tool directory placeholders that accompany the ingested assembly samples.
+Pages created: none.
+Pages updated: none.
+Review/lint: confirmed remaining pending files are only .DS_Store metadata.
+TODOs filed: none.
+
