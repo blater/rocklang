@@ -3,7 +3,7 @@ title: ZXN Target (ZX Spectrum Next / Z80)
 category: targets
 tags: [zxn, z80, spectrum-next, z88dk, sdcc, embedded, target]
 sources: []
-updated: 2026-04-10
+updated: 2026-04-11
 status: current
 ---
 
@@ -91,7 +91,7 @@ Rock supports inline Z80 assembly via embed blocks:
 @end asm
 ```
 
-The `asm_interop.h` / `asm_interop.c` files in `src/lib/z80/` provide C-callable wrappers for common Z80 I/O operations (port reads, writes, memory-mapped access). See [[syntax/embed]] for embed block syntax.
+The `asm_interop.h` / `asm_interop.c` files in `src/lib/` provide C-callable wrappers for common Z80 I/O operations (port reads, writes, memory-mapped access). See [[syntax/embed]] for embed block syntax.
 
 ## peek / poke
 
@@ -126,7 +126,7 @@ The Next hardware is documented in a dedicated hierarchy under `pages/targets/zx
 | Feature | Status |
 |---------|--------|
 | `enum_test.rkr` | Currently fails on ZXN due to SDCC enum syntax incompatibility |
-| Inline assembly | Supported but requires Z88DK's `__asm` / `__endasm` syntax |
+| Inline assembly | Supported via `@embed asm`; generator emits `#asm`/`#endasm` (Z88DK preprocessor directives, processed by `zcc` before SDCC); host builds skip the block via `#ifdef __SDCC` |
 | Dynamic memory | Arena allocator works; SDCC heap is limited on Z80 |
 
 ## Verified Working

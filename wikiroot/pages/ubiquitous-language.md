@@ -13,20 +13,11 @@ Canonical glossary for the Rock compiler and language domain. All wiki pages use
 
 ---
 
-### AST (Abstract Syntax Tree)
-The tree data structure produced by the parser. Each node is a `node_t` tagged with a `node_tag_t` enum value identifying its kind (e.g. `fundef`, `funcall`, `vardef`, `ifstmt`). The root node has tag `program`.
-
-**Domain:** Parser  
-**See also:** [[parser/parser-overview]], [[domain-model]]
-
----
-
 ### Arena Allocator
 Rock's memory strategy: `allocate_compiler_persistent()` allocates from a growing stack; `kill_compiler_stack()` frees everything at once. No incremental freeing occurs during compilation.
 
 **Domain:** Runtime / compiler infrastructure  
 **See also:** [[concepts/array-internals]]
-
 ---
 
 ### Array (dynamic)
@@ -34,7 +25,6 @@ A heap-allocated, growable sequence. Represented at runtime as `__internal_dynam
 
 **Domain:** Runtime library  
 **See also:** [[concepts/array-internals]]
-
 ---
 
 ### Array (fixed-size)
@@ -42,247 +32,13 @@ A `Type[N]` declaration in Rock. Uses the same `__internal_dynamic_array_t` stru
 
 **Domain:** Runtime library  
 **See also:** [[concepts/array-internals]]
-
 ---
 
-### Builtin Function
-A function recognised by name in the generator and translated directly to a runtime call rather than a user-defined `sub`. Examples: `append`, `get`, `set`, `pop`, `insert`, `length`, `concat`, `substring`, `print`, `peek`, `poke`.
-
-**Domain:** Generator  
-**See also:** [[generator/generator-overview]]
-
----
-
-### Compilation Pipeline
-The three sequential phases: Lex → Parse → Generate. Orchestrated by `main.c`.
-
-**Domain:** Architecture  
-**See also:** [[overview]], [[concepts/compilation-pipeline]]
-
----
-
-### Embed Block
-An `@embed lang … @end lang` section in Rock source containing raw C or Z80 assembly. The lexer captures the body verbatim in the token; the generator emits it unchanged.
-
-**Domain:** Lexer / Generator  
-**See also:** [[syntax/embed]]
-
----
-
-### Enum
-A Rock type declared with `enum Name { Item1, Item2, … }`. Maps to a C `typedef enum`.
-
-**Domain:** Parser / Generator  
-**See also:** [[syntax/modules-and-records]]
-
----
-
-### fundef
-The AST node type for function and method definitions. Fields include name, return type, parameter list, method flags (`is_method`, `is_array_method`), and body.
+### AST (Abstract Syntax Tree)
+The tree data structure produced by the parser. Each node is a `node_t` tagged with a `node_tag_t` enum value identifying its kind (e.g. `fundef`, `funcall`, `vardef`, `ifstmt`). The root node has tag `program`.
 
 **Domain:** Parser  
-**See also:** [[parser/parser-overview]]
-
----
-
-### Generator
-The compiler phase that walks the AST and emits C source. Implemented in `generator.c`. Maintains a name table, a `pre_f` buffer for statement setup code, and a string temporary counter.
-
-**Domain:** Generator  
-**See also:** [[generator/generator-overview]]
-
----
-
-### Host Target
-Compilation target. This could be a standard POSIX/Linux/macOS systems, or small system or retro system. Modern systems use C output compiled with `gcc`. The zx next target uses z88dk as its C compiler.
-
-**Domain:** Targets  
-**See also:** [[targets/host-gcc]], [[targets/zxn-z80]], [[overview]]
-
----
-
-### Hardware IM2
-ZX Spectrum Next extension of IM2 that uses a 32-byte aligned vector table and Next interrupt-control registers to route named interrupt sources such as line, ULA, CTC, and UART events.
-
-**Domain:** ZXN Hardware  
-**See also:** [[targets/zxn/zxn-interrupts]], [[targets/zxn/samples/zxn-im2hw-sample-summary]]
-
----
-
-### IM1
-Z80 interrupt mode 1. On the ZX Spectrum Next, the regular frame interrupt jumps to address `$0038`, so custom IM1 code normally requires paging RAM over the ROM area that contains that address.
-
-**Domain:** ZXN Hardware  
-**See also:** [[targets/zxn/zxn-interrupts]], [[targets/zxn/samples/zxn-im1-sample-summary]]
-
----
-
-### IM2
-Z80 interrupt mode 2. The `I` register supplies the high byte of a vector table address, and the data bus supplies the low byte. Robust setups use a 257-byte vector table and a handler address whose high and low bytes match.
-
-**Domain:** ZXN Hardware  
-**See also:** [[targets/zxn/zxn-interrupts]], [[targets/zxn/samples/zxn-im2safe-sample-summary]]
-
----
-
-### Include
-A `include "path/to/file.rkr"` directive. The included file's tokens are spliced into the parent token stream at parse time. Included files must begin with `module Name;`.  File paths are relative to the including file.
-
-**Domain:** Parser  
-**See also:** [[parser/parser-overview]]
-
----
-
-### Interrupt Handler
-Routine entered by the CPU when a maskable interrupt is accepted. A reusable ZXN handler must preserve any registers it uses, perform source-specific acknowledgement when required, and return with `RETI`.
-
-**Domain:** ZXN Hardware  
-**See also:** [[targets/zxn/zxn-interrupts]], [[targets/zxn/samples/zxn-interrupt-samples]]
-
----
-
-### Interrupt Vector Table
-Memory table used by IM2-style interrupts to resolve an interrupt event to a handler address. Legacy IM2 uses a 256-byte aligned table; Hardware IM2 uses a 32-byte aligned table with one word per source.
-
-**Domain:** ZXN Hardware  
-**See also:** [[targets/zxn/zxn-interrupts]], [[targets/zxn/samples/zxn-interrupt-samples]]
-
----
-
-### Lexer
-The first compiler phase. Converts the Rock source character stream into a flat `token_array_t`. Implemented in `lexer.c`.
-
-**Domain:** Lexer  
-**See also:** [[lexer/lexer-overview]]
-
----
-
-### Method
-A function defined with `sub Type.method(…)` or `sub Type[].method(…)`. Has an implicit `this` parameter. Mangled in generated C as `TypeName_methodName`.
-
-**Domain:** Parser / Generator  
-**See also:** [[syntax/functions-and-methods]]
-
----
-
-### Module
-A named singleton struct type declared with `module Name;`. Field declarations follow in the same file. The generator synthesises a `TypeName_new()` constructor.
-
-**Domain:** Parser / Generator  
-**See also:** [[syntax/modules-and-records]]
-
----
-
-### Name Table
-The compiler's symbol table. A flat array of entries with scope depths. Implemented in `name_table.c`. Used by the generator to look up types and resolve method call receivers.
-
-**Domain:** Generator / Compiler infrastructure  
-**See also:** [[concepts/name-table]]
-
----
-
-### Parser
-The second compiler phase. Converts a `token_array_t` into an AST. Implemented in `parser.c`. Handles includes, operator precedence, and all Rock grammar rules.
-
-**Domain:** Parser  
-**See also:** [[parser/parser-overview]]
-
----
-
-### pre_f Buffer
-A secondary output buffer in the generator. Complex sub-expressions (string literals, temporaries) are emitted here first so the surrounding C statement stays syntactically valid. Required for ZXN target; used on host too for consistency.
-
-**Domain:** Generator  
-**See also:** [[generator/generator-overview]]
-
----
-
-### Product Type (pro)
-A Rock type declared with `pro Name { Constructor: type, … }`. A tagged-union-like construct. Maps to a C struct with a tag field.
-
-**Domain:** Parser / Generator  
-**See also:** [[syntax/modules-and-records]]
-
----
-
-### Record
-A composite value type declared with `record Name { field: type, … }`. Maps to a C struct. Instantiated with `record { field := value, … }`.
-
-**Domain:** Parser / Generator  
-**See also:** [[syntax/modules-and-records]]
-
----
-
-### Rock
-The language being transpiled. Statically typed, C-targeting, with syntax inspired by BASIC-era structured languages. File extension `.rkr`.
-
-**Domain:** Language  
-**See also:** [[overview]]
-
----
-
-### Scope
-A lexical nesting level in the name table. Scope 0 = top-level / global. Functions and loops create new scopes. On scope exit, entries deeper than the current depth are truncated from the name table.
-
-**Domain:** Compiler infrastructure  
-**See also:** [[concepts/name-table]]
-
----
-
-### sjasmplus
-Assembler used by the ZXN sample programs. It supports `DEVICE ZXSPECTRUMNEXT`, `NEXTREG`, bank/page directives, `INCBIN`, and `SAVENEX` output generation.
-
-**Domain:** Targets  
-**See also:** [[targets/zxn/zxn-sample-programs]]
-
----
-
-### Statement Splitting
-The technique of separating complex expression setup from the statement that uses it, writing setup into `pre_f` and the main expression into `f`. Required to satisfy C grammar constraints on ZXN/SDCC.
-
-**Domain:** Generator  
-**See also:** [[generator/generator-overview]], [[targets/zxn-z80]]
-
----
-
-### String Temporary
-A generated variable `__strtmp_N` used to hold an intermediate string value during expression evaluation. Counter managed by the generator per-function.
-
-**Domain:** Generator  
-**See also:** [[concepts/string-representation]]
-
----
-
-### sub
-The Rock keyword for defining a function or method (`sub name(params): rettype { body }`).
-
-**Domain:** Language / Parser  
-**See also:** [[syntax/functions-and-methods]]
-
----
-
-### Token
-The unit of output from the lexer. A `token_t` struct with `type` (enum), `lexeme` (string view), `line`, `col`, and for embed tokens, `embed_body` and `embed_lang`.
-
-**Domain:** Lexer  
-**See also:** [[lexer/lexer-overview]]
-
----
-
-### Transpile
-The process of converting Rock source to C source. Distinguished from compilation (C→machine code) which is handled by gcc or zcc.
-
-**Domain:** Architecture  
-**See also:** [[overview]]
-
----
-
-### AY-3-8912
-Programmable sound chip. The ZX Spectrum Next includes three of these chips (Turbo Sound Next). Each has 3 tone channels, 1 noise generator, and an envelope generator. Programmed via I/O ports `$FFFD` (chip/register select) and `$BFFD` (register write).
-
-**Domain:** ZXN Hardware  
-**See also:** [[targets/zxn/zxn-sound]]
-
+**See also:** [[parser/parser-overview]], [[domain-model]]
 ---
 
 ### AY Register
@@ -290,7 +46,13 @@ One of the 14 internal registers on an AY-3-8912 chip. Programs select a registe
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-sound]], [[targets/zxn/samples/zxn-sound-sample-summary]]
+---
 
+### AY-3-8912
+Programmable sound chip. The ZX Spectrum Next includes three of these chips (Turbo Sound Next). Each has 3 tone channels, 1 noise generator, and an envelope generator. Programmed via I/O ports `$FFFD` (chip/register select) and `$BFFD` (register write).
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-sound]]
 ---
 
 ### Bank (memory bank)
@@ -298,23 +60,13 @@ A fixed-size block of physical RAM that can be mapped into a CPU address slot. T
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-memory-paging]]
-
 ---
 
-### Copper
-A hardware co-processor on the ZX Spectrum Next that executes a program of WAIT/MOVE/HALT/NOOP instructions in sync with the raster scan. Allows per-scanline register changes without Z80 intervention. Has 2KB of dedicated write-only program memory.
+### Builtin Function
+A function recognised by name in the generator and translated directly to a runtime call rather than a user-defined `sub`. Examples: `append`, `get`, `set`, `pop`, `insert`, `length`, `concat`, `substring`, `print`, `peek`, `poke`.
 
-**Domain:** ZXN Hardware  
-**See also:** [[targets/zxn/zxn-copper]]
-
----
-
-### Copper List
-Sequence of 16-bit Copper instructions uploaded into Copper memory. A list commonly alternates WAIT and MOVE instructions and ends with HALT so the program can restart cleanly on the next vertical blank.
-
-**Domain:** ZXN Hardware  
-**See also:** [[targets/zxn/zxn-copper]], [[targets/zxn/samples/zxn-copper-sample-summary]]
-
+**Domain:** Generator  
+**See also:** [[generator/generator-overview]]
 ---
 
 ### Clip Window
@@ -322,7 +74,27 @@ Layer-specific visible rectangle controlled by sequential Next register writes. 
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-layer2]], [[targets/zxn/samples/zxn-layer2-samples]]
+---
 
+### Compilation Pipeline
+The three sequential phases: Lex → Parse → Generate. Orchestrated by `main.c`.
+
+**Domain:** Architecture  
+**See also:** [[overview]], [[concepts/compilation-pipeline]]
+---
+
+### Copper
+A hardware co-processor on the ZX Spectrum Next that executes a program of WAIT/MOVE/HALT/NOOP instructions in sync with the raster scan. Allows per-scanline register changes without Z80 intervention. Has 2KB of dedicated write-only program memory.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-copper]]
+---
+
+### Copper List
+Sequence of 16-bit Copper instructions uploaded into Copper memory. A list commonly alternates WAIT and MOVE instructions and ends with HALT so the program can restart cleanly on the next vertical blank.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-copper]], [[targets/zxn/samples/zxn-copper-sample-summary]]
 ---
 
 ### DMA (zxnDMA)
@@ -330,7 +102,83 @@ The ZX Spectrum Next's single-channel DMA controller at port `$xx6B`. Transfers 
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-dma]]
+---
 
+### Embed Block
+An `@embed lang … @end lang` section in Rock source containing raw C or Z80 assembly. The lexer captures the body verbatim in the token; the generator emits it unchanged.
+
+**Domain:** Lexer / Generator  
+**See also:** [[syntax/embed]]
+---
+
+### Enum
+A Rock type declared with `enum Name { Item1, Item2, … }`. Maps to a C `typedef enum`.
+
+**Domain:** Parser / Generator  
+**See also:** [[syntax/modules-and-records]]
+---
+
+### fundef
+The AST node type for function and method definitions. Fields include name, return type, parameter list, method flags (`is_method`, `is_array_method`), and body.
+
+**Domain:** Parser  
+**See also:** [[parser/parser-overview]]
+---
+
+### Generator
+The compiler phase that walks the AST and emits C source. Implemented in `generator.c`. Maintains a name table, a `pre_f` buffer for statement setup code, and a string temporary counter.
+
+**Domain:** Generator  
+**See also:** [[generator/generator-overview]]
+---
+
+### Hardware IM2
+ZX Spectrum Next extension of IM2 that uses a 32-byte aligned vector table and Next interrupt-control registers to route named interrupt sources such as line, ULA, CTC, and UART events.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-interrupts]], [[targets/zxn/samples/zxn-im2hw-sample-summary]]
+---
+
+### Host Target
+Compilation target. This could be a standard POSIX/Linux/macOS systems, or small system or retro system. Modern systems use C output compiled with `gcc`. The zx next target uses z88dk as its C compiler.
+
+**Domain:** Targets  
+**See also:** [[targets/host-gcc]], [[targets/zxn-z80]], [[overview]]
+---
+
+### IM1
+Z80 interrupt mode 1. On the ZX Spectrum Next, the regular frame interrupt jumps to address `$0038`, so custom IM1 code normally requires paging RAM over the ROM area that contains that address.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-interrupts]], [[targets/zxn/samples/zxn-im1-sample-summary]]
+---
+
+### IM2
+Z80 interrupt mode 2. The `I` register supplies the high byte of a vector table address, and the data bus supplies the low byte. Robust setups use a 257-byte vector table and a handler address whose high and low bytes match.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-interrupts]], [[targets/zxn/samples/zxn-im2safe-sample-summary]]
+---
+
+### Include
+A `include "path/to/file.rkr"` directive. The included file's tokens are spliced into the parent token stream at parse time. Included files must begin with `module Name;`.  File paths are relative to the including file.
+
+**Domain:** Parser  
+**See also:** [[parser/parser-overview]]
+---
+
+### Interrupt Handler
+Routine entered by the CPU when a maskable interrupt is accepted. A reusable ZXN handler must preserve any registers it uses, perform source-specific acknowledgement when required, and return with `RETI`.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-interrupts]], [[targets/zxn/samples/zxn-interrupt-samples]]
+---
+
+### Interrupt Vector Table
+Memory table used by IM2-style interrupts to resolve an interrupt event to a handler address. Legacy IM2 uses a 256-byte aligned table; Hardware IM2 uses a 32-byte aligned table with one word per source.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-interrupts]], [[targets/zxn/samples/zxn-interrupt-samples]]
 ---
 
 ### Layer 2
@@ -338,7 +186,20 @@ A full-colour framebuffer layer on the ZX Spectrum Next. Supports 256×192 (256 
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-layer2]]
+---
 
+### Lexer
+The first compiler phase. Converts the Rock source character stream into a flat `token_array_t`. Implemented in `lexer.c`.
+
+**Domain:** Lexer  
+**See also:** [[lexer/lexer-overview]]
+---
+
+### Method
+A function defined with `sub Type.method(…)` or `sub Type[].method(…)`. Has an implicit `this` parameter. Mangled in generated C as `TypeName_methodName`.
+
+**Domain:** Parser / Generator  
+**See also:** [[syntax/functions-and-methods]]
 ---
 
 ### MMU Slot
@@ -346,7 +207,20 @@ One of eight 8K regions in the Z80's 64K address space, managed by the Next MMU 
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-memory-paging]]
+---
 
+### Module
+A named singleton struct type declared with `module Name;`. Field declarations follow in the same file. The generator synthesises a `TypeName_new()` constructor.
+
+**Domain:** Parser / Generator  
+**See also:** [[syntax/modules-and-records]]
+---
+
+### Name Table
+The compiler's symbol table. A flat array of entries with scope depths. Implemented in `name_table.c`. Used by the generator to look up types and resolve method call receivers.
+
+**Domain:** Generator / Compiler infrastructure  
+**See also:** [[concepts/name-table]]
 ---
 
 ### NEX File
@@ -354,7 +228,6 @@ Executable file format used by the ZX Spectrum Next. sjasmplus samples produce i
 
 **Domain:** Targets  
 **See also:** [[targets/zxn-z80]], [[targets/zxn/zxn-sample-programs]]
-
 ---
 
 ### Next Register
@@ -362,7 +235,6 @@ A hardware control register on the ZX Spectrum Next, accessed via ports `$243B` 
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-ports-registers]]
-
 ---
 
 ### NEXTREG
@@ -370,7 +242,6 @@ A Z80N extended instruction that writes a value directly to a Next register. Syn
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-ports-registers]]
-
 ---
 
 ### Palette (ZXN)
@@ -378,7 +249,6 @@ A 256-entry lookup table mapping colour indices to RRRGGGBB (8-bit) or RRRGGGBBB
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-palette]]
-
 ---
 
 ### Palette Offset
@@ -386,7 +256,55 @@ A 4-bit value attached to each sprite or tilemap tile that shifts its colour ind
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-sprites]], [[targets/zxn/zxn-tilemap]]
+---
 
+### Parser
+The second compiler phase. Converts a `token_array_t` into an AST. Implemented in `parser.c`. Handles includes, operator precedence, and all Rock grammar rules.
+
+**Domain:** Parser  
+**See also:** [[parser/parser-overview]]
+---
+
+### pre_f Buffer
+A secondary output buffer in the generator. Complex sub-expressions (string literals, temporaries) are emitted here first so the surrounding C statement stays syntactically valid. Required for ZXN target; used on host too for consistency.
+
+**Domain:** Generator  
+**See also:** [[generator/generator-overview]]
+---
+
+### Product Type (pro)
+A Rock type declared with `pro Name { Constructor: type, … }`. A tagged-union-like construct. Maps to a C struct with a tag field.
+
+**Domain:** Parser / Generator  
+**See also:** [[syntax/modules-and-records]]
+---
+
+### Record
+A composite value type declared with `record Name { field: type, … }`. Maps to a C struct. Instantiated with `record { field := value, … }`.
+
+**Domain:** Parser / Generator  
+**See also:** [[syntax/modules-and-records]]
+---
+
+### Rock
+The language being transpiled. Statically typed, C-targeting, with syntax inspired by BASIC-era structured languages. File extension `.rkr`.
+
+**Domain:** Language  
+**See also:** [[overview]]
+---
+
+### Scope
+A lexical nesting level in the name table. Scope 0 = top-level / global. Functions and loops create new scopes. On scope exit, entries deeper than the current depth are truncated from the name table.
+
+**Domain:** Compiler infrastructure  
+**See also:** [[concepts/name-table]]
+---
+
+### sjasmplus
+Assembler used by the ZXN sample programs. It supports `DEVICE ZXSPECTRUMNEXT`, `NEXTREG`, bank/page directives, `INCBIN`, and `SAVENEX` output generation.
+
+**Domain:** Targets  
+**See also:** [[targets/zxn/zxn-sample-programs]]
 ---
 
 ### Sprite
@@ -394,7 +312,6 @@ A 16×16 pixel hardware-rendered object on the ZX Spectrum Next. Pattern data li
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-sprites]]
-
 ---
 
 ### Sprite Pattern
@@ -402,15 +319,27 @@ Pixel data for one hardware sprite image. In 8-bit mode each 16x16 pattern uses 
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-sprites]], [[targets/zxn/samples/zxn-sprite-sample-summary]]
-
 ---
 
-### Tilemap
-A block-based display layer on the ZX Spectrum Next using 8×8 pixel tile definitions. Two resolutions: 40×32 or 80×32 tiles (full screen including border). 4 bits per pixel per tile, with per-tile palette offset, mirroring, and rotation attributes. Tile data lives in 16K bank 5.
+### Statement Splitting
+The technique of separating complex expression setup from the statement that uses it, writing setup into `pre_f` and the main expression into `f`. Required to satisfy C grammar constraints on ZXN/SDCC.
 
-**Domain:** ZXN Hardware  
-**See also:** [[targets/zxn/zxn-tilemap]]
+**Domain:** Generator  
+**See also:** [[generator/generator-overview]], [[targets/zxn-z80]]
+---
 
+### String Temporary
+A generated variable `__strtmp_N` used to hold an intermediate string value during expression evaluation. Counter managed by the generator per-function.
+
+**Domain:** Generator  
+**See also:** [[concepts/string-representation]]
+---
+
+### sub
+The Rock keyword for defining a function or method (`sub name(params): rettype { body }`).
+
+**Domain:** Language / Parser  
+**See also:** [[syntax/functions-and-methods]]
 ---
 
 ### Tile Definition
@@ -418,7 +347,13 @@ Pixel data for one 8x8 tile used by the Tilemap layer. In 4-bit tile mode each d
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-tilemap]], [[targets/zxn/samples/zxn-tilemap-sample-summary]]
+---
 
+### Tilemap
+A block-based display layer on the ZX Spectrum Next using 8×8 pixel tile definitions. Two resolutions: 40×32 or 80×32 tiles (full screen including border). 4 bits per pixel per tile, with per-tile palette offset, mirroring, and rotation attributes. Tile data lives in 16K bank 5.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-tilemap]]
 ---
 
 ### Tilemap Entry
@@ -426,7 +361,20 @@ The per-cell value in tilemap memory. In one-byte mode it is only the tile index
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-tilemap]], [[targets/zxn/samples/zxn-tilemap-sample-summary]]
+---
 
+### Token
+The unit of output from the lexer. A `token_t` struct with `type` (enum), `lexeme` (string view), `line`, `col`, and for embed tokens, `embed_body` and `embed_lang`.
+
+**Domain:** Lexer  
+**See also:** [[lexer/lexer-overview]]
+---
+
+### Transpile
+The process of converting Rock source to C source. Distinguished from compilation (C→machine code) which is handled by gcc or zcc.
+
+**Domain:** Architecture  
+**See also:** [[overview]]
 ---
 
 ### Turbo Sound Next
@@ -434,7 +382,6 @@ ZX Spectrum Next audio extension that provides three AY-3-8912 chips and 9 total
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-sound]], [[targets/zxn/samples/zxn-sound-sample-summary]]
-
 ---
 
 ### ULA (Uncommitted Logic Array)
@@ -442,7 +389,6 @@ The original ZX Spectrum display chip. Provides a 256×192 pixel display using 1
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-ula]]
-
 ---
 
 ### Unified Relative Sprite
@@ -450,7 +396,6 @@ Sprite grouping mode where relative sprites inherit the anchor's transform so a 
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-sprites]], [[targets/zxn/samples/zxn-sprite-sample-summary]]
-
 ---
 
 ### ZXN Sample Program
@@ -458,7 +403,6 @@ A small sjasmplus assembly program used as an executable reference for one ZX Sp
 
 **Domain:** Targets  
 **See also:** [[targets/zxn/zxn-sample-programs]]
-
 ---
 
 ### ZXN Target

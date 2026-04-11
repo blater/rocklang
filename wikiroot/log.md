@@ -258,3 +258,20 @@ Pages updated: none.
 Review/lint: confirmed remaining pending files are only .DS_Store metadata.
 TODOs filed: none.
 
+## [2026-04-11] todo | Nested sub definitions unimplemented
+
+**Issue:** `pages/syntax/functions-and-methods.md` notes that nested `sub` definitions are still unimplemented; `generator.c` currently asserts `sub.path.length == 1`.
+
+**Pages affected:** `pages/syntax/functions-and-methods.md`
+
+**Resolution:** Decide whether nested functions should remain unsupported syntax, become a parser-level error, or gain generator/runtime semantics.
+
+## [2026-04-11] lint | fix wiki lint follow-ups
+
+Changed files: 4
+
+Issues fixed: removed pending .DS_Store metadata files from new/, added a formal TODO log entry for the nested-sub inline TODO, sorted ubiquitous-language glossary headings alphabetically, and committed the source-checked embed/Z80 target documentation updates already present in the wiki working tree.
+Remaining issues: content TODOs remain open for pro match semantics, nested sub semantics, sprite sample DMA length preservation, and Copper sample Layer 2 bank count.
+Validation: verified new/ has no pending files, glossary ordering has no out-of-order pairs, and wiki links/frontmatter/index coverage remain clean.
+TODOs filed: 1 — nested sub definitions unimplemented.
+
