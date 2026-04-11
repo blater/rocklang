@@ -1,9 +1,0 @@
-sub main(): void => {
-  dim x: int := 10;
-  @embed c
-    printf("Before: x = %d\n", x);
-    x = x * x;
-    printf("After: x = %d\n", x);
-  @end c
-  print("Test complete\n");
-}

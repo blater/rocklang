@@ -1,0 +1,19 @@
+.DS_Store
+
+# Build and generated test output
+build/
+tmp/
+x/
+
+# Legacy docs are being retired in favor of wikiroot/
+docs/
+logs/
+RELATIVE_PATH_FIX_PLAN.md
+.bak/RELATIVE_PATH_FIX_PLAN.md
+.bak/compile.sh
+.bak/docs/
+.bak/examples/
+
+# Local Claude session state; committed project memory lives under .claude/projects/
+.claude/settings.local.json
+.claude/worktrees/

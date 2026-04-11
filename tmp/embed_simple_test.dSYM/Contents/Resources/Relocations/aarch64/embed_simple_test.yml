@@ -1,5 +1,0 @@
----
-triple:          'arm64-apple-darwin'
-binary-path:     embed_simple_test
-relocations:     []
-...
