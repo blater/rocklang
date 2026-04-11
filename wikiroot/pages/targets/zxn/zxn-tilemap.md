@@ -2,8 +2,8 @@
 title: ZXN Tilemap
 category: targets
 tags: [zxn, tilemap, tiles, 40x32, 80x32, text-mode, tiledef]
-sources: [zxnext_guide.md]
-updated: 2026-04-10
+sources: [zxnext_guide.md, samples/tilemap/main.asm, samples/tilemap/tiles.map, samples/tilemap/tiles.spr, samples/tilemap/tiles.pal]
+updated: 2026-04-11
 status: current
 ---
 
@@ -76,6 +76,8 @@ NEXTREG $43, %00110000   ; auto-increment, select first tilemap palette
 
 Copy tile definitions with `LDIR` from source data to `START_OF_TILES`. Copy tilemap data with `LDIR` from source to `START_OF_TILEMAP`.
 
+The tilemap sample implements this setup directly, using `$6000` for 40x32 one-byte tilemap entries and `$6600` for tile definitions. It also uploads a 16-entry palette and toggles `$30` to create a 1-pixel shake. See [[targets/zxn/samples/zxn-tilemap-sample-summary]].
+
 ![Tilemap example](../../../raw/images/zxnext_guide_p100_f1.png)
 
 ## Registers
@@ -143,6 +145,7 @@ Copy tile definitions with `LDIR` from source data to `START_OF_TILES`. Copy til
 ## See Also
 
 - [[targets/zxn-hardware]] — layer stack and priority
+- [[targets/zxn/samples/zxn-tilemap-sample-summary]] — worked tilemap asset setup sample
 - [[targets/zxn/zxn-palette]] — tilemap palette offset scheme
 - [[targets/zxn/zxn-ula]] — ULA stencil interaction
 - [[targets/zxn/zxn-ports-registers]] — full register index

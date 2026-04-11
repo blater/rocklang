@@ -2,7 +2,7 @@
 title: Ubiquitous Language — Rock Compiler Glossary
 category: overview
 tags: [glossary, domain-language]
-sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm, samples/sprites/main.asm, samples/sound/main.asm]
+sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm, samples/sprites/main.asm, samples/sound/main.asm, samples/tilemap/main.asm]
 updated: 2026-04-11
 status: current
 ---
@@ -394,6 +394,22 @@ A block-based display layer on the ZX Spectrum Next using 8×8 pixel tile defini
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-tilemap]]
+
+---
+
+### Tile Definition
+Pixel data for one 8x8 tile used by the Tilemap layer. In 4-bit tile mode each definition uses 32 bytes, and definitions are stored in bank 5 at the address selected by `$6F`.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-tilemap]], [[targets/zxn/samples/zxn-tilemap-sample-summary]]
+
+---
+
+### Tilemap Entry
+The per-cell value in tilemap memory. In one-byte mode it is only the tile index; in two-byte mode it pairs an attribute byte with an index byte.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-tilemap]], [[targets/zxn/samples/zxn-tilemap-sample-summary]]
 
 ---
 

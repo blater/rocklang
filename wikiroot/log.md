@@ -207,3 +207,14 @@ Pages updated: zxn-sample-programs, zxn-sound, ubiquitous-language, index.
 Review/lint: verified touched wiki links and raw source links; drained the sound pending directory including its build .gitignore.
 TODOs filed: none.
 
+
+## [2026-04-11] ingest | ZXN tilemap sample
+
+Changed files: 11
+
+Summary: Ingested the tilemap assembly sample and its map, tile, and palette binary assets. Added a tilemap sample summary covering bank 5 placement, one-byte 40x32 entries, tile definitions, palette upload, and offset-based shake.
+Pages created: zxn-tilemap-sample-summary.
+Pages updated: zxn-sample-programs, zxn-tilemap, ubiquitous-language, index.
+Review/lint: verified touched wiki links and raw asset links; checked asset sizes/hashes; drained the tilemap pending directory including its build .gitignore.
+TODOs filed: none.
+
