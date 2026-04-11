@@ -417,3 +417,24 @@ Compilation target for the ZX Spectrum Next (Z80 architecture). C output compile
 
 **Domain:** Targets  
 **See also:** [[targets/zxn-z80]], [[overview]]
+---
+
+### z80asm
+The relocatable macro assembler, linker, and librarian that forms the backend of Z88DK. Invoked by `zcc` internally; also available directly as `z88dk-z80asm`. Supports Z80N opcodes (`-mz80n`) for ZX Spectrum Next targets, `CU.*` Copper directives, and `DMA.*` DMA directives.
+
+**Domain:** Targets  
+**See also:** [[targets/zxn/tools/z80asm-reference]], [[targets/zxn-z80]]
+---
+
+### ASMPC
+Assembly program counter — the address of the current instruction at the point z80asm is assembling it. Used in expressions to compute relative offsets or data sizes. Resolved at link time.
+
+**Domain:** Targets  
+**See also:** [[targets/zxn/tools/z80asm-reference]]
+---
+
+### Calling Convention
+The protocol by which the caller and callee agree on how parameters are passed (registers vs. stack), who cleans the stack, and where return values are placed. Z88DK with SDCC (`-clib=sdcc_iy`) uses a register-based convention for small parameters; the stack is used for overflow. `@embed asm` blocks run inside an SDCC-managed frame — IY must not be modified.
+
+**Domain:** Targets  
+**See also:** [[targets/zxn/tools/z88dk-inline-asm]], [[targets/zxn-z80]]

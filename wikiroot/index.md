@@ -38,6 +38,12 @@ Organised by category. Each entry: `page-name — one-line description`.
 - [[targets/zxn/zx-z88dk-startupcrt-summary]] — Z88DK startup CRT profiles and output-driver implications
 - [[targets/zxn/zxn-sample-programs]] — ZXN sample-program hub linking concrete sjasmplus code to hardware pages
 
+### Z88DK Tools and Assembly
+
+- [[targets/zxn/tools/z88dk-inline-asm]] — `#asm`/`#endasm` syntax, calling conventions, data types, return registers
+- [[targets/zxn/tools/z88dk-z80-library]] — `<z80.h>`: timing delays, port I/O, IM2 interrupt setup, memory access macros
+- [[targets/zxn/tools/z80asm-reference]] — z80asm assembler/linker: input format, preprocessor, expressions, all directives
+
 ### ZXN Hardware Subsystems
 
 - [[targets/zxn/zxn-ports-registers]] — Complete I/O port map and Next register index (all 130 registers)

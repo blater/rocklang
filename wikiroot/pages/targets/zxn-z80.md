@@ -109,6 +109,14 @@ byte val := peek(0x5c00);
 
 These map directly to C pointer casts: `*(uint8_t*)(addr)`.
 
+## Z88DK Tools and Assembly
+
+Detailed reference documentation for the Z88DK toolchain used by the ZXN target:
+
+- [[targets/zxn/tools/z88dk-inline-asm]] — `#asm`/`#endasm` syntax, calling conventions, data types, return registers
+- [[targets/zxn/tools/z88dk-z80-library]] — `<z80.h>` library: timing delays, port I/O, IM2 interrupt setup, memory access
+- [[targets/zxn/tools/z80asm-reference]] — z80asm assembler/linker: input format, expressions, preprocessor macros, all directives, command line
+
 ## ZXN Hardware Reference
 
 The Next hardware is documented in a dedicated hierarchy under `pages/targets/zxn/`:

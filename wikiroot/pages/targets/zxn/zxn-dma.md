@@ -208,3 +208,4 @@ The copper sample uses the same DMA shape with Port B fixed as I/O, but targets 
 - [[targets/zxn/samples/zxn-copper-sample-summary]] — worked Copper-list DMA upload sample
 - [[targets/zxn/zxn-interrupts]] — DMA interrupt enable registers
 - [[targets/zxn/zxn-ports-registers]] — full register index
+- [[targets/zxn/tools/z80asm-reference]] — `DMA.*` assembler directives for DMA program generation

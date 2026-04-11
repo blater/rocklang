@@ -3,7 +3,7 @@ title: Testing Overview
 category: testing
 tags: [testing, test-suite, assertions, rkr]
 sources: []
-updated: 2026-04-10
+updated: 2026-04-11
 status: current
 ---
 
@@ -35,27 +35,36 @@ Tests print `PASS:` / `FAIL:` lines directly, and `run_tests.sh` parses those ma
 
 The script uses `./rock` to compile each test, runs the resulting binary, and reports PASS / FAIL per test. ZXN tests must be compiled and run manually — `run_tests.sh` has no `--target` option.
 
-## Test Suite (38 auto-discovered tests)
+## Test Suite (39 auto-discovered tests)
 
 | Test file | Features covered |
 |-----------|-----------------|
 | `simple_test.rkr` | Basic variables, string assignment, assertions |
-| `array_test.rkr` | Dynamic arrays, `append`, `get`, `length`, fixed-size arrays |
-| `array_insert_test.rkr` | `insert()` at beginning, middle, end; multiple sequential inserts |
 | `assign_test.rkr` | Variable assignment, reassignment |
+| `var_declare_test.rkr` | Global variables, default-initialised scalar declarations |
 | `assignment_default_test.rkr` | Default initialisation for all types (`int x;` → `0`, etc.) |
-| `array_field_expr_receiver_test.rkr` | Field access on postfix expression receivers such as `make_wrapper().Names` |
-| `array_field_direct_index_test.rkr` | Direct indexing and assignment through record array fields |
+| `new_style_decl_test.rkr` | New-style (C/Java-like) variable declarations and record instantiation |
+| `new_style_params_test.rkr` | New-style function parameters (`type name` syntax) |
+| `unary_test.rkr` | Unary minus, unary not |
+| `casting_test.rkr` | `to_int`, `to_byte`, `to_word`, `to_dword` conversions |
 | `byte_test.rkr` | `byte` type arithmetic and casting |
 | `byte_advanced_test.rkr` | Advanced byte operations, overflow |
 | `word_test.rkr` | `word` type (uint16) |
 | `dword_test.rkr` | `dword` type (uint32) |
-| `casting_test.rkr` | `to_int`, `to_byte`, `to_word`, `to_dword` conversions |
+| `array_test.rkr` | Dynamic arrays, `append`, `get`, `length`, fixed-size arrays |
+| `array_insert_test.rkr` | `insert()` at beginning, middle, end; multiple sequential inserts |
+| `array_field_expr_receiver_test.rkr` | Field access on postfix expression receivers such as `make_wrapper().Names` |
+| `array_field_direct_index_test.rkr` | Direct indexing and assignment through record array fields |
 | `concat_test.rkr` | String concatenation with `concat()`, char+string |
 | `substring_test.rkr` | `substring(s, from)` — basic substring |
 | `substring_advanced_test.rkr` | `substring(s, from, len)` — ranged substring |
 | `tostring_test.rkr` | `to_string(n)` for numeric types |
 | `format_test.rkr` | `printf` format string output |
+| `record_init_test.rkr` | Record instantiation, field access, field mutation |
+| `record_field_test.rkr` | Record fields holding arrays; array ops through record references |
+| `methods.rkr` | Method syntax (`sub Type.method()`), `this` binding, return values |
+| `module_decl_test.rkr` | Module declaration, method dispatch, singleton state |
+| `module_instance_test.rkr` | Multiple module instances, state isolation |
 | `enum_test.rkr` | Enum declarations, enum values in expressions |
 | `loop_test.rkr` | Counter loops (`for i := 0 to N`) |
 | `for_each_test.rkr` | Iterator loops (`for x in arr`) |
@@ -64,17 +73,15 @@ The script uses `./rock` to compile each test, runs the resulting binary, and re
 | `peek_poke_simple_test.rkr` | Simplified peek/poke |
 | `peek_poke_minimal.rkr` | Minimal peek/poke |
 | `peek_poke_silent.rkr` | peek/poke without assertion output |
-| `unary_test.rkr` | Unary minus, unary not |
-| `embed_test.rkr` | `@embed c … @end c` inline C blocks |
-| `embed_simple_test.rkr` | Simple embed block |
-| `embed_inline_test.rkr` | Inline embed usage |
+| `embed_test.rkr` | `@embed c … @end c` top-level inline C function |
+| `embed_simple_test.rkr` | Minimal top-level embed usage |
+| `embed_inline_test.rkr` | `@embed c` inside a function body modifying a local variable |
+| `embed_asm_test.rkr` | `@embed asm` inside a function; verifies compile-clean on host |
 | `get_args_test.rkr` | `get_args()` — command-line argument access |
 
-Tests nested below `test/` are not auto-discovered by `run_tests.sh`; run them explicitly by path when needed. For example, `test/arrays/array_field_test.rkr` is a focused exploratory regression outside the default top-level sweep.
+## Test Status (as of 2026-04-11)
 
-## Test Status (as of 2026-04-10)
-
-- **Host (gcc):** 38/38 auto-discovered tests passing
+- **Host (gcc):** 39/39 auto-discovered tests passing
 - **ZXN:** Most tests pass; `enum_test.rkr` currently fails due to SDCC enum syntax incompatibility
 
 ## Adding a New Test

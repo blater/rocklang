@@ -121,3 +121,4 @@ For live patching a single byte of an existing instruction, the sample seeks the
 - [[targets/zxn/samples/zxn-copper-sample-summary]] — worked Copper list and live-patching sample
 - [[targets/zxn/zxn-interrupts]] — alternative: Z80 line interrupt for per-scanline effects
 - [[targets/zxn/zxn-ports-registers]] — full register index
+- [[targets/zxn/tools/z80asm-reference]] — `CU.*` assembler directives for Copper list generation
