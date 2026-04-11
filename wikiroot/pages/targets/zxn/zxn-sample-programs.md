@@ -2,7 +2,7 @@
 title: ZXN Sample Programs
 category: targets
 tags: [zxn, samples, sjasmplus, nex, hardware]
-sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm, samples/sprites/main.asm, samples/sprites/sprites.spr, samples/sound/main.asm, samples/tilemap/main.asm, samples/tilemap/tiles.map, samples/tilemap/tiles.spr, samples/tilemap/tiles.pal, samples/layer2-256x192/main.asm, samples/layer2-320x256/main.asm, samples/layer2-640x256/main.asm]
+sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm, samples/sprites/main.asm, samples/sprites/sprites.spr, samples/sound/main.asm, samples/tilemap/main.asm, samples/tilemap/tiles.map, samples/tilemap/tiles.spr, samples/tilemap/tiles.pal, samples/layer2-256x192/main.asm, samples/layer2-320x256/main.asm, samples/layer2-640x256/main.asm, samples/copper/main.asm]
 updated: 2026-04-11
 status: current
 ---
@@ -22,6 +22,7 @@ Use this page as the bridge between the hardware reference and implementation de
 | Sound | [[targets/zxn/zxn-sound]] | [[targets/zxn/samples/zxn-sound-sample-summary]] | [[targets/zxn/zxn-sound]] |
 | Tilemap | [[targets/zxn/zxn-tilemap]] | [[targets/zxn/samples/zxn-tilemap-sample-summary]] | [[targets/zxn/zxn-tilemap]], [[targets/zxn/zxn-palette]] |
 | Layer 2 graphics | [[targets/zxn/samples/zxn-layer2-samples]] | [[targets/zxn/samples/zxn-layer2-256x192-sample-summary]], [[targets/zxn/samples/zxn-layer2-320x256-sample-summary]], [[targets/zxn/samples/zxn-layer2-640x256-sample-summary]] | [[targets/zxn/zxn-layer2]], [[targets/zxn/zxn-memory-paging]] |
+| Copper | [[targets/zxn/zxn-copper]] | [[targets/zxn/samples/zxn-copper-sample-summary]] | [[targets/zxn/zxn-copper]], [[targets/zxn/zxn-layer2]], [[targets/zxn/zxn-dma]] |
 
 ## Common Assembly Shape
 

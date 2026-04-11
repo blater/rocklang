@@ -2,7 +2,7 @@
 title: Ubiquitous Language — Rock Compiler Glossary
 category: overview
 tags: [glossary, domain-language]
-sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm, samples/sprites/main.asm, samples/sound/main.asm, samples/tilemap/main.asm, samples/layer2-256x192/main.asm, samples/layer2-320x256/main.asm, samples/layer2-640x256/main.asm]
+sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm, samples/sprites/main.asm, samples/sound/main.asm, samples/tilemap/main.asm, samples/layer2-256x192/main.asm, samples/layer2-320x256/main.asm, samples/layer2-640x256/main.asm, samples/copper/main.asm]
 updated: 2026-04-11
 status: current
 ---
@@ -306,6 +306,14 @@ A hardware co-processor on the ZX Spectrum Next that executes a program of WAIT/
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-copper]]
+
+---
+
+### Copper List
+Sequence of 16-bit Copper instructions uploaded into Copper memory. A list commonly alternates WAIT and MOVE instructions and ends with HALT so the program can restart cleanly on the next vertical blank.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-copper]], [[targets/zxn/samples/zxn-copper-sample-summary]]
 
 ---
 

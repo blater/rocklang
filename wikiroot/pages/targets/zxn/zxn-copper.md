@@ -2,8 +2,8 @@
 title: ZXN Copper
 category: targets
 tags: [zxn, copper, coprocessor, raster, scanline, timing]
-sources: [zxnext_guide.md]
-updated: 2026-04-10
+sources: [zxnext_guide.md, samples/copper/main.asm]
+updated: 2026-04-11
 status: current
 ---
 
@@ -50,6 +50,8 @@ LD B, CopperListSize
 NEXTREG $61, %00000000
 NEXTREG $62, %11000000
 ```
+
+The copper sample provides both upload paths: direct byte upload through `$63`, and DMA upload by selecting `$63` through `$243B` then streaming bytes to `$253B`. See [[targets/zxn/samples/zxn-copper-sample-summary]].
 
 ## Program Format
 
@@ -109,10 +111,13 @@ Bits 2–0: MSB 3 bits of upload index. Writing mode bits without changing index
 
 **Copper Data 16-bit Write `$63`** — preferred over `$60`. Buffers first write (MSB); commits both bytes atomically on second write. Prevents half-written instructions from executing.
 
+For live patching a single byte of an existing instruction, the sample seeks the Copper PC with `$61`/`$62` and writes through `$60`. `$63` is intentionally not used for one-byte patches because it waits for a pair of bytes before committing.
+
 ![Copper control register](../../../raw/images/zxnext_guide_p118_f1.png)
 
 ## See Also
 
 - [[targets/zxn-hardware]] — overview of Next co-processors
+- [[targets/zxn/samples/zxn-copper-sample-summary]] — worked Copper list and live-patching sample
 - [[targets/zxn/zxn-interrupts]] — alternative: Z80 line interrupt for per-scanline effects
 - [[targets/zxn/zxn-ports-registers]] — full register index

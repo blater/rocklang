@@ -2,7 +2,7 @@
 title: ZXN DMA
 category: targets
 tags: [zxn, dma, transfer, zxndma, z80dma]
-sources: [zxnext_guide.md, samples/sprites/main.asm]
+sources: [zxnext_guide.md, samples/sprites/main.asm, samples/copper/main.asm]
 updated: 2026-04-11
 status: current
 ---
@@ -173,6 +173,8 @@ LoadSprites:
 
 The sprite sample uses this memory-to-I/O form to upload pattern bytes from `sprites.spr` to `$005B`. See [[targets/zxn/samples/zxn-sprite-sample-summary]] for the full sample context and review note about preserving the byte-count register.
 
+The copper sample uses the same DMA shape with Port B fixed as I/O, but targets `$253B` after selecting Copper data register `$63` via `$243B`. See [[targets/zxn/samples/zxn-copper-sample-summary]].
+
 ## DMA and Interrupts
 
 - In **continuous mode**, the CPU cannot respond to maskable interrupts (level-triggered, only ~30 cycles at 3.5MHz).
@@ -203,5 +205,6 @@ The sprite sample uses this memory-to-I/O form to upload pattern bytes from `spr
 - [[targets/zxn-hardware]] — hardware overview
 - [[targets/zxn/zxn-sprites]] — sprite pattern upload via DMA
 - [[targets/zxn/samples/zxn-sprite-sample-summary]] — worked sprite DMA upload sample
+- [[targets/zxn/samples/zxn-copper-sample-summary]] — worked Copper-list DMA upload sample
 - [[targets/zxn/zxn-interrupts]] — DMA interrupt enable registers
 - [[targets/zxn/zxn-ports-registers]] — full register index

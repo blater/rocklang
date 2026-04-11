@@ -229,3 +229,21 @@ Pages updated: zxn-sample-programs, zxn-layer2, ubiquitous-language, index.
 Review/lint: verified touched wiki links and raw source links; checked source moves and patch-marker cleanup. Non-source .DS_Store metadata remains pending for final cleanup/reporting.
 TODOs filed: none.
 
+## [2026-04-11] todo | Confirm Copper sample Layer 2 clear bank count
+
+**Issue:** `samples/copper/main.asm` defines `L2_END_8K_BANK = L2_START_8K_BANK + 6` and exits after comparing with `L2_END_8K_BANK + 1`, which appears to clear seven 8K banks (`18..24`) instead of the six 8K banks required for 256x192 Layer 2.
+
+**Pages affected:** `pages/targets/zxn/samples/zxn-copper-sample-summary.md`
+
+**Resolution:** Confirm whether the extra bank clear is intentional padding or an off-by-one in the sample constants.
+
+## [2026-04-11] ingest | ZXN copper sample
+
+Changed files: 9
+
+Summary: Ingested the Copper assembly sample. Added a Copper sample summary covering Layer 2 setup, Copper list upload via $63 or DMA, live one-byte patching via $60, palette changes, and clip-window effects.
+Pages created: zxn-copper-sample-summary.
+Pages updated: zxn-sample-programs, zxn-copper, zxn-dma, ubiquitous-language, index.
+Review/lint: verified touched wiki links and raw source links; drained the copper pending directory including its build .gitignore.
+TODOs filed: 1 — confirm whether the Layer 2 clear loop intentionally clears seven 8K banks.
+

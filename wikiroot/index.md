@@ -66,6 +66,7 @@ Organised by category. Each entry: `page-name — one-line description`.
 - [[targets/zxn/samples/zxn-layer2-256x192-sample-summary]] — Layer 2 256x192 sample using six 8K row banks
 - [[targets/zxn/samples/zxn-layer2-320x256-sample-summary]] — Layer 2 320x256 sample using ten 8K column banks
 - [[targets/zxn/samples/zxn-layer2-640x256-sample-summary]] — Layer 2 640x256 sample using packed 4bpp byte columns
+- [[targets/zxn/samples/zxn-copper-sample-summary]] — Copper sample using list upload, live instruction patching, and Layer 2 palette/clip effects
 
 ---
 
