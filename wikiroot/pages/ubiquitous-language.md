@@ -2,7 +2,7 @@
 title: Ubiquitous Language — Rock Compiler Glossary
 category: overview
 tags: [glossary, domain-language]
-sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm]
+sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm, samples/sprites/main.asm]
 updated: 2026-04-11
 status: current
 ---
@@ -365,11 +365,19 @@ A 4-bit value attached to each sprite or tilemap tile that shifts its colour ind
 
 ---
 
-### Sprite (hardware)
+### Sprite
 A 16×16 pixel hardware-rendered object on the ZX Spectrum Next. Pattern data lives in 16KB of dedicated FPGA memory. Up to 128 simultaneous sprites. Can be 8-bit (256 colour) or 4-bit (16 colour). Supports scaling, mirroring, rotation, and anchor/relative grouping.
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-sprites]]
+
+---
+
+### Sprite Pattern
+Pixel data for one hardware sprite image. In 8-bit mode each 16x16 pattern uses 256 bytes; in 4-bit mode each 16x16 pattern uses 128 bytes. Patterns are uploaded to dedicated FPGA sprite memory through port `$xx5B`, often with DMA.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-sprites]], [[targets/zxn/samples/zxn-sprite-sample-summary]]
 
 ---
 
@@ -386,6 +394,14 @@ The original ZX Spectrum display chip. Provides a 256×192 pixel display using 1
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-ula]]
+
+---
+
+### Unified Relative Sprite
+Sprite grouping mode where relative sprites inherit the anchor's transform so a multi-pattern object moves, rotates, mirrors, and scales as one unit.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-sprites]], [[targets/zxn/samples/zxn-sprite-sample-summary]]
 
 ---
 

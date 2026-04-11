@@ -158,7 +158,6 @@ Issues fixed: corrected the host target toolchain table so rock and rockc roles 
 Remaining issues: none found in the targeted neutral-tone sweep across the touched pages.
 TODOs filed: none.
 
-
 ## [2026-04-11] ingest | ZXN interrupt samples
 
 Changed files: 16
@@ -168,4 +167,22 @@ Pages created: zxn-sample-programs, zxn-interrupt-samples, zxn-im1-sample-summar
 Pages updated: zxn-interrupts, domain-model, overview, ubiquitous-language, index.
 Review/lint: verified touched wiki links and raw source links; fixed a pre-existing glossary link typo while updating glossary terms.
 TODOs filed: none.
+
+## [2026-04-11] todo | Confirm sprite sample DMA length preservation
+
+**Issue:** `samples/sprites/main.asm` documents `BC` as the sprite byte count for `loadSprites`, but the routine loads `$303B` into `BC` before storing `.dmaLength`. The sample therefore appears to upload `$303B` bytes instead of the requested `16*16*5` bytes.
+
+**Pages affected:** `pages/targets/zxn/samples/zxn-sprite-sample-summary.md`, `pages/targets/zxn/zxn-dma.md`
+
+**Resolution:** Confirm whether the sample intentionally uploads more of `sprites.spr`, or update the sample/routine pattern to preserve the caller's `BC` byte count before selecting the sprite slot port.
+
+## [2026-04-11] ingest | ZXN sprite sample
+
+Changed files: 10
+
+Summary: Ingested the sprite assembly sample and binary sprite sheet. Added a sprite sample summary covering DMA pattern upload, sprite attribute writes, and unified relative sprite groups.
+Pages created: zxn-sprite-sample-summary.
+Pages updated: zxn-sample-programs, zxn-sprites, zxn-dma, ubiquitous-language, index.
+Review/lint: verified touched wiki links and raw asset links; checked sprite asset size/hash; drained the sprite pending directory including its build .gitignore.
+TODOs filed: 1 — confirm whether loadSprites intentionally clobbers BC before writing the DMA length.
 

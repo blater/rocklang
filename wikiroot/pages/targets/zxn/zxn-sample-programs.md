@@ -2,14 +2,14 @@
 title: ZXN Sample Programs
 category: targets
 tags: [zxn, samples, sjasmplus, nex, hardware]
-sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm]
+sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm, samples/sprites/main.asm, samples/sprites/sprites.spr]
 updated: 2026-04-11
 status: current
 ---
 
 # ZXN Sample Programs
 
-**ZXN sample programs** are concrete sjasmplus assembly programs that exercise one hardware subsystem at a time. They complement the register reference pages by showing the setup order, live register values, memory placement, and `.nex` output conventions needed to make the hardware do visible work.
+**ZXN Sample Program** pages document concrete sjasmplus assembly programs that exercise one hardware subsystem at a time. They complement the register reference pages by showing the setup order, live register values, memory placement, and `.nex` output conventions needed to make the hardware do visible work.
 
 Use this page as the bridge between the hardware reference and implementation detail. The subsystem pages explain what the hardware can do; the sample pages explain the smallest working sequences that make it happen.
 
@@ -18,6 +18,7 @@ Use this page as the bridge between the hardware reference and implementation de
 | Topic | Overview | Sample summaries | Hardware pages |
 |-------|----------|------------------|----------------|
 | Interrupts | [[targets/zxn/samples/zxn-interrupt-samples]] | [[targets/zxn/samples/zxn-im1-sample-summary]], [[targets/zxn/samples/zxn-im2-sample-summary]], [[targets/zxn/samples/zxn-im2hw-sample-summary]], [[targets/zxn/samples/zxn-im2safe-sample-summary]] | [[targets/zxn/zxn-interrupts]], [[targets/zxn/zxn-memory-paging]] |
+| Sprites | [[targets/zxn/zxn-sprites]] | [[targets/zxn/samples/zxn-sprite-sample-summary]] | [[targets/zxn/zxn-sprites]], [[targets/zxn/zxn-dma]], [[targets/zxn/zxn-palette]] |
 
 ## Common Assembly Shape
 
@@ -37,7 +38,8 @@ The samples add practical detail that is not obvious from the register tables al
 
 - Order matters. Interrupt samples wrap hardware setup in `DI`/`EI` so a partially configured handler cannot fire.
 - Memory placement matters. IM1 places the handler in a bank that becomes slot 0, while IM2 places vector data on alignment boundaries.
-- Register programming is intentionally direct. Samples use `NEXTREG` when writing **Next registers** and 16-bit I/O ports for hardware that is not register-mirrored.
+- Register programming is intentionally direct. Samples use `NEXTREG` for **Next Register** writes and 16-bit I/O ports for hardware that is not register-mirrored.
+- Assets matter. Sprite and tilemap programs pair `.asm` setup with binary data loaded through `INCBIN`.
 - Debuggability matters. Each sample leaves simple counters, infinite loops, or visible state changes so CSpect inspection can confirm the setup.
 
 ## See Also

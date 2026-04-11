@@ -2,8 +2,8 @@
 title: ZXN Sprites
 category: targets
 tags: [zxn, sprites, hardware-sprites, patterns, anchor, composite, unified]
-sources: [zxnext_guide.md]
-updated: 2026-04-10
+sources: [zxnext_guide.md, samples/sprites/main.asm, samples/sprites/sprites.spr]
+updated: 2026-04-11
 status: current
 ---
 
@@ -67,6 +67,8 @@ LoadSprites:
 .dmaProgramSize = $-.dmaProgram
 ```
 
+The sprite sample packages this pattern as `loadSprites` and pairs it with `INCBIN "sprites.spr"`. It selects the starting pattern slot through `$303B`, then streams pattern bytes to `$005B` with zxnDMA. See [[targets/zxn/samples/zxn-sprite-sample-summary]].
+
 ## Enabling Sprites
 
 ```asm
@@ -112,6 +114,8 @@ NEXTREG $37, %00000000
 NEXTREG $38, %11000010  ; visible, byte 4 present, pattern 2
 NEXTREG $79, %01000000  ; relative sprite
 ```
+
+The sample builds a 2x2 object from one anchor and three unified relatives, then updates only the anchor position and byte 4 to move, rotate, mirror, and scale the whole group. That makes unified-relative sprites the natural representation for multi-pattern actors.
 
 ## Registers
 
@@ -197,6 +201,7 @@ For **unified relative** sprites:
 ## See Also
 
 - [[targets/zxn-hardware]] — layer priority (`$15`)
+- [[targets/zxn/samples/zxn-sprite-sample-summary]] — worked sprite setup and DMA upload sample
 - [[targets/zxn/zxn-palette]] — sprite palette and transparency
 - [[targets/zxn/zxn-dma]] — bulk pattern loading
 - [[targets/zxn/zxn-ports-registers]] — full register index
