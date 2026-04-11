@@ -1512,8 +1512,11 @@ void generate_embed(generator_t *g, ast_t node) {
       fprintf(f, "{\n%s\n}\n", e.body);
     }
   } else if (strcmp(e.lang, "asm") == 0) {
-    // Wrap in GCC inline asm
-    fprintf(f, "__asm__ volatile (\"%s\");\n", e.body);
+    // Z88DK inline assembly: emitted only when compiled with SDCC.
+    // Host/GCC builds skip the block entirely; Z80 mnemonics are not valid x86.
+    // Leading newline ensures the #ifdef starts on its own line (function open brace
+    // is emitted without a trailing newline).
+    fprintf(f, "\n#ifdef __SDCC\n#asm\n%s\n#endasm\n#endif\n", e.body);
   } else {
     // Unknown language: emit warning
     fprintf(f, "/* WARNING: Unknown embed language '%s' */\n", e.lang);
