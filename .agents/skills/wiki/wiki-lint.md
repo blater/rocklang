@@ -4,41 +4,58 @@
 
 ## Steps
 
-### 1. Inventory
+### 1. Run the automated lint tool
 
-- Glob all files under `wikiroot/pages/` recursively
-- Read `wikiroot/index.md`
-- Glob `wikiroot/new/` (pending sources)
+```bash
+python3 wikiroot/tools/lint.py --no-colour
+```
+
+This checks all structural properties mechanically and is authoritative for:
+
+| Check | What it catches |
+|-------|----------------|
+| **Frontmatter** | Missing required fields; invalid `status` values; malformed blocks |
+| **Links** | Every `[[path]]` wiki-link resolved to an actual file; reports `file:lineno` |
+| **Orphans** | Pages with zero inbound links from any page or `index.md` |
+| **Index coverage** | Pages missing from `index.md`; `index.md` entries with no matching file |
+| **Directory sizes** | Any category directory over 15 pages |
+| **Pending sources** | Files/directories in `wikiroot/new/` awaiting ingest |
+
+Capture the full output — it is included verbatim in the log body for fix runs.
+
+Exit 0 = structurally clean. Exit 1 = issues to report.
+
+### 2. Manual inventory
+
 - Grep `wikiroot/log.md` for `todo` entries (pattern: `^## \[.*\] todo`)
 - Grep all pages for inline `> **TODO:**` blocks
 
-### 2. Content Health Checks
+### 3. Content Health Checks
 
 For each page under `pages/`:
 
 - [ ] **Contradictions** — does any claim conflict with another page or with `src/`? (spot-check by topic; focus on pages sharing the same `tags` or `sources`)
 - [ ] **Stale** — `updated` date significantly older than recent ingests on the same topic (`status: stale` or not yet marked stale)
 - [ ] **Drafts ready to promote** — `status: draft` pages that look complete enough for `status: current`
-- [ ] **Orphans** — no inbound `[[filename]]` links from any other page (grep all pages for the filename)
-- [ ] **Missing cross-references** — pages that clearly relate but don't link to each other
+- [ ] **Missing cross-references** — pages that clearly relate but don't link to each other (the automated tool catches broken/missing links; this checks for *absent but desirable* links)
 - [ ] **Undefined terms** — bold terms (**term**) used in pages but absent from `ubiquitous-language.md`
 - [ ] **Missing concept pages** — important concepts mentioned across multiple pages but lacking a dedicated page
-- [ ] **Outstanding TODOs** — collect all `> **TODO:**` blocks and log.md `todo` entries found in step 1
+- [ ] **Outstanding TODOs** — collect all `> **TODO:**` blocks and log.md `todo` entries found above
 
-### 3. Structural Health Checks
+### 4. Structural Health Checks (manual, informed by tool output)
 
-- [ ] **Overcrowded directories** — any `pages/<category>/` with more than ~15 pages → propose sub-categories
 - [ ] **Miscategorised pages** — pages clearly in the wrong directory
 - [ ] **Missing categories** — a cluster of related pages with no dedicated directory
 - [ ] **Redundant categories** — directories with only 1–2 pages that would sit better elsewhere
-- [ ] **Index drift** — `index.md` entries pointing to non-existent files; pages that exist but are missing from the index
-- [ ] **Pending sources** — report any files found in `wikiroot/new/` (excluding `.gitkeep`)
 
-### 4. Output
+### 5. Output
 
 Produce a prioritised issue list grouped by type:
 
 ```
+## Automated Tool
+[tool exit code and summary line]
+
 ## Content Issues
 P1: [Critical — contradictions, wrong claims]
 P2: [Important — stale, orphans, undefined terms]
@@ -57,27 +74,18 @@ P3: [Nice-to-have — missing cross-refs, draft promotion]
 [New questions to investigate, sources to seek]
 ```
 
-### 5. Before Executing Structural Changes
-
-- Describe the proposed change (move, rename, new directory) and its rationale
-- **Ask for approval before executing** — moving files has git history implications
-- For content fixes (updating frontmatter, adding cross-refs, correcting terms): offer to fix immediately
-
 ### 6. Applying an Approved Fix Batch
 
 - Do not change files during plain `/wiki lint`; report only
-- Apply fixes only when the user explicitly asks for a change batch such as `/wiki lint fix <scope>`
+- Apply fixes only when the user explicitly invokes `/wiki lint fix <scope>` — that invocation is the approval
 - Keep each batch focused and small enough to describe clearly in one log entry and one commit
-- After updating the approved files, run `./.agents/skills/wiki/scripts/log_and_commit.sh` with the exact changed file list and a short stdin summary
-- Include in the log body: which issues were fixed, what remains open, and any follow-up TODOs created
+- After updating the approved files, run the commit helper with the exact changed file list:
 
-### 7. Log and Commit Example
-
-Use this pattern for mutating lint runs:
-```
+```sh
 ./.agents/skills/wiki/scripts/log_and_commit.sh lint "<brief summary>" \
   wikiroot/pages/<page>.md \
   wikiroot/index.md <<'EOF'
+Automated tool: <exit code and summary>
 Issues fixed: <what changed>
 Remaining issues: <what was deferred, or "none">
 TODOs filed: <count and short description, or "none">

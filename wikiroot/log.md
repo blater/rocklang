@@ -176,6 +176,32 @@ TODOs filed: none.
 
 **Resolution:** Confirm whether the sample intentionally uploads more of `sprites.spr`, or update the sample/routine pattern to preserve the caller's `BC` byte count before selecting the sprite slot port.
 
+## [2026-04-11] ingest | Z88DK tools and assembly reference
+
+**Sources (11):** `z88dk_inlineAssembler.md`, `z88dk-calling-with-stack-params.md`, `z88dk_z80.md`, `Tool---z80asm.md`, `Tool---z80asm---command-line.md`, `Tool---z80asm---input-format.md`, `Tool---z80asm---preprocessor.md`, `Tool---z80asm---expressions.md`, `Tool---z80asm---directives.md`, `Tool---z80asm---environment.md`, `Tool---z80asm---old-manual.md` (stub only).
+
+**Pages created (3):**
+- `pages/targets/zxn/z88dk-inline-asm.md` — `#asm`/`#endasm` syntax, Z88DK inline assembly guidance, calling conventions, data type sizes, stack layout, return registers, safe `@embed asm` patterns for SDCC/IY
+- `pages/targets/zxn/z88dk-z80-library.md` — `<z80.h>` library: `z80_delay_ms`, port I/O (`z80_inp`/`z80_outp`/block variants), memory access macros, interrupt state, full IM2 management API
+- `pages/targets/zxn/z80asm-reference.md` — z80asm assembler/linker: three modes, key CLI flags, source format (labels, local labels, number literals, continuation), expression operator table, preprocessor (`#define`, `MACRO`/`ENDM`, `REPT`/`REPTC`/`REPTI`, `DEFL`), all key directives (`DEFB`/`DEFW`/`DEFS`/`DEFVARS`/`DEFGROUP`, `ORG`/`SECTION`/`ALIGN`/`PHASE`, `PUBLIC`/`EXTERN`, `IF`/`IFDEF`, `CU.*`, `DMA.*`), file types, environment variables
+
+**Pages updated (4):**
+- `pages/targets/zxn-z80.md` — added "Z88DK Tools and Assembly" hub section with links to all three new pages
+- `pages/ubiquitous-language.md` — added `z80asm`, `ASMPC`, `Calling Convention`
+- `index.md` — added "Z88DK Tools and Assembly" subsection with 3 entries
+- `wikiroot/log.md` — this entry
+
+**Key takeaways from sources:**
+- Z88DK recommends **against** heavy inline assembly; prefer separate `.asm` files with C prototypes for callable assembly functions
+- `#asm`/`#endasm` is processed by `zcc` before SDCC sees the file — this is how Rock's `@embed asm` generator output works
+- SDCC (`-clib=sdcc_iy`) uses IY as frame pointer — never modify IY inside `@embed asm`
+- Stack layout at call entry (sccz80 / stack-mode): SP = return addr, SP+2 = 2nd param, SP+4 = 1st param; return values in L (byte), HL (int/word), DE:HL (long)
+- z80asm supports ZXN-native `CU.*` (Copper) and `DMA.*` directives for producing encoded hardware control bytes in assembly source
+- `ASMPC` in z80asm = current instruction address, resolved at link time
+- z80asm `-mz80n` enables ZX Spectrum Next Z80N extended instruction set
+
+---
+
 ## [2026-04-11] update | Fix @embed asm documentation accuracy
 
 Changed files: 2 (`pages/syntax/embed.md`, `pages/targets/zxn-z80.md`)
@@ -285,4 +311,46 @@ Pages created: pages/targets/zxn/zx-z88dk-startupcrt-summary.md, pages/syntax/bu
 Pages updated: pages/targets/zxn-z80.md, pages/ubiquitous-language.md, pages/syntax/types.md, pages/syntax/strings.md, pages/syntax/modules-and-records.md, pages/syntax/functions-and-methods.md, pages/syntax/control-flow.md, pages/syntax/arrays.md, pages/syntax/syntax-index.md, index.md
 Review/lint: verified 51 pages, 435 wiki links, 51 index links, sorted glossary, and no pending sources. Excluded stale SYNTAX.md claims about dim/let declarations, bool, slash-only comments, loop keyword use, and substring length semantics because source does not support them as written.
 TODOs filed: none.
+
+## [2026-04-11] ingest | Z88DK tools and inline assembly documentation
+
+Changed files: 8
+
+Summary: Ingested 11 Z88DK documentation sources from wikiroot/new/ covering inline assembly calling conventions, the z80.h C library, and the z80asm assembler/linker. Organised into three new pages under targets/zxn/. Updated zxn-z80.md and index.md with hub links. Added z80asm, ASMPC, and Calling Convention terms to ubiquitous-language.md.
+Pages created: pages/targets/zxn/z88dk-inline-asm.md, pages/targets/zxn/z88dk-z80-library.md, pages/targets/zxn/z80asm-reference.md
+Pages updated: pages/targets/zxn/zxn-z80.md, pages/ubiquitous-language.md, index.md
+TODOs filed: none.
+
+## [2026-04-11] update | @embed asm documentation accuracy
+
+Changed files: 2
+
+Summary: Corrected five inaccuracies in syntax/embed.md and targets/zxn-z80.md found by verifying against src/generator.c. Fixed: opening paragraph claim that asm body is "emitted unchanged" (it is wrapped); removed "Host builds reject @embed asm" claim (silently skipped via #ifdef __SDCC); corrected #asm/#endasm directive names (was incorrectly __asm__/__endasm__); fixed asm_interop library path; added Generator Handling table, Host Behaviour section, embed_asm_test.rkr to test coverage list, and link to z88dk-inline-asm.
+TODOs filed: none.
+
+## [2026-04-11] lint | full wiki health check
+
+Changed files: 6
+
+Issues fixed:
+- testing-overview: test count 38→39, added 9 missing test rows, updated status date
+- syntax/embed.md: added missing cross-reference to z88dk-inline-asm in See Also
+- zxn-copper.md: added [[z80asm-reference]] link for CU.* directives
+- zxn-dma.md: added [[z80asm-reference]] link for DMA.* directives
+
+Validation results:
+- Links: 54/54 valid (0 broken)
+- Orphans: 0
+- Index coverage: 54/54 pages indexed
+- Frontmatter: 54/54 pages valid
+
+Structural note: targets/zxn/ has 17 pages (guideline ≤15 after adding 3 new Z88DK pages). Candidate reorganisation: move z88dk-inline-asm, z88dk-z80-library, z80asm-reference to targets/zxn/tools/ — held pending user approval due to git history implications.
+TODOs filed: none.
+
+## [2026-04-11] lint | first automated lint with wikiroot/tools/lint.py
+
+Automated tool: 1 issue (pending sources only). Manual checks: 0 content, 0 structural.
+Tool results: 54/54 frontmatter valid, 471/471 links valid, 0 orphans, 54/54 indexed, all dirs within threshold.
+Pending: wikiroot/new/samples/ awaiting ingest (sjasmplus samples — will resolve TODOs 1 & 2).
+Outstanding TODOs: 4 open (copper bank count, sprite DMA length, nested subs, pro match semantics).
 
