@@ -176,6 +176,16 @@ TODOs filed: none.
 
 **Resolution:** Confirm whether the sample intentionally uploads more of `sprites.spr`, or update the sample/routine pattern to preserve the caller's `BC` byte count before selecting the sprite slot port.
 
+## [2026-04-11] update | Fix @embed asm documentation accuracy
+
+Changed files: 2 (`pages/syntax/embed.md`, `pages/targets/zxn-z80.md`)
+
+Issues fixed:
+- **embed.md**: "Host builds reject it" was wrong — host builds silently skip the block via `#ifdef __SDCC`; gcc compiles the surrounding function normally. Rewrote the Generator Handling section to accurately describe that `@embed c` emits verbatim while `@embed asm` wraps in `#ifdef __SDCC` / `#asm` / `#endasm` / `#endif`. Added the new `test/embed_asm_test.rkr` to test coverage.
+- **zxn-z80.md**: Known Limitations row claimed assembly "requires `__asm`/`__endasm` syntax" — wrong. The generator uses Z88DK's `#asm`/`#endasm` preprocessor directives (handled by `zcc` before SDCC). Fixed. Also corrected `asm_interop` path from `src/lib/z80/` to `src/lib/`.
+
+---
+
 ## [2026-04-11] ingest | ZXN sprite sample
 
 Changed files: 10
@@ -185,4 +195,15 @@ Pages created: zxn-sprite-sample-summary.
 Pages updated: zxn-sample-programs, zxn-sprites, zxn-dma, ubiquitous-language, index.
 Review/lint: verified touched wiki links and raw asset links; checked sprite asset size/hash; drained the sprite pending directory including its build .gitignore.
 TODOs filed: 1 — confirm whether loadSprites intentionally clobbers BC before writing the DMA length.
+
+
+## [2026-04-11] ingest | ZXN sound sample
+
+Changed files: 8
+
+Summary: Ingested the sound assembly sample. Added a sound sample summary covering Turbo Sound setup, AY register selection/writes, the compact tune-row format, and the CSpect/OpenAL runtime caveat.
+Pages created: zxn-sound-sample-summary.
+Pages updated: zxn-sample-programs, zxn-sound, ubiquitous-language, index.
+Review/lint: verified touched wiki links and raw source links; drained the sound pending directory including its build .gitignore.
+TODOs filed: none.
 

@@ -60,6 +60,7 @@ Organised by category. Each entry: `page-name — one-line description`.
 - [[targets/zxn/samples/zxn-im2hw-sample-summary]] — Hardware IM2 sample using the Next vectored interrupt registers
 - [[targets/zxn/samples/zxn-im2safe-sample-summary]] — Bus-safe IM2 sample with a 257-byte table and `$F0F0` handler
 - [[targets/zxn/samples/zxn-sprite-sample-summary]] — Sprite sample using DMA pattern upload and unified relative groups
+- [[targets/zxn/samples/zxn-sound-sample-summary]] — Sound sample using Turbo Sound setup and AY register playback
 
 ---
 

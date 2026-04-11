@@ -2,8 +2,8 @@
 title: ZXN Sound
 category: targets
 tags: [zxn, sound, ay, ay-3-8912, turbo-sound, audio, dac]
-sources: [zxnext_guide.md]
-updated: 2026-04-10
+sources: [zxnext_guide.md, samples/sound/main.asm]
+updated: 2026-04-11
 status: current
 ---
 
@@ -72,6 +72,8 @@ WriteDToAYReg:
   RET
 ```
 
+The sound sample builds on this helper shape with `writeDToAYReg` and `writeDEToAYReg`, then drives a small tune table containing mixer, tone period, noise period, channel, and volume bytes. See [[targets/zxn/samples/zxn-sound-sample-summary]].
+
 ## Selecting a Chip (Turbo Sound)
 
 ```asm
@@ -80,6 +82,8 @@ LD BC, $FFFD
 LD A, %10111101    ; bit 7=1 (chip select), bits 6+5=1 (L+R audio), bits 4-2=100 (AY1)
 OUT (C), A
 ```
+
+The sample uses the same `%11111101` control value as the hardware guide example, then enables Turbo Sound through `$08` and mono output through `$09`.
 
 ## Configuration Registers
 
@@ -113,5 +117,6 @@ OUT (C), A
 ## See Also
 
 - [[targets/zxn-hardware]] — hardware overview
+- [[targets/zxn/samples/zxn-sound-sample-summary]] — worked AY register playback sample
 - [[targets/zxn/zxn-dma]] — DMA with prescalar for sampled audio streaming
 - [[targets/zxn/zxn-ports-registers]] — full register index

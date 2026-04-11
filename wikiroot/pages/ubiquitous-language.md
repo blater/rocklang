@@ -2,7 +2,7 @@
 title: Ubiquitous Language — Rock Compiler Glossary
 category: overview
 tags: [glossary, domain-language]
-sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm, samples/sprites/main.asm]
+sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm, samples/sprites/main.asm, samples/sound/main.asm]
 updated: 2026-04-11
 status: current
 ---
@@ -285,6 +285,14 @@ Programmable sound chip. The ZX Spectrum Next includes three of these chips (Tur
 
 ---
 
+### AY Register
+One of the 14 internal registers on an AY-3-8912 chip. Programs select a register through `$FFFD` with bit 7 clear, then write the value through `$BFFD`.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-sound]], [[targets/zxn/samples/zxn-sound-sample-summary]]
+
+---
+
 ### Bank (memory bank)
 A fixed-size block of physical RAM that can be mapped into a CPU address slot. The Next supports **8K banks** (for the MMU paging mode) and **16K banks** (for legacy 128K/+3 compatibility). Bank 0 starts at absolute address `$40000`.
 
@@ -386,6 +394,14 @@ A block-based display layer on the ZX Spectrum Next using 8×8 pixel tile defini
 
 **Domain:** ZXN Hardware  
 **See also:** [[targets/zxn/zxn-tilemap]]
+
+---
+
+### Turbo Sound Next
+ZX Spectrum Next audio extension that provides three AY-3-8912 chips and 9 total tone channels. Programs select the active chip through `$FFFD` and enable Turbo Sound behaviour with Peripheral 3 `$08`.
+
+**Domain:** ZXN Hardware  
+**See also:** [[targets/zxn/zxn-sound]], [[targets/zxn/samples/zxn-sound-sample-summary]]
 
 ---
 

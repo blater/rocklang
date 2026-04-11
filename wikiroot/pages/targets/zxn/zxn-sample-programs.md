@@ -2,7 +2,7 @@
 title: ZXN Sample Programs
 category: targets
 tags: [zxn, samples, sjasmplus, nex, hardware]
-sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm, samples/sprites/main.asm, samples/sprites/sprites.spr]
+sources: [samples/im1/main.asm, samples/im2/main.asm, samples/im2hw/main.asm, samples/im2safe/main.asm, samples/sprites/main.asm, samples/sprites/sprites.spr, samples/sound/main.asm]
 updated: 2026-04-11
 status: current
 ---
@@ -19,6 +19,7 @@ Use this page as the bridge between the hardware reference and implementation de
 |-------|----------|------------------|----------------|
 | Interrupts | [[targets/zxn/samples/zxn-interrupt-samples]] | [[targets/zxn/samples/zxn-im1-sample-summary]], [[targets/zxn/samples/zxn-im2-sample-summary]], [[targets/zxn/samples/zxn-im2hw-sample-summary]], [[targets/zxn/samples/zxn-im2safe-sample-summary]] | [[targets/zxn/zxn-interrupts]], [[targets/zxn/zxn-memory-paging]] |
 | Sprites | [[targets/zxn/zxn-sprites]] | [[targets/zxn/samples/zxn-sprite-sample-summary]] | [[targets/zxn/zxn-sprites]], [[targets/zxn/zxn-dma]], [[targets/zxn/zxn-palette]] |
+| Sound | [[targets/zxn/zxn-sound]] | [[targets/zxn/samples/zxn-sound-sample-summary]] | [[targets/zxn/zxn-sound]] |
 
 ## Common Assembly Shape
 
