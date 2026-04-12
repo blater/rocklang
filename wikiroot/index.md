@@ -98,6 +98,16 @@ Organised by category. Each entry: `page-name — one-line description`.
 
 ---
 
+## PASTA/80 (Reference Project)
+
+- [[pasta80/pasta80-overview]] — Project overview: Pascal cross-compiler for Z80, RTL design, target platforms
+- [[pasta80/pasta80-rtl-architecture]] — 4-layer RTL architecture, Block* HAL pattern, mixed Pascal/ASM strategy
+- [[pasta80/pasta80-rtl-api]] — Full RTL API reference (~115 symbols) organised by category and platform
+- [[pasta80/pasta80-target-platforms]] — CP/M, ZX48, ZX128, Next, Agon: composition, FCB design, platform APIs
+- [[pasta80/pasta80-lessons-for-rock]] — Patterns to adopt, pitfalls to improve on, Rock RTL strategy recommendations
+
+---
+
 ## Concepts
 
 - [[concepts/compilation-pipeline]] — CLI args, step-by-step pipeline, include resolution, memory lifecycle

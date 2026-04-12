@@ -13,12 +13,12 @@ The interrupt samples compare **IM1**, **IM2**, and **Hardware IM2** setup on th
 
 ## Source Map
 
-| Source | Summary | Main idea |
-|--------|---------|-----------|
-| [samples/im1/main.asm](../../../../raw/samples/im1/main.asm) | [[targets/zxn/samples/zxn-im1-sample-summary]] | Page a custom bank into slot 0 so the frame interrupt jumps to `$0038`. |
-| [samples/im2/main.asm](../../../../raw/samples/im2/main.asm) | [[targets/zxn/samples/zxn-im2-sample-summary]] | Fill a 256-byte table with 128 copies of the handler address. |
-| [samples/im2safe/main.asm](../../../../raw/samples/im2safe/main.asm) | [[targets/zxn/samples/zxn-im2safe-sample-summary]] | Use a 257-byte bus-safe table and a handler whose high and low bytes match. |
-| [samples/im2hw/main.asm](../../../../raw/samples/im2hw/main.asm) | [[targets/zxn/samples/zxn-im2hw-sample-summary]] | Use the Next's 32-byte hardware vector table and per-source enable/status registers. |
+| Source                                                               | Summary                                            | Main idea                                                                            |
+| -------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [samples/im1/main.asm](../../../../raw/samples/im1/main.asm)         | [[targets/zxn/samples/zxn-im1-sample-summary]]     | Page a custom bank into slot 0 so the frame interrupt jumps to `$0038`.              |
+| [samples/im2/main.asm](../../../../raw/samples/im2/main.asm)         | [[targets/zxn/samples/zxn-im2-sample-summary]]     | Fill a 256-byte table with 128 copies of the handler address.                        |
+| [samples/im2safe/main.asm](../../../../raw/samples/im2safe/main.asm) | [[targets/zxn/samples/zxn-im2safe-sample-summary]] | Use a 257-byte bus-safe table and a handler whose high and low bytes match.          |
+| [samples/im2hw/main.asm](../../../../raw/samples/im2hw/main.asm)     | [[targets/zxn/samples/zxn-im2hw-sample-summary]]   | Use the Next's 32-byte hardware vector table and per-source enable/status registers. |
 
 ## Shared Setup Pattern
 

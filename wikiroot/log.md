@@ -4,6 +4,16 @@ Append-only chronological record of ingests, queries, lints, and updates.
 
 ---
 
+## [2026-04-12] ingest | pasta80
+
+Ingested the PASTA/80 Pascal cross-compiler project as a reference system for Rock's cross-platform RTL strategy. PASTA/80 targets Z80 platforms (CP/M, ZX Spectrum 48K/128K, ZX Spectrum Next, Agon Light) and has a mature 4-layer RTL architecture with a clean HAL pattern (Block* procedures) that allows shared file I/O code across all platforms with file system access. Key lessons identified: adopt the Block* HAL pattern with byte-oriented I/O, use layered file composition, keep mixed C/ASM split. Key improvements over PASTA/80: use return codes instead of global error state, add heap coalescing, ensure dead-code elimination by default.
+
+Pages created: pasta80-overview.md, pasta80-rtl-architecture.md, pasta80-rtl-api.md, pasta80-target-platforms.md, pasta80-lessons-for-rock.md
+Pages updated: index.md
+TODOs filed: none
+
+---
+
 ## [2026-04-09] ingest | Bootstrap from src/ and test/
 
 **Sources:** Direct bootstrap from `../src/` and `../test/` (not via new/ lifecycle — initial wiki creation).
