@@ -1,4 +1,0 @@
-let main(): void => {
-  let x: string := "hello";
-  print(x);
-}

@@ -1,5 +1,0 @@
-// should produce error, lala/lalo not declared
-sub main() {
-    lala();
-    lalo();
-}
