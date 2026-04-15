@@ -72,7 +72,7 @@ The RTL is compiled into the binary — there is no separate linking step. The c
 
 ```
 pasta.pas           Main compiler source (Free Pascal)
-rtl/                Runtime library (see [[pasta80-rtl-architecture]])
+rtl/                Runtime library (see [[pasta80/pasta80-rtl-architecture]])
   system.pas        Core RTL: types, heap, math, strings, constants
   system.asm        Core Z80 assembly: arithmetic, string ops, heap, sets
   math48.asm        6-byte floating-point math (Hejlsberg)
@@ -101,7 +101,7 @@ misc/               Config, BASIC loaders, release scripts
 
 ## See Also
 
-- [[pasta80-rtl-architecture]] — Detailed RTL layering and HAL design
-- [[pasta80-rtl-api]] — Full RTL API reference
-- [[pasta80-target-platforms]] — Per-platform implementation details
-- [[pasta80-lessons-for-rock]] — Patterns and lessons applicable to Rock's RTL
+- [[pasta80/pasta80-rtl-architecture]] — Detailed RTL layering and HAL design
+- [[pasta80/pasta80-rtl-api]] — Full RTL API reference
+- [[pasta80/pasta80-target-platforms]] — Per-platform implementation details
+- [[pasta80/pasta80-lessons-for-rock]] — Patterns and lessons applicable to Rock's RTL

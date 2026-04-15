@@ -4,6 +4,323 @@ Append-only chronological record of ingests, queries, lints, and updates.
 
 ---
 
+## [2026-04-14] update | RTL component: triangle + filled_triangle
+
+New `src/lib/triangle.{h,c}` exposes two Rock builtins:
+`triangle(x1,y1, x2,y2, x3,y3)` (outline — three `draw()` calls) and
+`filled_triangle(...)` (scanline-rasterised solid fill including the
+outline). Both honour the current draw mode; both inherit y-clipping
+from `draw()` per row. "Current ink colour" is implicit — the
+framebuffer stores bits and the attribute cell displays the ink set
+via [[rtl-ink-paper]], so no special handling is needed in this
+component.
+
+**Fill algorithm.** Sort vertices by y, walk upper half with edges
+`v1→v2` + `v1→v3`, walk lower half with edges `v2→v3` + `v1→v3`,
+emit one `draw(xl, y, xr, y)` per row so each span takes draw.c's
+byte-mask H fast path. `plot_flush` once at the end amortises the
+host `tb_present`.
+
+**SDCC 16-bit int trap.** The naive edge formula `x0 + (y - y0) *
+(x1 - x0) / (y1 - y0)` overflows signed int on Z80 — the intermediate
+product can reach 191 × 255 = 48705. Implementation does the
+magnitude in `unsigned` (fits 65535) and carries the sign of dx
+separately, so it's a single 16-bit multiply + single 16-bit divide
+per edge per row.
+
+**Degenerate cases handled:** flat-top, flat-bottom, all-vertices-on-
+one-scanline (short-circuited to a single horizontal span), coincident
+vertices, bottom-edge overhang beyond y=191.
+
+**Files.** `src/lib/triangle.{h,c}` (new), `src/generator.c` (both
+builtins registered + transpile include), `rock` build script
+(added to `RTL_C_SRCS`), `test/triangle_test.rkr` (new — outline +
+fill + flat-top + flat-bottom + pointy-up + pointy-down + collinear
++ overhang + XOR erase + full-screen),
+`wikiroot/pages/rtl/rtl-triangle.md` (new),
+`wikiroot/index.md` (entry added).
+
+**Verification.** 243/243 host tests pass. ZXN build produces clean
+`triangle_test.nex` (only the expected SDCC info 218 pixelad/setae
+warnings from draw.c).
+
+---
+
+## [2026-04-14] update | RTL component: fill (rect; flood deferred)
+
+New `src/lib/fill.{h,c}` ships `fill_rect(byte x0, byte y0, byte x1,
+byte y1)` — axis-aligned filled rectangle on the ZX ULA screen. Flood
+fill deliberately deferred (needs framebuffer reads + an unbounded
+span queue that's awkward to size on the SDCC sdcc_iy stack).
+
+**Implementation.** Twenty lines: normalise endpoints, then walk y
+calling `draw(x0, y, x1, y)` per row so each row takes draw.c's
+H-fast-path byte-mask walk (one PIXELAD, contiguous `LD (HL), $FF` /
+`INC L` loop, leading/trailing partial masks). `plot_flush` once at
+the end amortises the host `tb_present` over the whole rectangle.
+
+**Loop shape.** `while (1) { draw; if (y == y1) break; y++; }`
+rather than `for (y = y0; y <= y1; y++)` to avoid byte overflow when
+`y1 == 255` (academic under the y >= 192 clip, but cheap insurance).
+
+**Mode handling.** Respects the sticky global draw mode for free —
+because every row delegates to `draw()`, which already branches on
+`rock_draw_mode`. XOR-erase works by calling `fill_rect` twice with
+identical coords.
+
+**Files.** `src/lib/fill.{h,c}` (new), `src/generator.c` (builtin
+registration + transpile include), `rock` build script (added to
+`RTL_C_SRCS`), `test/fill_rect_test.rkr` (new),
+`wikiroot/pages/rtl/rtl-fill.md` (new), `wikiroot/index.md` (entry
+added).
+
+**Verification.** 242/242 host tests pass. ZXN build produces clean
+`fill_rect_test.nex` (only the expected SDCC info 218 pixelad/setae
+warnings from draw.c).
+
+---
+
+## [2026-04-14] update | RTL component: circle (outline)
+
+Raster circle outline via the integer midpoint algorithm. New
+`src/lib/circle.{h,c}` exposes `circle(byte cx, byte cy, byte r)` as
+a Rock builtin. Outline only — fill is a separate component.
+
+**Algorithm.** Classic 8-way symmetric midpoint circle: walk one
+octant from `(0, r)` to the 45° diagonal, stamp eight mirrored points
+per iteration, branch on the decision variable `d`. `r == 0`
+degenerates to a single `plot`.
+
+**Targets.** Single C implementation shared between host and ZXN —
+both go through [[rtl-plot]]'s `plot_nopresent` + `plot_flush` API,
+so the draw-mode state, per-pixel y-clip, and host batching all come
+for free. Deliberately slower than a hand-tuned ZXN routine (which
+would cache PIXELAD across the stamped points) in exchange for being
+tiny, correct, and identical across targets. Perf work deferred.
+
+**Clipping.** Signed `int` offsets for `cx ± x/y` and `cy ± x/y` so
+negative y can be filtered in C before hitting `plot`. Horizontal
+offsets rely on byte wrap (256-wide ULA scanline = any byte is valid).
+
+**Files.** `src/lib/circle.{h,c}` (new), `src/generator.c` (builtin
+registration + transpile include), `rock` build script (added to
+`RTL_C_SRCS`), `test/circle_test.rkr` (new),
+`wikiroot/pages/rtl/rtl-circle.md` (new),
+`wikiroot/index.md` (entry added).
+
+**Verification.** 241/241 host tests pass. ZXN build produces clean
+`circle_test.nex` (only the expected SDCC info 218 pixelad/setae
+warnings from draw.c).
+
+---
+
+## [2026-04-14] update | RTL component: polyline
+
+Thin wrapper over [[rtl-draw]]. New `src/lib/polyline.{h,c}` exposes
+`polyline(byte[] xs, byte[] ys)` as a Rock builtin — draws N-1
+connected segments between paired points by delegating each segment
+to `draw()`. Inherits the H/V dispatcher, Bresenham fallback, y-clip,
+and current draw mode.
+
+**API shape.** Parallel `byte[]` arrays instead of a `point[]` record
+array — Rock's C ABI for user-record arrays isn't shipped yet, and
+parallel arrays are zero-ceremony for the caller. Length < 2 is a
+no-op; mismatched lengths clamp to the shorter so `byte_get_elem`
+never runs out of bounds. Closing a shape is the caller's job
+(append the first point again).
+
+**Implementation.** Twenty lines of C using
+`__internal_dynamic_array_t` + `byte_get_elem`. Single file, shared
+between host and ZXN — there's nothing target-specific because
+`draw()` already handles that split. No `polygon` convenience
+variant shipped — trivially composable from polyline + one append.
+
+**Files.** `src/lib/polyline.{h,c}` (new), `src/generator.c`
+(builtin registration + transpile include), `rock` build script
+(added to RTL_C_SRCS), `test/polyline_test.rkr` (new),
+`wikiroot/pages/rtl/rtl-polyline.md` (new),
+`wikiroot/index.md` (entry added).
+
+**Verification.** 240/240 host tests pass. ZXN build produces clean
+`polyline_test.nex` (only the expected SDCC info 218 pixelad/setae
+warnings from draw.c).
+
+---
+
+## [2026-04-14] update | Draw modes: OR / XOR for plot + draw
+
+Added a sticky global draw mode shared by [[rtl-plot]] and [[rtl-draw]].
+`DRAW_MODE_OR` (0, default) merges additively; `DRAW_MODE_XOR` (1)
+toggles the target pixel — draw the same shape twice to erase. Exposed
+to Rock as `set_draw_mode(byte)` / `get_draw_mode()`. Two modes instead
+of the originally considered three (OR/XOR/ERASE): XOR covers the
+erasable-cursor/sprite idiom, halving the asm duplication.
+
+**ZXN implementation.** `plot()` picks between `plot_raw_or` (uses
+`or (hl)`) and `plot_raw_xor` (uses `xor (hl)`) — same shape, same
+cost. `draw_hline` keeps a single inner loop and branches on mode in
+C. `draw_vline` ships two full `__asm` PIXELDN loops (the hot loop
+must not test mode). `draw_line_general` puts the if/else inside the
+Bresenham loop body, around the per-pixel inline `__asm` — ~50% slower
+under XOR than under OR but half the code size; duplicating the full
+shallow/steep Bresenham was rejected. Host path adds `shadow_xor` +
+a mode branch in `plot_nopresent`.
+
+**Files.** `src/lib/plot.{h,c}` (state + API + `rock_draw_mode`),
+`src/lib/draw.c` (hline/vline/Bresenham mode branches),
+`src/generator.c` (`set_draw_mode`/`get_draw_mode` builtin registration),
+`test/draw_mode_test.rkr` (new), `wikiroot/pages/rtl/rtl-plot.md`,
+`wikiroot/pages/rtl/rtl-draw.md` (both updated).
+
+**Verification.** 239/239 host tests pass. ZXN builds of
+`draw_mode_test`, `plot_test`, `draw_test` all produce clean `.nex`
+files (only the expected SDCC info 218 pixelad/setae mnemonic-size
+warnings).
+
+---
+
+## [2026-04-14] update | RTL component: draw (raster line, Phase 1)
+
+Second raster-graphics RTL component, sibling to [[rtl-plot]]. New
+`src/lib/draw.{h,c}` exposes `draw(byte x0, byte y0, byte x1, byte y1)`
+as a Rock builtin — draws an additive straight line between two absolute
+pixel coordinates on the ZX ULA screen. Origin top-left, pixels with
+y>=192 skipped per-iteration.
+
+**Dispatcher** branches on line shape. Horizontal (`y0 == y1`) takes a
+byte-mask walk: one `PIXELAD`, then `INC L` across the scanline with
+leading/trailing partial-byte masks and `LD (HL),0xff` for full bytes
+between. Vertical (`x0 == x1`) takes a `PIXELDN` loop with the pixel
+mask cached in B (one `SETAE` at the top, never recomputed). General
+case is a C Bresenham, shallow/steep split, with the per-pixel write
+inlined as a literal `__asm` block — no function call, no stack
+ceremony; six Z80 ops per iteration (2 scratch loads + PIXELAD + SETAE
++ OR (HL) + store). Single-pixel degenerate (`x0==x1 && y0==y1`) routes
+straight to `plot()`.
+
+**Hand-rolled asm Bresenham deferred** to Phase 2 — the C-driven
+inline-asm version is correct on first ship, debuggable, and
+fast enough that the H/V fast paths dominate real workloads. 45°
+diagonal fast path skipped because Bresenham at dx==dy is already
+optimal. Off-screen whole-line clipping also Phase 2.
+
+**Host path** is a single C Bresenham loop (no dispatcher — termbox
+redraw dominates, asm tricks wouldn't help). Uses new `plot_nopresent`
++ `plot_flush` helpers exposed from `plot.h` so `draw.c` doesn't need
+to know about the shadow buffer or `tb_present`: one flush per line,
+N shadow writes + cell redraws between. `plot()` itself now decomposes
+into `plot_nopresent + plot_flush`, transparent to Rock programs.
+
+**State sharing** between `plot.c` and `draw.c` goes only through
+`plot.h`'s public API. `draw.c` has its own scratch bytes
+(`rock_draw_x`, `rock_draw_y`, `rock_draw_count`, `rock_draw_hl`) for
+its own inline asm — no reach into `plot.c`'s internals.
+
+Verified: **235/235 host tests pass** (234 prior + 1 new `draw_test.rkr`
+covering every dispatcher branch, shallow, steep, reversed endpoints,
+y-clip, and a box outline). `./rock --target=zxn test/draw_test.rkr`
+produces a clean `draw_test.nex`. SDCC emits `info 218` messages for
+`pixelad` / `setae` because its code-size estimator doesn't know Z80N
+mnemonics, but the assembler handles them and the binary is correct.
+`plot_test.nex` also still builds clean (same Z80N deps).
+
+Pages created: rtl/rtl-draw.md
+Pages updated: index.md, rtl/rtl-plot.md (cross-ref left as-is — plot's
+shadow/flush split is now documented in rtl-draw)
+
+---
+
+## [2026-04-14] update | RTL component: plot (raster pixel, Phase 1)
+
+First raster-graphics RTL component. `plot(byte x, byte y)` sets a single
+pixel on the ZX ULA screen. ZXN path writes the framebuffer at `$4000-$57FF`
+directly using Z80N `PIXELAD` + `SETAE` — four real instructions, no ROM
+dependency. `src/lib/plot.c` uses the same file-scope-scratch-byte pattern
+as `print_at.c`/`ink_paper.c` so the naked inline-asm routine reads args
+with absolute `LD A,(nn)` and sidesteps the SDCC calling convention.
+
+Host path keeps a 256×192 bit shadow matching the real ULA bitmap (1 bit
+per pixel, MSB-left) and renders it through termbox2 using 16 Unicode
+quadrant block glyphs (`▘▝▀▖▌▞▛▗▚▐▜▄▙▟█`). Each terminal cell covers a 2×2
+pixel region → 128×96 visible resolution — coarse but enough to eyeball
+shapes. `host_caps.plot` flag gates the termbox branch; piped-stdout test
+harness falls back to `plot(x,y)\n` log lines. Top-left origin (matches
+`print_at`/termbox2, not Sinclair BASIC), additive-only (OR), no
+XOR/unplot/toggle variants in Phase 1. y≥192 clipped silently.
+
+Plot does *not* depend on [[rtl-ink-paper]] attribute state on either
+target in Phase 1 — the shadow is monochrome-in-TB_WHITE on host, and
+on ZXN the attribute cell the pixel lands in is whatever CLS left there.
+A later extension can read `attr_fg`/`attr_bg` during `redraw_cell`.
+
+Verified: 234/234 host tests pass; `./rock --target=zxn test/plot_test.rkr`
+produces a clean `plot_test.nex`. `host_caps.plot` added to
+[[rtl-host-caps]]; `plot.h` included in `transpile()`; `plot.c` appended
+to `RTL_C_SRCS`. See [[rtl-plot]] for the full component design.
+
+Pages created: rtl/rtl-plot.md
+Pages updated: index.md
+
+---
+
+## [2026-04-13] update | print_at host path via termbox2
+
+Replaced the plain-stdout host branch of `print_at` with a termbox2-backed renderer so gcc builds of Rock programs using `print_at` can be previewed in a real terminal at something close to the ZX 32×24 layout. termbox2 is vendored at `src/ext/lib/termbox2.h` and now has a dedicated one-TU impl file at `src/lib/host/termbox2_impl.c` that defines `TB_IMPL` once; other host components can `#include "termbox2.h"` without worrying about multiple-definition errors.
+
+`print_at.c` host branch is a 3-state lazy-init machine: on first call it checks `isatty(STDOUT_FILENO)`. Not a tty (e.g. test harness piping) → plain-text fallback, matching the old behaviour. Is a tty → `tb_init` + `atexit(tb_shutdown)` and subsequent calls go through `tb_print` + `tb_present`. This keeps `./run_tests.sh` working unchanged.
+
+Build script gained a new `RTL_HOST_SRCS` variable (host-only extra TUs) and the gcc command line adds `-I src/ext/lib`. SDCC branch is untouched and termbox2 never enters the ZXN build because of the existing `#ifdef __SDCC` split. A local `#pragma GCC diagnostic ignored "-Wunused-function"` in `termbox2_impl.c` suppresses a benign termbox2-internal warning under -Wall.
+
+Host tests: 225/225. ZXN build: `print_at_test.nex` still clean.
+
+Convention addition: host-only third-party deps now go under `src/lib/host/` with a one-TU impl file referenced from `RTL_HOST_SRCS`. [[rtl-overview]] updated with the recipe.
+
+Pages updated: rtl/rtl-print-at.md, rtl/rtl-overview.md
+
+---
+
+## [2026-04-13] update | RTL component: print_at (ROM placeholder)
+
+Third RTL component. `print_at(byte x, byte y, string text)` draws text at a character cell on the ZX upper screen. ZXN path calls ROM `RST 10h` directly (inline asm in `src/lib/print_at.c`), emitting the AT control sequence `22, row, col` followed by each text byte. Host path writes `@(x,y) text\n` to stdout for inspection. Implementation uses a file-scope scratch byte + noarg inline-asm wrapper to sidestep any SDCC calling-convention concerns. Deliberately bypasses z88dk's stdio control-code layer to stay close to the metal and reduce footprint.
+
+Host tests: 225/225. ZXN build: `print_at_test.nex` clean on first try, ~33 KB.
+
+Pages created: rtl/rtl-print-at.md
+Pages updated: index.md
+
+## [2026-04-13] todo | print_at raster replacement
+
+The current `print_at` ZXN implementation depends on ROM being paged in at `$0000-$3FFF` and uses the stock ZX character set via ROM. Future Rock programs will need to swap the ROM out for RAM banks and/or use custom fonts. Build a raster version that writes glyph bytes directly into the ULA framebuffer at `$4000-$57FF`, honouring the eccentric Y-bit permutation (`addr = 0x4000 | ((r & 0x18) << 5) | ((r & 0x07) << 5) | (c & 0x1F)`, scanlines step by `+0x100`). Likely location: `src/lib/zxn/raster.asm`. On landing, switch `print_at` to the raster path and retire or demote the ROM path. See [[rtl-print-at]].
+
+## [2026-04-13] todo | Rock builtin / function overloading
+
+`print_at(x, y, text)` was chosen over overloading `print(text)` because Rock's current call dispatch is name-only — the name table has no arity or type-based overload resolution. Adding overload support is a compiler feature of its own (parser changes, name-table keyed on signature, generate_funcall dispatch). When it lands, `print_at` can be re-exposed as `print(x, y, text)` without touching the C implementation. Until then, flat distinct names are the convention. See [[rtl-print-at]] and [[rtl-overview]].
+
+---
+
+## [2026-04-12] update | RTL component: border (Phase C — first follow-on)
+
+Second RTL component to validate that the Phase A conventions generalise. `border(colour)` and `border_get()` added as builtins; implementation in `src/lib/border.h`/`src/lib/border.c` using z88dk's `<z80.h>` `z80_outp` on ZXN and a shadow byte on host. Key result: **no `.asm` file was needed**, which exercises the C-only degenerate case of the component convention. Compiler/build diff is ~4 lines. Host tests: 224/224 (221 + 3 new). ZXN build: `border_test.nex` clean on first try — no SDCC symbol gotchas because nothing new is exported from asm.
+
+Lesson captured: prefer C + `<z80.h>` for simple port I/O; reserve `.asm` files for genuinely performance-sensitive or register-dependent code.
+
+Pages created: rtl/rtl-border.md
+Pages updated: index.md
+
+---
+
+## [2026-04-12] update | RTL pilot: keyboard scanner (Phase A)
+
+First RTL component delivered under the strategy in [[pasta80-lessons-for-rock]]. Added `src/lib/keyboard.h`, `src/lib/keyboard.c`, `src/lib/zxn/keyboard.asm`, and `test/keyboard_test.rkr`. Generator now registers `scan_keyboard`/`key_pressed` as builtins and emits `#include "keyboard.h"`. Build script adds `keyboard.c` to `LIB_SRCS` and `keyboard.asm` to the zcc invocation. Host test suite: 221/221 pass (217 baseline + 4 new). ZXN build verified: `keyboard_test.nex` (~33 KB) produced cleanly.
+
+Key lesson captured: **SDCC prefixes every C extern with a leading underscore when emitting asm**. Both functions and data symbols must declare `PUBLIC _name` and (for data) `DEFC _name = label`. The initial ZXN build failed with `undefined symbol: _ZK_BUFFER` until the buffer alias was renamed. Now documented in [[rtl-overview]] as the canonical gotcha for future components.
+
+Pages created: rtl/rtl-overview.md, rtl/rtl-keyboard.md
+Pages updated: index.md, pasta80/pasta80-lessons-for-rock.md (marked partially applied)
+TODOs filed: none
+
+---
+
 ## [2026-04-12] ingest | pasta80
 
 Ingested the PASTA/80 Pascal cross-compiler project as a reference system for Rock's cross-platform RTL strategy. PASTA/80 targets Z80 platforms (CP/M, ZX Spectrum 48K/128K, ZX Spectrum Next, Agon Light) and has a mature 4-layer RTL architecture with a clean HAL pattern (Block* procedures) that allows shared file I/O code across all platforms with file system access. Key lessons identified: adopt the Block* HAL pattern with byte-oriented I/O, use layered file composition, keep mixed C/ASM split. Key improvements over PASTA/80: use return codes instead of global error state, add heap coalescing, ensure dead-code elimination by default.
@@ -363,4 +680,55 @@ Automated tool: 1 issue (pending sources only). Manual checks: 0 content, 0 stru
 Tool results: 54/54 frontmatter valid, 471/471 links valid, 0 orphans, 54/54 indexed, all dirs within threshold.
 Pending: wikiroot/new/samples/ awaiting ingest (sjasmplus samples — will resolve TODOs 1 & 2).
 Outstanding TODOs: 4 open (copper bank count, sprite DMA length, nested subs, pro match semantics).
+
+
+## [2026-04-13] update | RTL host capability layer
+
+Refactored host lifecycle out of `print_at.c` into a new shared module `src/lib/host_caps.{h,c}`. `rock_rtl_init()` runs once at program startup (emitted by `transpile_fundef` between `fill_cmd_args` and the user body), `rock_rtl_shutdown()` runs once before `return 0`. ZXN init is trivial (set every flag to 1); host init does the `isatty` probe, `tb_init`, and installs the `atexit` teardown for termbox2. `print_at.c`'s host branch is now a flat `host_caps.print_at` flag check — no per-call lazy init, no state machine. Added rule 11 to `rtl-overview.md` ("lifecycle lives in host_caps, not in components") and a new page `rtl-host-caps.md`. Verified: 225/225 host tests pass, `print_at_test.nex` builds cleanly on ZXN.
+
+## [2026-04-13] update | Function overloading (arity-only, Phase 1)
+
+Shipped arity-based overloading for top-level user functions. Two+ `sub name(...)` declarations may now share a name as long as their arities differ; the generator mangles the C symbol to `name__N` only when a name has ≥2 fundefs (single-definition names stay bare — no diff churn). Implementation: new `program` field on `generator_t`, helpers `program_user_fundef_count` + `emit_fun_name` in `src/generator.c`, wired at the three emission sites (forward decl, definition, `generate_funcall`). No changes to the lexer, parser, name table, or typechecker. Builtins are not overloaded in Phase 1 (user function vs builtin still shadows). Hardcoded builtin fast-paths (append/get/set/pop/insert/substring/concat/to_string/printf) unchanged. Verified: 229/229 host tests pass (225 prior + 4 new `overload_test.rkr` assertions), ZXN build of `overload_test.nex` clean. See `pages/decisions/ADR-0001-function-overloading-arity-only.md` for the rationale. Phase 2 (RTL consolidation: `print_at` → `print(x,y,text)` overload) is a separate follow-up.
+
+## [2026-04-13] update | RTL consolidation: print(x,y,text) — Phase 2 of overloading
+
+Retired the Rock-level name `print_at` and re-exposed the same C implementation as the 3-arg overload of `print`. Rock source now uses `print("hi")` for the 1-arg form and `print(x, y, "hi")` for the positioned form. Mechanism: a dedicated fast-path branch in `generate_funcall()` that recognises `print/3` and emits the call against the existing C symbol `print_at` (unchanged in `src/lib/print_at.c`). The Rock-level `register_builtin("print_at", …)` line was removed; the component's files, wiki page, and C symbol keep the historical name for grep/debug continuity. `test/print_at_test.rkr` migrated to `print(x, y, text)`. Verified: 229/229 host tests pass, ZXN build of `print_at_test.nex` clean, generated C shows `print_at(...)` call emission as expected. The overloading TODO on the rtl-print-at page is now resolved; only the raster-replacement TODO remains open.
+
+## [2026-04-13] todo | RTL colour component (ink / paper / bright / flash) — plan drafted
+
+Drafted `pages/rtl/rtl-ink-paper.md` (status: draft) covering the planned ZX character-cell attribute component: `ink`, `paper`, `bright`, `flash`, `inverse`, `over`. ZXN path uses ROM channel #2 control codes 16-21 via the same `rst 0x10` wrapper `print_at` already uses; host path keeps a small termbox2 attribute shadow behind a new `host_caps.ink` flag and `print_at.c`'s `tb_print` call reads the shadow instead of `TB_DEFAULT`. On ZXN no change to `print_at` is needed — the ROM already applies current attributes to subsequent `RST 10h` output. Two open design questions recorded on the page: (a) whether to lift the `rst10_emit` scratch byte + wrapper out of `print_at.c` into a shared `src/lib/zxn/rom_channel2.{h,c}` (mildly revising rule 1 of rtl-overview to allow shared lifecycle helpers) — recommendation: lift; (b) individual functions vs a single `set_attr(kind, val)` — recommendation: individual. No code yet.
+
+## [2026-04-13] update | ink/paper plan revised (ownership + DRY, no extracted helpers)
+
+Reworked `pages/rtl/rtl-ink-paper.md` after architectural pushback: (a) dropped the `zx_putchar` extraction — it was encoding a ROM-era coincidence that both "render character" and "set attribute" happen to funnel through `RST 10h`. In the raster era they share no code at all. Both files keep a private inline-asm wrapper; duplication is deliberate and vanishes at raster-migration time. (b) dropped the proposed `host/attr_state` helper file — the attribute state is owned by `ink_paper`, full stop. `ink_paper.h` exposes `attr_fg()` / `attr_bg()` accessors; `print_at.c`'s host branch reads them. (c) rule 1 gains a one-sentence clarification that consuming a sibling component's public header is legitimate API use, not a cross-component include in the bad sense. DRY inside `ink_paper.c` is handled by one internal `set_attr(kind, val)` helper that all six public setters call. No external helper files created. Memory layout (pinning state vars to a specific address) deferred to a future ZXN micro-management pass.
+
+## [2026-04-13] update | ink_paper RTL component shipped
+Implemented `ink`/`paper`/`bright`/`flash`/`inverse`/`over` as Rock builtins.
+`src/lib/ink_paper.{h,c}` owns attribute state; setters DRY through an internal
+`set_attr` helper. ZXN branch emits two-byte control-code sequences via a
+private RST 10h wrapper (deliberately duplicated from print_at.c until raster
+migration). Host branch shadows state and exposes `attr_fg()`/`attr_bg()`
+composing Spectrum palette → termbox2 (with ZX-to-ANSI colour lookup), which
+print_at.c now reads instead of passing TB_DEFAULT. `host_caps.ink` flag added.
+All 230 host tests pass (+5 new); `./rock --target=zxn test/ink_paper_test.rkr`
+produces a clean `.nex`. rtl-overview rule 1 reworded around DRY with the
+public-header consumption clarification. Page flipped to status: current.
+
+## [2026-04-13] update | rtl-input page added; keyboard split documented
+Created `wikiroot/pages/rtl/rtl-input.md` for `inkey`/`keypress` (ROM route
+via LAST_K + FLAGS bit 5). Updated `rtl-keyboard.md` with a "When to use this
+vs rtl-input" table clarifying that the matrix scanner is for action games
+needing simultaneous key-holds, while the ROM route is for menus/text.
+Rock ships both components deliberately — they serve different needs and can
+be used together. Dependencies and limitations documented on both pages.
+Added both pages to index.md under Rock RTL.
+
+## [2026-04-15] lint | rewrite subdir wiki-links to full keys
+
+Changed files: 6
+
+Automated tool: exit 0 for links; 107 broken links resolved
+Issues fixed: rewrote [[rtl-X]] → [[rtl/rtl-X]], [[pasta80-X]] → [[pasta80/pasta80-X]], [[zxn-ula]] → [[targets/zxn/zxn-ula]] across 18 files in pasta80/ and rtl/
+Remaining issues: pending source wikiroot/new/keyboard_example (awaits /wiki ingest)
+TODOs filed: none
 

@@ -180,7 +180,7 @@ This pattern is replicated identically on CP/M (BDOS calls), Next (esxDOS calls)
 
 ## See Also
 
-- [[pasta80-overview]] — Project overview
-- [[pasta80-rtl-api]] — Full API reference
-- [[pasta80-target-platforms]] — Platform-specific implementation details
-- [[pasta80-lessons-for-rock]] — Lessons for Rock's RTL
+- [[pasta80/pasta80-overview]] — Project overview
+- [[pasta80/pasta80-rtl-api]] — Full API reference
+- [[pasta80/pasta80-target-platforms]] — Platform-specific implementation details
+- [[pasta80/pasta80-lessons-for-rock]] — Lessons for Rock's RTL

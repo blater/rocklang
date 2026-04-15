@@ -7,6 +7,8 @@ updated: 2026-04-12
 status: current
 ---
 
+> **Note (2026-04-12):** Partially applied. The keyboard pilot under [[rtl/rtl-overview]] realises lessons 1–4 (thin HAL, mixed C/ASM split, host stubs, flat builtins). Lessons 5–8 remain as rules for future components.
+
 # PASTA/80 Lessons for Rock's RTL
 
 Analysis of PASTA/80's runtime library with concrete recommendations for Rock's cross-platform RTL strategy. Organised as: **pattern observed** → **lesson for Rock** → **recommendation**.
@@ -180,6 +182,6 @@ Analysis of PASTA/80's runtime library with concrete recommendations for Rock's 
 
 ## See Also
 
-- [[pasta80-overview]] — Project overview
-- [[pasta80-rtl-architecture]] — Detailed architecture analysis
-- [[pasta80-target-platforms]] — Per-platform implementation details
+- [[pasta80/pasta80-overview]] — Project overview
+- [[pasta80/pasta80-rtl-architecture]] — Detailed architecture analysis
+- [[pasta80/pasta80-target-platforms]] — Per-platform implementation details

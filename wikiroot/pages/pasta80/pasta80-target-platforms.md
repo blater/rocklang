@@ -239,6 +239,6 @@ Although the Agon shares some API patterns with CP/M (both have `Bdos`/`BdosHL` 
 
 ## See Also
 
-- [[pasta80-overview]] — Project overview
-- [[pasta80-rtl-architecture]] — HAL pattern details
-- [[pasta80-lessons-for-rock]] — What Rock can learn from this
+- [[pasta80/pasta80-overview]] — Project overview
+- [[pasta80/pasta80-rtl-architecture]] — HAL pattern details
+- [[pasta80/pasta80-lessons-for-rock]] — What Rock can learn from this

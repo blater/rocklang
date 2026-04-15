@@ -51,7 +51,7 @@ Complete API surface of the PASTA/80 runtime library. Platform tags indicate ava
 |------|----------|---------|
 | `PBlock = ^TBlock` | [All] | Heap free-list pointer |
 | `TBlock = record Next: PBlock; Size: Integer end` | [All] | Heap free-list node |
-| `FileControlBlock` | [CPM] [ZXNext] [Agon] | Platform-specific file handle (see [[pasta80-rtl-architecture]]) |
+| `FileControlBlock` | [CPM] [ZXNext] [Agon] | Platform-specific file handle (see [[pasta80/pasta80-rtl-architecture]]) |
 | `TextRec` | [CPM] [ZXNext] [Agon] | Text file: FCB + readable/writable flags + 128-byte buffer |
 | `FileRec` | [CPM] [ZXNext] [Agon] | Typed file: FCB + component size/count/index + 128-byte buffer |
 | `Registers` | [ZXNext] [Agon] | Z80 register set for OS API calls (variant record: byte/word views) |
@@ -208,5 +208,5 @@ Complete API surface of the PASTA/80 runtime library. Platform tags indicate ava
 
 ## See Also
 
-- [[pasta80-rtl-architecture]] — How the layers fit together
-- [[pasta80-target-platforms]] — Platform-specific details
+- [[pasta80/pasta80-rtl-architecture]] — How the layers fit together
+- [[pasta80/pasta80-target-platforms]] — Platform-specific details
