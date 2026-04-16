@@ -41,7 +41,8 @@ RTL_C_SRCS="\
   $RT/lib/circle.c \
   $RT/lib/fill.c \
   $RT/lib/triangle.c \
-  $RT/lib/random.c"
+  $RT/lib/random.c \
+  $RT/lib/nextreg.c"
 
 # Host-only (gcc) extra sources — e.g. third-party single-header impl TUs.
 RTL_HOST_SRCS="\
