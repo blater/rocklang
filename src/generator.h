@@ -32,6 +32,7 @@ typedef struct generator_t {
   char **deferred_global_init_code; // runtime-init code to emit at start of main()
   int deferred_global_init_count;
   int deferred_global_init_capacity;
+  ast_t program;             // top-level program node, set at top of transpile()
 } generator_t;
 
 generator_t new_generator(char *filename);

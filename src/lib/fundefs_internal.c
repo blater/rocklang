@@ -431,3 +431,7 @@ void exit_rocker(int status) {
   end_rocker();
   exit(status);
 }
+
+void halt(byte code) {
+  exit_rocker((int)code);
+}

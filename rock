@@ -5,6 +5,51 @@
 
 ROCK_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLIB=sdcc_iy    # z88dk main library
+RT="${ROCK_ROOT}/src"
+
+# ---------------------------------------------------------------------------
+# Rock RTL manifest
+# ---------------------------------------------------------------------------
+# To add a new RTL component:
+#   1. Append its .c file to RTL_C_SRCS.
+#   2. If it has Z80 assembly, append its .asm file to RTL_ZXN_ASM.
+#   3. Register builtins and emit the #include in src/generator.c.
+# See wikiroot/pages/rtl/rtl-overview.md for full conventions.
+# ---------------------------------------------------------------------------
+
+# Core runtime — always linked on both host and ZXN targets.
+RTL_CORE_SRCS="\
+  $RT/lib/alloc.c \
+  $RT/lib/fundefs.c \
+  $RT/lib/fundefs_internal.c \
+  $RT/lib/asm_interop.c \
+  $RT/lib/host_caps.c"
+
+# RTL component C shims — one line per component.
+RTL_C_SRCS="\
+  $RT/lib/keyboard.c \
+  $RT/lib/border.c \
+  $RT/lib/ink_paper.c \
+  $RT/lib/cls.c \
+  $RT/lib/time.c \
+  $RT/lib/sound.c \
+  $RT/lib/input.c \
+  $RT/lib/print_at.c \
+  $RT/lib/plot.c \
+  $RT/lib/draw.c \
+  $RT/lib/polyline.c \
+  $RT/lib/circle.c \
+  $RT/lib/fill.c \
+  $RT/lib/triangle.c \
+  $RT/lib/random.c"
+
+# Host-only (gcc) extra sources — e.g. third-party single-header impl TUs.
+RTL_HOST_SRCS="\
+  $RT/lib/host/termbox2_impl.c"
+
+# RTL component Z80 assembly — one line per component, ZXN target only.
+RTL_ZXN_ASM="\
+  $RT/lib/zxn/keyboard.asm"
 
 transpile() {
   local target="$1" exe_abs="$2" source_abs="$3"
@@ -16,17 +61,18 @@ build() {
 
   echo "compile $sourcefile -> $exe_abs"
 
-  local RT="${ROCK_ROOT}/src"
-  local LIB_SRCS="$RT/lib/alloc.c $RT/lib/fundefs.c $RT/lib/fundefs_internal.c $RT/lib/asm_interop.c"
+  local LIB_SRCS="${RTL_CORE_SRCS} ${RTL_C_SRCS}"
 
   if [ "$target" = "gcc" ]; then
-    gcc -Wall -Wno-unused-variable -I "${RT}/lib" -o "${exe_abs}" "${exe_abs}.c" ${LIB_SRCS}
+    gcc -Wall -Wno-unused-variable \
+      -I "${RT}/lib" -I "${RT}/ext/lib" \
+      -o "${exe_abs}" "${exe_abs}.c" ${LIB_SRCS} ${RTL_HOST_SRCS}
   else
     zcc +zxn -vn -subtype=nex -startup=1 -clib=$CLIB -create-app \
       -pragma-include:"${RT}/lib/zxn/zpragma_zxn.inc" \
       -I"${RT}/lib" \
       -o "${exe_abs}" \
-      "${exe_abs}.c" ${LIB_SRCS}
+      "${exe_abs}.c" ${LIB_SRCS} ${RTL_ZXN_ASM}
   fi
   if [ $? -eq 0 ]; then
     if [ "$target" = "gcc" ]; then

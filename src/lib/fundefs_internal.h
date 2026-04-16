@@ -10,6 +10,10 @@ void init_rocker(int argc, char **argv);
 void end_rocker(void);
 void exit_rocker(int status);
 
+/* Rock-exposed program termination. Mirrors PASTA/80's Halt(ExitCode).
+ * Runs end_rocker() then exits with the given code. */
+void halt(byte code);
+
 __internal_dynamic_array_t __internal_make_array(size_t size, size_t max_capacity);
 int __internal_push_array(__internal_dynamic_array_t arr, void *elem);
 void *__internal_pop_array(__internal_dynamic_array_t arr);

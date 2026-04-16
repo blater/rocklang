@@ -132,6 +132,33 @@ static void register_builtin_array(name_table_t *table, const char *name,
   push_nt(table, sv_from_cstr((char*)name), NT_FUN, new_ast(fn));
 }
 
+// Count top-level user fundefs (non-methods) sharing a name. Used to decide
+// whether to mangle a name for arity-based overload dispatch. Only user fundefs
+// are counted — builtins are not overloaded in Phase 1.
+static int program_user_fundef_count(ast_t program, string_view name) {
+  if (program == NULL) return 0;
+  int n = 0;
+  ast_array_t stmts = program->data.program.prog;
+  for (int i = 0; i < stmts.length; i++) {
+    ast_t s = stmts.data[i];
+    if (s->tag == fundef && !s->data.fundef.is_method &&
+        svcmp(s->data.fundef.name.lexeme, name) == 0)
+      n++;
+  }
+  return n;
+}
+
+// Emit a function name for both declaration and call sites. When a user
+// fundef name is overloaded (>=2 top-level user fundefs share the name),
+// the name is mangled as `name__N` where N is the arity. Single-definition
+// names emit unmangled for backward compatibility and diff minimisation.
+static void emit_fun_name(FILE *f, generator_t *g, string_view name, int argc) {
+  if (program_user_fundef_count(g->program, name) > 1)
+    fprintf(f, SV_Fmt "__%d", SV_Arg(name), argc);
+  else
+    fprintf(f, SV_Fmt, SV_Arg(name));
+}
+
 // Helper: Check if a function is a known operation that's always available
 // These functions emit code patterns we recognize regardless of name table
 // Unified string concat: capture arguments, emit setup to pre_f, emit tmp var
@@ -298,6 +325,7 @@ generator_t new_generator(char *filename) {
   res.deferred_global_init_code = NULL;
   res.deferred_global_init_count = 0;
   res.deferred_global_init_capacity = 0;
+  res.program = NULL;
 
   // Register C library builtin functions with their return types
   // Stdlib / I/O
@@ -332,12 +360,49 @@ generator_t new_generator(char *filename) {
   register_builtin_array(&res.table, "get_args",       "string");
   // Core compiler functions - always available
   register_builtin(&res.table, "exit",                 "void");
+  register_builtin(&res.table, "halt",                 "void");
   register_builtin(&res.table, "putchar",              "void");
   register_builtin(&res.table, "allocate_compiler_persistent", "void");
   register_builtin(&res.table, "fill_cmd_args",        "void");
   // Memory operations
   register_builtin(&res.table, "poke",                 "void");
   register_builtin(&res.table, "peek",                 "byte");
+
+  register_builtin(&res.table, "scan_keyboard",        "void");
+  register_builtin(&res.table, "key_pressed",          "byte");
+
+  register_builtin(&res.table, "border",               "void");
+  register_builtin(&res.table, "border_get",           "byte");
+
+  register_builtin(&res.table, "ink",                  "void");
+  register_builtin(&res.table, "paper",                "void");
+  register_builtin(&res.table, "bright",               "void");
+  register_builtin(&res.table, "flash",                "void");
+  register_builtin(&res.table, "inverse",              "void");
+  register_builtin(&res.table, "over",                 "void");
+
+  register_builtin(&res.table, "cls",                  "void");
+
+  register_builtin(&res.table, "plot",                 "void");
+  register_builtin(&res.table, "point",                "byte");
+  register_builtin(&res.table, "draw",                 "void");
+  register_builtin(&res.table, "polyline",             "void");
+  register_builtin(&res.table, "circle",               "void");
+  register_builtin(&res.table, "fill",                 "void");
+  register_builtin(&res.table, "triangle",             "void");
+  register_builtin(&res.table, "trianglefill",         "void");
+
+  register_builtin(&res.table, "randomize",            "void");
+  register_builtin(&res.table, "random_byte",          "byte");
+  register_builtin(&res.table, "random_word",          "word");
+
+  register_builtin(&res.table, "sleep",                "void");
+  register_builtin(&res.table, "beep",                 "void");
+  register_builtin(&res.table, "inkey",                "byte");
+  register_builtin(&res.table, "keypress",             "byte");
+  /* print(x, y, text) — 3-arg overload of `print`, routed to C print_at
+   * via a fast-path branch in generate_funcall. Not registered as a
+   * separate Rock name; the C symbol lives in src/lib/print_at.c. */
 
   // Always initialize pre_f buffer for statement splitting
   res.pre_buf = NULL;
@@ -917,6 +982,27 @@ void generate_funcall(generator_t *g, ast_t fun) {
   } else if (svcmp(funcall.name.lexeme, sv_from_cstr("to_string")) == 0 ||
              svcmp(funcall.name.lexeme, sv_from_cstr("toString")) == 0) {
     generate_to_string(g, funcall);
+  } else if (svcmp(funcall.name.lexeme, sv_from_cstr("print")) == 0 &&
+             funcall.args.length == 3) {
+    // Overloaded print(x, y, text) — routes to the C print_at entry point
+    // defined in src/lib/print_at.c. 1-arg print(text) falls through to the
+    // generic path below and emits as C `print`.
+    FILE *f = g->f;
+    fprintf(f, "print_at(");
+    for (int i = 0; i < funcall.args.length; i++) {
+      if (i > 0) fprintf(f, ", ");
+      generate_expression(g, funcall.args.data[i]);
+    }
+    fprintf(f, ")");
+  } else if (svcmp(funcall.name.lexeme, sv_from_cstr("sleep")) == 0) {
+    // Rock `sleep` → C `rock_sleep` to avoid POSIX unistd.h collision.
+    FILE *f = g->f;
+    fprintf(f, "rock_sleep(");
+    for (int i = 0; i < funcall.args.length; i++) {
+      if (i > 0) fprintf(f, ", ");
+      generate_expression(g, funcall.args.data[i]);
+    }
+    fprintf(f, ")");
   } else if (svcmp(funcall.name.lexeme, sv_from_cstr("printf")) == 0) {
     // Rock printf takes one string argument
     FILE *f = g->f;
@@ -945,8 +1031,9 @@ void generate_funcall(generator_t *g, ast_t fun) {
             "undefined function " SV_Fmt, SV_Arg(fname));
     }
 
-    // Emit plain function call
-    fprintf(f, SV_Fmt "(", SV_Arg(funcall.name.lexeme));
+    // Emit plain function call (mangled if the name is overloaded)
+    emit_fun_name(f, g, funcall.name.lexeme, funcall.args.length);
+    fprintf(f, "(");
     for (int i = 0; i < funcall.args.length; i++) {
       if (i > 0)
         fprintf(f, ", ");
@@ -1589,7 +1676,12 @@ void generate_fundef(generator_t *g, ast_t fun) {
 
   if (svcmp(fundef.name.lexeme, sv_from_cstr("main")) != 0) {
     generate_type(f, fundef.ret_type);
-    fprintf(f, " " SV_Fmt "(", SV_Arg(emit_name));
+    fprintf(f, " ");
+    if (fundef.is_method)
+      fprintf(f, SV_Fmt, SV_Arg(emit_name));
+    else
+      emit_fun_name(f, g, fundef.name.lexeme, fundef.args.length);
+    fprintf(f, "(");
     if (fundef.args.length == 0) {
       fprintf(f, "void");
     } else {
@@ -1617,6 +1709,7 @@ void generate_fundef(generator_t *g, ast_t fun) {
     fprintf(f, "int main(int argc, char **argv) {\n");
     fprintf(f, "init_compiler_stack();\n");
     fprintf(f, "fill_cmd_args(argc, argv);\n");
+    fprintf(f, "rock_rtl_init();\n");
     // Initialize any global module vars that were deferred from global scope
     for (int i = 0; i < g->deferred_module_inits.length; i++) {
       ast_vardef vd = g->deferred_module_inits.data[i]->data.vardef;
@@ -1632,6 +1725,7 @@ void generate_fundef(generator_t *g, ast_t fun) {
     g->in_global_scope = 0;
     generate_compound(g, fundef.body);
     g->in_global_scope = saved_global;
+    fprintf(f, "rock_rtl_shutdown();\n");
     fprintf(f, "kill_compiler_stack();\n");
     fprintf(f, "return 0;\n");
     fprintf(f, "}\n\n");
@@ -1728,10 +1822,13 @@ void generate_forward_defs(generator_t *g, ast_t program) {
       if (svcmp(fundef.name.lexeme, sv_from_cstr("main")) != 0) {
         generate_type(f, fundef.ret_type);
 
-        if (fundef.is_method)
+        if (fundef.is_method) {
           fprintf(f, " %s(", mangle_method(fundef.type_name.lexeme, fundef.name.lexeme, fundef.is_array_method));
-        else
-          fprintf(f, " " SV_Fmt "(", SV_Arg(fundef.name.lexeme));
+        } else {
+          fprintf(f, " ");
+          emit_fun_name(f, g, fundef.name.lexeme, fundef.args.length);
+          fprintf(f, "(");
+        }
         if (fundef.args.length == 0) {
           fprintf(f, "void");
         } else {
@@ -1833,12 +1930,29 @@ void generate_tdef(generator_t *g, ast_t tdef_ast) {
 
 void transpile(generator_t *g, ast_t program) {
   FILE *f = g->f;
+  g->program = program;
   ast_array_t stmts = program->data.program.prog;
 
   fprintf(f, "#include \"alloc.h\"\n");
   fprintf(f, "#include \"fundefs.h\"\n");
   fprintf(f, "#include \"fundefs_internal.h\"\n");
-  fprintf(f, "#include \"typedefs.h\"\n\n");
+  fprintf(f, "#include \"typedefs.h\"\n");
+  fprintf(f, "#include \"host_caps.h\"\n");
+  fprintf(f, "#include \"keyboard.h\"\n");
+  fprintf(f, "#include \"border.h\"\n");
+  fprintf(f, "#include \"ink_paper.h\"\n");
+  fprintf(f, "#include \"cls.h\"\n");
+  fprintf(f, "#include \"time.h\"\n");
+  fprintf(f, "#include \"sound.h\"\n");
+  fprintf(f, "#include \"input.h\"\n");
+  fprintf(f, "#include \"print_at.h\"\n");
+  fprintf(f, "#include \"plot.h\"\n");
+  fprintf(f, "#include \"draw.h\"\n");
+  fprintf(f, "#include \"polyline.h\"\n");
+  fprintf(f, "#include \"circle.h\"\n");
+  fprintf(f, "#include \"fill.h\"\n");
+  fprintf(f, "#include \"triangle.h\"\n");
+  fprintf(f, "#include \"random.h\"\n\n");
 
   if (g->target == TARGET_ZXN)
     fprintf(f, "#define INIT_CAP_ALLOC_STACK 64\n\n");
