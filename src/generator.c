@@ -402,6 +402,16 @@ generator_t new_generator(char *filename) {
   register_builtin(&res.table, "cpu_speed_get",        "byte");
   register_builtin(&res.table, "mmu_set",              "void");
 
+  register_builtin(&res.table, "odd",                  "byte");
+  register_builtin(&res.table, "even",                 "byte");
+  register_builtin(&res.table, "hi",                   "byte");
+  register_builtin(&res.table, "lo",                   "byte");
+  register_builtin(&res.table, "swap",                 "word");
+  register_builtin(&res.table, "upcase",               "char");
+  register_builtin(&res.table, "locase",               "char");
+  register_builtin(&res.table, "abs_int",              "int");
+  register_builtin(&res.table, "abs_word",             "word");
+
   register_builtin(&res.table, "sleep",                "void");
   register_builtin(&res.table, "beep",                 "void");
   register_builtin(&res.table, "inkey",                "byte");
@@ -1959,7 +1969,8 @@ void transpile(generator_t *g, ast_t program) {
   fprintf(f, "#include \"fill.h\"\n");
   fprintf(f, "#include \"triangle.h\"\n");
   fprintf(f, "#include \"random.h\"\n");
-  fprintf(f, "#include \"nextreg.h\"\n\n");
+  fprintf(f, "#include \"nextreg.h\"\n");
+  fprintf(f, "#include \"helpers.h\"\n\n");
 
   if (g->target == TARGET_ZXN)
     fprintf(f, "#define INIT_CAP_ALLOC_STACK 64\n\n");
