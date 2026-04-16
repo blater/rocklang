@@ -3,7 +3,7 @@ title: Control Flow
 category: syntax
 tags: [control-flow, if, while, for, match, loop, iter]
 sources: []
-updated: 2026-04-11
+updated: 2026-04-16
 status: current
 ---
 
@@ -139,6 +139,21 @@ a & b    a | b    a ^ b
 ```rock
 -a    // numeric negation
 ```
+
+### Operators Rock does NOT have
+
+Common C operators that are **absent** from Rock — reaching for these in tests or user code produces confusing parse errors:
+
+| Missing | Use instead |
+|---------|-------------|
+| `==` equality | `=` (see note above) |
+| `!` logical not | `not` is also absent — invert the branch or compare explicitly |
+| `and` / `or` keywords | `&&` / `\|\|` |
+| `?:` ternary | plain `if` statement writing to a temporary |
+| `+=`, `-=`, `*=`, `/=` | `x := x + y` etc. |
+| `++`, `--` | `x := x + 1` |
+
+See also [[syntax/types]] for the decimal-only numeric literal rule (no `0x` hex).
 
 ## Assignment
 

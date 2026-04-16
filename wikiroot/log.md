@@ -732,3 +732,12 @@ Issues fixed: rewrote [[rtl-X]] → [[rtl/rtl-X]], [[pasta80-X]] → [[pasta80/p
 Remaining issues: pending source wikiroot/new/keyboard_example (awaits /wiki ingest)
 TODOs filed: none
 
+
+## [2026-04-16] update | document Rock operator gotchas
+
+Changed files: 2
+
+Added "Operators Rock does NOT have" table to control-flow.md covering
+==, !, and/or keywords, ternary, compound assignment, and ++/--.
+Collected during pasta80 RTL parity work when writing test fixtures.
+
