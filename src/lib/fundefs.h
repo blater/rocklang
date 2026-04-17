@@ -85,5 +85,6 @@ static inline string get_abs_path(string path) {
 #define to_word(x)   ((word)(x))
 #define to_dword(x)  ((dword)(x))
 #endif
+#define to_float(x)  ((float)(x))
 
 #endif // ROCKER_FUNDEFS

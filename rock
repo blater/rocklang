@@ -43,7 +43,8 @@ RTL_C_SRCS="\
   $RT/lib/triangle.c \
   $RT/lib/random.c \
   $RT/lib/nextreg.c \
-  $RT/lib/helpers.c"
+  $RT/lib/helpers.c \
+  $RT/lib/fmath.c"
 
 # Host-only (gcc) extra sources — e.g. third-party single-header impl TUs.
 RTL_HOST_SRCS="\
@@ -68,7 +69,7 @@ build() {
   if [ "$target" = "gcc" ]; then
     gcc -Wall -Wno-unused-variable \
       -I "${RT}/lib" -I "${RT}/ext/lib" \
-      -o "${exe_abs}" "${exe_abs}.c" ${LIB_SRCS} ${RTL_HOST_SRCS}
+      -o "${exe_abs}" "${exe_abs}.c" ${LIB_SRCS} ${RTL_HOST_SRCS} -lm
   else
     zcc +zxn -vn -subtype=nex -startup=1 -clib=$CLIB -create-app \
       -pragma-include:"${RT}/lib/zxn/zpragma_zxn.inc" \

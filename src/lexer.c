@@ -114,6 +114,22 @@ int length_of_num_lit(lexer_t l) {
     cter++;
     lexer_consume(&l);
   }
+  /* Optional fractional part: exactly one dot followed by at least one
+   * digit. A trailing dot without a digit is left to the caller so we
+   * do not eat record-field access like `arr.0` (Rock does not have
+   * number.field semantics, but the principle stands). */
+  if (lexer_peek(l) == '.') {
+    lexer_t peek = l;
+    lexer_consume(&peek);
+    if (is_char_num(lexer_peek(peek))) {
+      cter++;                 /* the '.' */
+      lexer_consume(&l);
+      while (is_char_num(lexer_peek(l))) {
+        cter++;
+        lexer_consume(&l);
+      }
+    }
+  }
   return cter;
 }
 

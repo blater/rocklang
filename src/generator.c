@@ -350,6 +350,7 @@ generator_t new_generator(char *filename) {
   register_builtin(&res.table, "to_byte",              "byte");
   register_builtin(&res.table, "to_word",              "word");
   register_builtin(&res.table, "to_dword",             "dword");
+  register_builtin(&res.table, "to_float",             "float");
   register_builtin(&res.table, "set_string_index_base","void");
   // Built-in array/string functions with special code generation
   register_builtin(&res.table, "substring",            "string");
@@ -411,6 +412,12 @@ generator_t new_generator(char *filename) {
   register_builtin(&res.table, "locase",               "char");
   register_builtin(&res.table, "abs_int",              "int");
   register_builtin(&res.table, "abs_word",             "word");
+
+  register_builtin(&res.table, "fsin",                 "float");
+  register_builtin(&res.table, "fcos",                 "float");
+  register_builtin(&res.table, "fsqrt",                "float");
+  register_builtin(&res.table, "fabs_float",           "float");
+  register_builtin(&res.table, "fpi",                  "float");
 
   register_builtin(&res.table, "sleep",                "void");
   register_builtin(&res.table, "beep",                 "void");
@@ -1970,7 +1977,8 @@ void transpile(generator_t *g, ast_t program) {
   fprintf(f, "#include \"triangle.h\"\n");
   fprintf(f, "#include \"random.h\"\n");
   fprintf(f, "#include \"nextreg.h\"\n");
-  fprintf(f, "#include \"helpers.h\"\n\n");
+  fprintf(f, "#include \"helpers.h\"\n");
+  fprintf(f, "#include \"fmath.h\"\n\n");
 
   if (g->target == TARGET_ZXN)
     fprintf(f, "#define INIT_CAP_ALLOC_STACK 64\n\n");

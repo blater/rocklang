@@ -630,6 +630,7 @@ static ast_t synthesize_default(ast_t type_node) {
       svcmp(name, (string_view)SV_Static("byte"))    == 0 ||
       svcmp(name, (string_view)SV_Static("word"))    == 0 ||
       svcmp(name, (string_view)SV_Static("dword"))   == 0 ||
+      svcmp(name, (string_view)SV_Static("float"))   == 0 ||
       svcmp(name, (string_view)SV_Static("boolean")) == 0) {
     token_t tok = pos;
     tok.type = TOK_NUM_LIT;
