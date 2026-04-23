@@ -260,6 +260,7 @@ void __to_string_word(string *out, word w) {
 
 int   __to_int_dword(dword d)  { return (int)d; }
 dword __to_dword_int(int n)    { return (dword)n; }
+int   __to_int_float(float f)  { return (int)f; }
 
 void __to_string_dword(string *out, dword d) {
   char buf[11];  // max "4294967295\0"

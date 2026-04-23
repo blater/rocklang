@@ -30,7 +30,7 @@ void __substring_range(string *out, string s, int start, int end);
 // Helper for string construction (replaces C99 compound literals)
 void __rock_make_string(string *out, const char *data, size_t length);
 
-// byte/word/dword casting
+// byte/word/dword/float casting
 int    __to_int_byte(byte b);
 byte   __to_byte_int(int n);
 void __to_string_byte(string *out, byte b);
@@ -41,6 +41,7 @@ int    __to_int_dword(dword d);
 dword  __to_dword_int(int n);
 void __to_string_dword(string *out, dword d);
 void __to_string_int(string *out, int n);
+int    __to_int_float(float f);
 
 // Host-only wrappers for file I/O (returns by value)
 #ifndef __SDCC
@@ -75,7 +76,7 @@ static inline string get_abs_path(string path) {
 #endif
 
 #ifndef __SDCC
-#define to_int(x)    _Generic((x), byte: __to_int_byte, word: __to_int_word, dword: __to_int_dword, default: (int)(x))(x)
+#define to_int(x)    _Generic((x), byte: __to_int_byte, word: __to_int_word, dword: __to_int_dword, float: __to_int_float, default: (int)(x))(x)
 #define to_byte(x)   _Generic((x), int:  __to_byte_int, default: (byte)(x))(x)
 #define to_word(x)   _Generic((x), int:  __to_word_int, default: (word)(x))(x)
 #define to_dword(x)  _Generic((x), int:  __to_dword_int, default: (dword)(x))(x)
