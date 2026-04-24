@@ -2,13 +2,11 @@
 
 #ifdef __SDCC
 
-/* ZXN: not yet wired up — these stubs keep the component linkable
- * under SDCC so other components can reference math.h without
- * pulling libm in. Replace with real implementations once the ZXN
- * compile recipe for -lm is added to compile.sh. */
-float fsin(float x)       { (void)x; return 0.0f; }
-float fcos(float x)       { (void)x; return 1.0f; }
-float fsqrt(float x)      { (void)x; return 0.0f; }
+#include <math.h>
+
+float fsin(float x)       { return sin(x); }
+float fcos(float x)       { return cos(x); }
+float fsqrt(float x)      { return sqrt(x); }
 float fabs_float(float x) { return x < 0.0f ? -x : x; }
 float fpi(void)           { return 3.14159265f; }
 
