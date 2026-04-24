@@ -208,6 +208,7 @@ void emit_to_string(generator_t *g, ast_funcall call) {
     if (svcmp(type, sv_from_cstr("byte")) == 0) fn = "__to_string_byte";
     else if (svcmp(type, sv_from_cstr("word")) == 0) fn = "__to_string_word";
     else if (svcmp(type, sv_from_cstr("dword")) == 0) fn = "__to_string_dword";
+    else if (svcmp(type, sv_from_cstr("float")) == 0) fn = "__to_string_float";
   }
 
   const char *tmp_var = allocate_string_tmp(g);

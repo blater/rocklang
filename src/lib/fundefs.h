@@ -42,6 +42,7 @@ dword  __to_dword_int(int n);
 void __to_string_dword(string *out, dword d);
 void __to_string_int(string *out, int n);
 int    __to_int_float(float f);
+void __to_string_float(string *out, float f);
 
 // Host-only wrappers for file I/O (returns by value)
 #ifndef __SDCC

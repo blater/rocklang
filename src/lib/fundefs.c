@@ -270,6 +270,14 @@ void __to_string_dword(string *out, dword d) {
   __rock_make_string(out, out_buf, (size_t)len);
 }
 
+void __to_string_float(string *out, float f) {
+  char buf[24];
+  int len = snprintf(buf, sizeof(buf), "%g", (double)f);
+  char *out_buf = allocate_compiler_persistent(len + 1);
+  memcpy(out_buf, buf, len + 1);
+  __rock_make_string(out, out_buf, (size_t)len);
+}
+
 // ============================================================================
 // ALWAYS-AVAILABLE CASTING FUNCTIONS (safe for sccz80)
 // ============================================================================

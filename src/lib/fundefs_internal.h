@@ -107,6 +107,18 @@ void word_set_elem(__internal_dynamic_array_t arr, size_t index, word elem);
 
 void word_insert(__internal_dynamic_array_t arr, size_t index, word elem);
 
+__internal_dynamic_array_t float_make_array(void);
+
+void float_push_array(__internal_dynamic_array_t arr, float elem);
+
+float float_pop_array(__internal_dynamic_array_t arr);
+
+float float_get_elem(__internal_dynamic_array_t arr, size_t index);
+
+void float_set_elem(__internal_dynamic_array_t arr, size_t index, float elem);
+
+void float_insert(__internal_dynamic_array_t arr, size_t index, float elem);
+
 __internal_dynamic_array_t dword_make_array(void);
 
 void dword_push_array(__internal_dynamic_array_t arr, dword elem);

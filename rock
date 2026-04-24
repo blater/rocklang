@@ -74,6 +74,7 @@ build() {
     zcc +zxn -vn -subtype=nex -startup=1 -clib=$CLIB -create-app \
       -pragma-include:"${RT}/lib/zxn/zpragma_zxn.inc" \
       -I"${RT}/lib" \
+      -lm \
       -o "${exe_abs}" \
       "${exe_abs}.c" ${LIB_SRCS} ${RTL_ZXN_ASM}
   fi

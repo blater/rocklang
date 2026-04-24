@@ -396,6 +396,27 @@ void dword_insert(__internal_dynamic_array_t arr, size_t index, dword elem) {
   __internal_insert(arr, index, &elem);
 }
 
+__internal_dynamic_array_t float_make_array(void) {
+  return __internal_make_array(sizeof(float), 0);
+}
+void float_push_array(__internal_dynamic_array_t arr, float elem) {
+  __internal_push_array(arr, &elem);
+}
+float float_pop_array(__internal_dynamic_array_t arr) {
+  float *res = __internal_pop_array(arr);
+  return *res;
+}
+float float_get_elem(__internal_dynamic_array_t arr, size_t index) {
+  float *res = __internal_get_elem(arr, index);
+  return *res;
+}
+void float_set_elem(__internal_dynamic_array_t arr, size_t index, float elem) {
+  __internal_set_elem(arr, index, &elem);
+}
+void float_insert(__internal_dynamic_array_t arr, size_t index, float elem) {
+  __internal_insert(arr, index, &elem);
+}
+
 int global_argc;
 char **global_argv;
 

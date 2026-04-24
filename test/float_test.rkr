@@ -44,4 +44,31 @@ sub main() {
   // fpi() truncated = 3
   x := fpi();
   a.AssertEQ("fpi -> 3", 3, to_int(x));
+
+  // to_string(float) round-trip.
+  string s;
+  x := 3.14;
+  s := to_string(x);
+  a.AssertEQ("to_string(3.14)", 1, str_eq(s, "3.14"));
+
+  x := 0.0;
+  s := to_string(x);
+  a.AssertEQ("to_string(0.0)", 1, str_eq(s, "0"));
+
+  x := 0.0 - 2.5;
+  s := to_string(x);
+  a.AssertEQ("to_string(-2.5)", 1, str_eq(s, "-2.5"));
+
+  // float[] arrays.
+  float[] arr;
+  append(arr, 1.5);
+  append(arr, 2.5);
+  append(arr, 3.5);
+  a.AssertEQ("float[] length", 3, length(arr));
+  a.AssertEQ("float[0]", 1, to_int(arr[0]));
+  a.AssertEQ("float[1]", 2, to_int(arr[1]));
+  a.AssertEQ("float[2]", 3, to_int(arr[2]));
+
+  arr[1] := 9.9;
+  a.AssertEQ("float[1] set", 9, to_int(arr[1]));
 }
