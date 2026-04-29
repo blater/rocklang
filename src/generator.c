@@ -1611,10 +1611,13 @@ void generate_assignement(generator_t *g, ast_t assignment) {
                 SV_Arg(assign.target->data.identifier.id.lexeme));
         fprintf(f, "__free_string(&" SV_Fmt ");\n",
                 SV_Arg(assign.target->data.identifier.id.lexeme));
-        // Deep-copy when RHS is a string identifier to prevent aliasing
+        // ADR-0003 §10.6: descriptor copy + retain when RHS is a borrower
+        // (existing identifier). Replaces the legacy deep-copy via new_string.
         if (assign.expr->tag == identifier) {
-          fprintf(f, "new_string(&" SV_Fmt ", %s)",
-                  SV_Arg(assign.target->data.identifier.id.lexeme), rhs_text);
+          fprintf(f, SV_Fmt " = %s; __string_retain(" SV_Fmt ");\n",
+                  SV_Arg(assign.target->data.identifier.id.lexeme),
+                  rhs_text,
+                  SV_Arg(assign.target->data.identifier.id.lexeme));
         } else {
           fprintf(f, SV_Fmt " = %s;\n",
                   SV_Arg(assign.target->data.identifier.id.lexeme), rhs_text);
@@ -1636,8 +1639,11 @@ void generate_assignement(generator_t *g, ast_t assignment) {
         /* Paired release + legacy free; see scope-cleanup site for rationale. */
         fprintf(f, "__string_release(%s);\n", target_text);
         fprintf(f, "__free_string(&%s);\n", target_text);
+        // ADR-0003 §10.6: descriptor copy + retain for borrower RHS;
+        // transfer (copy + nullify) for producer RHS.
         if (assign.expr->tag == identifier) {
-          fprintf(f, "new_string(&%s, %s);\n", target_text, rhs_text);
+          fprintf(f, "%s = %s; __string_retain(%s);\n",
+                  target_text, rhs_text, target_text);
         } else {
           fprintf(f, "%s = %s;\n", target_text, rhs_text);
           if (strncmp(rhs_text, "__strtmp_", 9) == 0) {
@@ -1744,11 +1750,13 @@ void generate_vardef(generator_t *g, ast_t var) {
     // Constant expression (e.g. integer literal) or inside a function: emit normally
     flush_pre_f(g, f);
 
-    // For string-to-string variable init, deep-copy to prevent aliasing
+    // For string-to-string variable init from a borrower (existing slot),
+    // ADR-0003 §10.6: descriptor copy + retain. Both alias share the same
+    // backing; refcount tracks the live aliases.
     if (!g->in_global_scope && svcmp(type_name, SV_STRING) == 0
         && !vardef.type->data.type.is_array && vardef.expr->tag == identifier) {
-      fprintf(f, "string " SV_Fmt "; new_string(&" SV_Fmt ", %s);\n",
-              SV_Arg(vardef.name.lexeme), SV_Arg(vardef.name.lexeme), expr_text);
+      fprintf(f, "string " SV_Fmt " = %s; __string_retain(" SV_Fmt ");\n",
+              SV_Arg(vardef.name.lexeme), expr_text, SV_Arg(vardef.name.lexeme));
     } else {
       generate_type(f, vardef.type);
       fprintf(f, " " SV_Fmt " = %s;\n", SV_Arg(vardef.name.lexeme), expr_text);
