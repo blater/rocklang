@@ -226,6 +226,12 @@ static int __normalize_substr_idx(int idx, int length) {
   return idx - __rock_substr_index_base;
 }
 
+/* ADR-0003 §7.5: substring is a view. The result descriptor points into
+ * the source's bytes with capacity = 0 (read-only) and inherits the
+ * source's `backing`. For longlived sources, the inherited backing's
+ * refcount is incremented so the source survives as long as any view
+ * does. For static sources (sentinel) and bump sources (NULL), the
+ * retain is a no-op. */
 void __substring_from(string *out, string s, int start) {
   int c_start = __normalize_substr_idx(start, (int)s.length);
   if (c_start < 0 || c_start > (int)s.length) {
@@ -234,9 +240,12 @@ void __substring_from(string *out, string s, int start) {
     exit_rocker(1);
   }
   int len = (int)s.length - c_start;
-  __rock_make_longlived_string(out, (size_t)len);
-  memcpy(out->data, s.data + c_start, len);
-  out->data[len] = 0;
+  out->data     = s.data + c_start;
+  out->length   = (size_t)len;
+  out->capacity = 0;             /* view: read-only */
+  out->backing  = s.backing;     /* inherit source's lifetime anchor */
+  out->owned    = 0;
+  __string_retain(*out);
 }
 
 void __substring_range(string *out, string s, int start, int end) {
@@ -253,9 +262,12 @@ void __substring_range(string *out, string s, int start, int end) {
     exit_rocker(1);
   }
   int len = c_end - c_start + 1;
-  __rock_make_longlived_string(out, (size_t)len);
-  memcpy(out->data, s.data + c_start, len);
-  out->data[len] = 0;
+  out->data     = s.data + c_start;
+  out->length   = (size_t)len;
+  out->capacity = 0;
+  out->backing  = s.backing;
+  out->owned    = 0;
+  __string_retain(*out);
 }
 
 // ============================================================================
