@@ -1205,17 +1205,19 @@ void generate_funcall(generator_t *g, ast_t fun) {
     }
     fprintf(f, ")");
   } else if (svcmp(funcall.name.lexeme, sv_from_cstr("printf")) == 0) {
-    // Rock printf takes one string argument
+    // Rock printf takes one string argument.
+    // ADR-0003 §13: route Rock string expressions through the length-aware
+    // print() runtime helper. Substring views are not null-terminated, so
+    // C %s would print past the substring's end into the source's bytes.
     FILE *f = g->f;
     ast_t arg = funcall.args.data[0];
 
-    // String expression: wrap with "%s" format and extract .data
     if (expr_returns_string(arg, g->table)) {
-      fprintf(f, "printf(\"%%s\", ");
-      generate_string_to_cstr(g, arg);
+      fprintf(f, "print(");
+      generate_expression(g, arg);
       fprintf(f, ")");
     }
-    // Non-string: just emit it
+    // Non-string: emit C printf as before
     else {
       fprintf(f, "printf(");
       generate_expression(g, arg);

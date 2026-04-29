@@ -144,6 +144,9 @@ void __read_file_impl(string *out, string filename) {
 }
 
 void write_string_to_file(string s, string filename) {
+  /* ADR-0003 §13: length-aware write. Substring views are not
+   * null-terminated, so fprintf("%s", s.data) would over-read into the
+   * source's bytes. fwrite uses the descriptor's length explicitly. */
   char *fname = string_to_cstr(filename);
   FILE *f = fopen(fname, "wb");
   if (f == NULL) {
@@ -152,7 +155,9 @@ void write_string_to_file(string s, string filename) {
     perror("");
     exit_rocker(1);
   }
-  fprintf(f, "%s", s.data);
+  if (s.data != NULL && s.length > 0) {
+    fwrite(s.data, 1, s.length, f);
+  }
   fclose(f);
 }
 
