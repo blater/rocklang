@@ -47,6 +47,11 @@ void __substring_range(string *out, string s, int start, int end);
 // Helper for string construction (replaces C99 compound literals)
 void __rock_make_string(string *out, const char *data, size_t length);
 
+/* ADR-0003 §7.1: allocate writable backing in the longlived pool and
+ * populate the descriptor's `backing` field. Caller writes `length+1`
+ * bytes into out->data (including the null terminator). */
+void __rock_make_longlived_string(string *out, size_t length);
+
 // byte/word/dword/float casting
 int    __to_int_byte(byte b);
 byte   __to_byte_int(int n);

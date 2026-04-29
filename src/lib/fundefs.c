@@ -20,6 +20,21 @@ void __rock_make_string(string *out, const char *data, size_t length) {
   out->owned = 0;
 }
 
+/* ADR-0003 §7.1: allocate a fresh writable string in the longlived pool.
+ * Returns through `out` with backing pointing at the rock_block_header
+ * (refcount = 1 from rock_longlived_alloc). The caller writes `length+1`
+ * bytes into out->data (including the null terminator). owned stays 0 so
+ * the legacy __free_string skips this descriptor — refcount-driven
+ * __string_release is the canonical reclamation path. */
+void __rock_make_longlived_string(string *out, size_t length) {
+  char *payload = (char *)rock_longlived_alloc(length + 1);
+  out->data     = payload;
+  out->length   = length;
+  out->capacity = length;
+  out->backing  = ((rock_block_header *)payload) - 1;
+  out->owned    = 0;
+}
+
 char charAt(string s, int n) {
   if (s.data == NULL || n >= s.length)
     return 0;
@@ -57,46 +72,33 @@ void cstr_to_string(string *out, char *cstr) {
 
 void __concat_char(string *out, string s, char c) {
   if (s.data == NULL) {
-    char *tmp = allocate_compiler_persistent(2);
-    tmp[0] = c;
-    tmp[1] = 0;
-    __rock_make_string(out, tmp, 1);
-    out->owned = 1;
-  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
+    __rock_make_longlived_string(out, 1);
+    out->data[0] = c;
+    out->data[1] = 0;
     return;
   }
-  char *tmp = allocate_compiler_persistent(s.length + 2);
-  memcpy(tmp, s.data, s.length);
-  tmp[s.length] = c;
-  tmp[s.length + 1] = 0;
-  __rock_make_string(out, tmp, s.length + 1);
-  out->owned = 1;
-  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
+  __rock_make_longlived_string(out, s.length + 1);
+  memcpy(out->data, s.data, s.length);
+  out->data[s.length] = c;
+  out->data[s.length + 1] = 0;
 }
 
 void __concat_str(string *out, string s1, string s2) {
   size_t len1 = (s1.data == NULL) ? 0 : s1.length;
   size_t len2 = (s2.data == NULL) ? 0 : s2.length;
-  char *buffer = allocate_compiler_persistent(len1 + len2 + 1);
+  __rock_make_longlived_string(out, len1 + len2);
   if (s1.data != NULL)
-    memcpy(buffer, s1.data, len1);
+    memcpy(out->data, s1.data, len1);
   if (s2.data != NULL)
-    memcpy(&buffer[len1], s2.data, len2);
-  buffer[len1 + len2] = 0;
-  __rock_make_string(out, buffer, len1 + len2);
-  out->owned = 1;
-  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
+    memcpy(&out->data[len1], s2.data, len2);
+  out->data[len1 + len2] = 0;
 }
 
 void new_string(string *out, string s) {
-  out->data = allocate_compiler_persistent(s.length + 1);
-  out->length = s.length;
-  for (int i = 0; i < out->length; i++)
+  __rock_make_longlived_string(out, s.length);
+  for (size_t i = 0; i < out->length; i++)
     out->data[i] = s.data[i];
   out->data[out->length] = 0;
-  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
-  out->backing = NULL;          /* refcount machinery wired in Phase E */
-  out->owned = 1;
 }
 
 void setCharAt(string s, int n, char c) {
@@ -135,13 +137,10 @@ void __read_file_impl(string *out, string filename) {
   fseek(f, 0, SEEK_END);
   size_t length = ftell(f);
   fseek(f, 0, SEEK_SET);
-  char *buffer = allocate_compiler_persistent(length + 1);
-  fread(buffer, 1, length, f);
-  buffer[length] = 0;
+  __rock_make_longlived_string(out, length);
+  fread(out->data, 1, length, f);
+  out->data[length] = 0;
   fclose(f);
-  __rock_make_string(out, buffer, length);
-  out->owned = 1;
-  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
 }
 
 void write_string_to_file(string s, string filename) {
@@ -164,13 +163,9 @@ void __get_abs_path_impl(string *out, string path) {
     exit(1);
   }
   size_t abs_len = strlen(abs_path_tmp);
-  char *abs_path = allocate_compiler_persistent(abs_len + 1);
-  memcpy(abs_path, abs_path_tmp, abs_len + 1);
+  __rock_make_longlived_string(out, abs_len);
+  memcpy(out->data, abs_path_tmp, abs_len + 1);
   free(abs_path_tmp);
-
-  string tmp;
-  __rock_make_string(&tmp, abs_path, abs_len);
-  new_string(out, tmp);
 }
 #endif
 
@@ -239,12 +234,9 @@ void __substring_from(string *out, string s, int start) {
     exit_rocker(1);
   }
   int len = (int)s.length - c_start;
-  char *buf = allocate_compiler_persistent(len + 1);
-  memcpy(buf, s.data + c_start, len);
-  buf[len] = 0;
-  __rock_make_string(out, buf, (size_t)len);
-  out->owned = 1;
-  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
+  __rock_make_longlived_string(out, (size_t)len);
+  memcpy(out->data, s.data + c_start, len);
+  out->data[len] = 0;
 }
 
 void __substring_range(string *out, string s, int start, int end) {
@@ -261,12 +253,9 @@ void __substring_range(string *out, string s, int start, int end) {
     exit_rocker(1);
   }
   int len = c_end - c_start + 1;
-  char *buf = allocate_compiler_persistent(len + 1);
-  memcpy(buf, s.data + c_start, len);
-  buf[len] = 0;
-  __rock_make_string(out, buf, (size_t)len);
-  out->owned = 1;
-  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
+  __rock_make_longlived_string(out, (size_t)len);
+  memcpy(out->data, s.data + c_start, len);
+  out->data[len] = 0;
 }
 
 // ============================================================================
@@ -284,21 +273,15 @@ byte __to_byte_int(int n) {
 void __to_string_byte(string *out, byte b) {
   char buf[4];  // max "255\0"
   int len = snprintf(buf, sizeof(buf), "%u", (unsigned int)b);
-  char *out_buf = allocate_compiler_persistent(len + 1);
-  memcpy(out_buf, buf, len + 1);
-  __rock_make_string(out, out_buf, (size_t)len);
-  out->owned = 1;
-  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
+  __rock_make_longlived_string(out, (size_t)len);
+  memcpy(out->data, buf, len + 1);
 }
 
 void __to_string_int(string *out, int n) {
   char buf[24];
   int len = snprintf(buf, sizeof(buf), "%d", n);
-  char *out_buf = allocate_compiler_persistent(len + 1);
-  memcpy(out_buf, buf, len + 1);
-  __rock_make_string(out, out_buf, (size_t)len);
-  out->owned = 1;
-  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
+  __rock_make_longlived_string(out, (size_t)len);
+  memcpy(out->data, buf, len + 1);
 }
 
 int  __to_int_word(word w)  { return (int)w; }
@@ -307,11 +290,8 @@ word __to_word_int(int n)   { return (word)n; }
 void __to_string_word(string *out, word w) {
   char buf[6];  // max "65535\0"
   int len = snprintf(buf, sizeof(buf), "%u", (unsigned int)w);
-  char *out_buf = allocate_compiler_persistent(len + 1);
-  memcpy(out_buf, buf, len + 1);
-  __rock_make_string(out, out_buf, (size_t)len);
-  out->owned = 1;
-  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
+  __rock_make_longlived_string(out, (size_t)len);
+  memcpy(out->data, buf, len + 1);
 }
 
 int   __to_int_dword(dword d)  { return (int)d; }
@@ -321,21 +301,15 @@ int   __to_int_float(float f)  { return (int)f; }
 void __to_string_dword(string *out, dword d) {
   char buf[11];  // max "4294967295\0"
   int len = snprintf(buf, sizeof(buf), "%lu", (unsigned long)d);
-  char *out_buf = allocate_compiler_persistent(len + 1);
-  memcpy(out_buf, buf, len + 1);
-  __rock_make_string(out, out_buf, (size_t)len);
-  out->owned = 1;
-  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
+  __rock_make_longlived_string(out, (size_t)len);
+  memcpy(out->data, buf, len + 1);
 }
 
 void __to_string_float(string *out, float f) {
   char buf[24];
   int len = snprintf(buf, sizeof(buf), "%g", (double)f);
-  char *out_buf = allocate_compiler_persistent(len + 1);
-  memcpy(out_buf, buf, len + 1);
-  __rock_make_string(out, out_buf, (size_t)len);
-  out->owned = 1;
-  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
+  __rock_make_longlived_string(out, (size_t)len);
+  memcpy(out->data, buf, len + 1);
 }
 
 // ============================================================================
