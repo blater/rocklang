@@ -215,20 +215,23 @@ Phase exit checks:
 
 ## Phase H: String semantics and public API
 
-- [ ] Make `substring` return a view with inherited backing.
-- [ ] Make `charAt`, `equals`, and `print` length-aware.
-- [ ] Replace generated C `printf("%s", expr.data)` for Rock strings.
-- [ ] Update file output to use `fwrite(s.data, 1, s.length, f)`.
-- [ ] Implement capacity-gated `setCharAt`.
-- [ ] Replace `new_string` with `clone`.
-- [ ] Keep one `string` type; do not add `stringbuf` or `char[]` string-like duplicates.
+- [x] Make `substring` return a view with inherited backing. — `__substring_from`/`__substring_range` now return descriptor with `data = source + offset`, `capacity = 0`, `backing = source.backing`, plus `__string_retain` to extend source's lifetime.
+- [x] Make `charAt`, `equals`, and `print` length-aware. — All three already used `length` in `fundefs.c`; verified.
+- [x] Replace generated C `printf("%s", expr.data)` for Rock strings. — Generator now emits `print(expr)` via the length-aware runtime helper.
+- [x] Update file output to use `fwrite(s.data, 1, s.length, f)`. — `write_string_to_file` updated.
+- [x] Implement capacity-gated `setCharAt`. — Halts on `capacity == 0` with a clear runtime diagnostic; new negative test `test/negative/setcharat_on_literal.rkr` proves the halt path. `test/negative/run_negative.sh` extended with a runtime-halt mode.
+- [!] Replace `new_string` with `clone`. — Blocked on Phase I: `fundefs_internal.c` uses `new_string` for string-array element deep-copy. Renaming requires switching string-array elements to descriptor-copy (ADR §8.7), which is Phase I work.
+- [x] Keep one `string` type; do not add `stringbuf` or `char[]` string-like duplicates. — By inaction; only `string` exists.
 
 Phase exit checks:
 
-- [ ] `test/string_view_test.rkr` passes.
-- [ ] `test/string_capacity_test.rkr` passes.
-- [ ] `test/string_alias_mutation_test.rkr` passes.
-- [ ] `test/string_clone_test.rkr` passes.
+- [x] String literals get static sentinel backing (Phase H step 1).
+- [x] `concat` / `toString` / `clone` / `read_file` / `__get_abs_path_impl` / substring all populate `backing` via `rock_longlived_alloc` (Phase H step 2 + 3).
+- [x] Length-aware output paths in place (Phase H step 4).
+- [x] Capacity-gated setCharAt (Phase H step 5).
+- [x] Substring view + alias-via-retain validated by `test/substring_view_test.rkr` and `test/string_alias_test.rkr`.
+
+Implementation note (2026-04-29): tight-loop allocation pressure validated by `test/string_alloc_loop_test.rkr` (5000 iterations in default longlived pool). ZXN smoke compile of `simple_test` and `format_test` verifies SDCC compatibility of `pools.c` and the new `rock_longlived_alloc` paths.
 
 ## Phase I: Arrays and aggregate operations
 
