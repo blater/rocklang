@@ -10,7 +10,7 @@ OBJECTS = $(BUILD)alloc.o $(BUILD)ast.o $(BUILD)lexer.o $(BUILD)token.o \
           $(BUILD)main.o
 DEPS = $(OBJECTS:.o=.d)
 
-.PHONY: all clean test-pools test-negative
+.PHONY: all clean test-pools test-negative test-refcount
 
 all: $(BUILD) rockc
 
@@ -42,6 +42,30 @@ test-pools: $(BUILD)pools_test
 # diagnostic.
 test-negative: rockc
 	test/negative/run_negative.sh
+
+# Phase E.a — string retain/release runtime helpers.
+# Synthesises longlived backings to exercise the live refcount paths
+# since no Rock program path populates `backing` until Phase H.
+#
+# fundefs.c, alloc.c, fundefs_internal.c are compiled with the same
+# relaxed flags the `rock` script uses for runtime sources (the strict
+# rockc flags would catch pre-existing sign-compare warnings unrelated
+# to ADR-0003 work).
+RUNTIME_CFLAGS = -Wall -Wno-unused-variable -I src
+$(BUILD)fundefs_for_test.o: $(LIB)fundefs.c $(LIB)fundefs.h $(LIB)pools.h | $(BUILD)
+	$(CC) $(RUNTIME_CFLAGS) -c $< -o $@
+$(BUILD)alloc_for_test.o: $(LIB)alloc.c $(LIB)alloc.h | $(BUILD)
+	$(CC) $(RUNTIME_CFLAGS) -c $< -o $@
+$(BUILD)fundefs_internal_for_test.o: $(LIB)fundefs_internal.c $(LIB)fundefs_internal.h | $(BUILD)
+	$(CC) $(RUNTIME_CFLAGS) -c $< -o $@
+$(BUILD)string_refcount_test: test/string_refcount_test.c $(BUILD)pools.o \
+                              $(BUILD)fundefs_for_test.o \
+                              $(BUILD)alloc_for_test.o \
+                              $(BUILD)fundefs_internal_for_test.o | $(BUILD)
+	$(CC) $(RUNTIME_CFLAGS) -o $@ $^
+
+test-refcount: $(BUILD)string_refcount_test
+	$(BUILD)string_refcount_test
 
 clean:
 	rm -rf $(BUILD)

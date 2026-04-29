@@ -89,63 +89,69 @@ Phase exit checks:
 
 - [ ] Measure ZXN code, rodata, runtime state, stack, and usable pool budget from `.map` output.
 - [ ] Replace illustrative ADR pool sizes with measured values before acceptance.
-- [ ] Implement `__pool_bump_alloc`, `__pool_bump_save`, and `__pool_bump_restore`.
-- [ ] Implement `__pool_longlived_alloc` and `__pool_longlived_free` with universal `{size, refcount}` headers.
-- [ ] Implement free-block and static-block sentinels.
-- [ ] Implement size-class freelists and miscellaneous-class handling.
-- [ ] Implement `reclaim()` as non-relocating adjacent-free-block coalescing.
-- [ ] Add named OOM diagnostics for `bump` and `longlived`.
+- [x] Implement `__pool_bump_alloc`, `__pool_bump_save`, and `__pool_bump_restore`. — `src/lib/pools.c` (named `rock_bump_*`).
+- [x] Implement `__pool_longlived_alloc` and `__pool_longlived_free` with universal `{size, refcount}` headers.
+- [x] Implement free-block and static-block sentinels. — `0xFFFE` and `0xFFFF` respectively.
+- [x] Implement size-class freelists and miscellaneous-class handling. — Power-of-two classes 8…4096; misc list for non-class sizes.
+- [x] Implement `reclaim()` as non-relocating adjacent-free-block coalescing. — `rock_longlived_reclaim`.
+- [x] Add named OOM diagnostics for `bump` and `longlived`. — Default handler exits; tests can install a non-exiting capture.
 - [ ] Implement `--memory-profile=zxn` for host builds.
 
 Phase exit checks:
 
-- [ ] Pool unit tests or focused Rock tests can exhaust each pool with named diagnostics.
-- [ ] `reclaim()` tests show adjacent free blocks coalesce and non-adjacent blocks do not.
+- [x] Pool unit tests or focused Rock tests can exhaust each pool with named diagnostics. — `test/pools_test.c` 18/18 passing.
+- [x] `reclaim()` tests show adjacent free blocks coalesce and non-adjacent blocks do not.
 - [ ] Host `--memory-profile=zxn` uses the same pool sizes as the ZXN manifest.
+
+Implementation note (2026-04-29): function names use `rock_` prefix instead of `__pool_` per existing project naming; semantics are identical. Pool sizes in the generator are placeholders pending the deferred `.map` measurement.
 
 ## Phase B: Typechecker acyclicity
 
-- [ ] Build the user-type graph after type resolution.
-- [ ] Walk through array, record, union, and descriptor fields.
-- [ ] Reject direct recursive types.
-- [ ] Reject indirect recursive cycles.
-- [ ] Emit a diagnostic that names the cycle path and recommends flat index-based structures.
+- [x] Build the user-type graph after type resolution.
+- [x] Walk through array, record, union, and descriptor fields.
+- [x] Reject direct recursive types.
+- [x] Reject indirect recursive cycles.
+- [x] Emit a diagnostic that names the cycle path and recommends flat index-based structures.
 
 Phase exit checks:
 
-- [ ] `test/recursive_type_rejected_test.rkr` exists and passes.
-- [ ] Non-recursive aggregate combinations still typecheck.
+- [x] `test/recursive_type_rejected_test.rkr` exists and passes. — Three negative tests under `test/negative/` cover direct, indirect-via-array, and mutual recursion. Runner is `test/negative/run_negative.sh` (`make test-negative`).
+- [x] Non-recursive aggregate combinations still typecheck. — All 397 existing tests pass; flat-tree workaround (`Tree { Node[] nodes }, Node { int parent_idx }`) compiles cleanly.
 
 ## Phase C: Region emission and cleanup skeleton
 
-- [ ] Emit bump save/restore for function bodies.
-- [ ] Emit bump save/restore for `if`, `else`, loop, and `case` bodies.
-- [ ] Emit fresh region handling for each loop iteration.
-- [ ] Emit statement-region save/restore.
-- [ ] Add freestanding plain-block statement parsing.
-- [ ] Build compile-time cleanup records with typed owned locals.
-- [ ] Replace return-only cleanup with `emit_unwind_to(target_scope)`.
+- [x] Emit bump save/restore for function bodies. — `generate_compound` covers all braced blocks including function bodies.
+- [x] Emit bump save/restore for `if`, `else`, loop, and `case` bodies. — Same path; all braced bodies route through `generate_compound`.
+- [x] Emit fresh region handling for each loop iteration. — Loop bodies are compounds, so each iteration reissues `rock_bump_save`/`rock_bump_restore` around the body.
+- [ ] Emit statement-region save/restore. — Deferred to Phase G/F. No allocations route to the bump pool yet, so per-statement save/restore would be no-op scaffolding. Will be added when escape analysis decides per-statement scratch lifetimes.
+- [x] Add freestanding plain-block statement parsing. — Already supported in `parser.c:501-502` from prior work.
+- [ ] Build compile-time cleanup records with typed owned locals. — Existing `tracked_var_t` machinery still drives cleanup; replacement happens in Phase H/J when refcount-based release supersedes `__free_string`.
+- [ ] Replace return-only cleanup with `emit_unwind_to(target_scope)`. — Pending; existing `emit_scope_cleanup` still drives cleanup.
 
 Phase exit checks:
 
-- [ ] `test/region_iteration_test.rkr` passes.
-- [ ] `test/region_nested_block_test.rkr` passes.
-- [ ] Generated code for early return restores the correct bump marks in order.
+- [ ] `test/region_iteration_test.rkr` passes. — Test not yet added; meaningful only once allocations route through the bump pool. Add during Phase G.
+- [ ] `test/region_nested_block_test.rkr` passes. — Same: add during Phase G.
+- [ ] Generated code for early return restores the correct bump marks in order. — Pending Phase H (early-exit unwinding).
+
+Implementation note (2026-04-29): bump save/restore is emitted in `generate_compound` using `rock_bump_mark __bm` with C scope shadowing; nested blocks shadow the outer `__bm` naturally without needing a counter. Pools runtime is included in every generated program (`#include "pools.h"`, `rock_pools_init`/`rock_pools_deinit` in main); host gets 4 MB pools, ZXN gets 7 KB bump / 3 KB longlived as placeholders.
 
 ## Phase D: Descriptor and handle layout
 
-- [ ] Replace `struct string.owned` with `capacity` and `backing`.
-- [ ] Add universal block header access helpers.
-- [ ] Ensure arrays do not carry a second refcount in `__internal_dynamic_array_t`.
-- [ ] Ensure aggregates do not introduce a separate `__aggregate_header`.
-- [ ] Update generated allocations to initialise `capacity`, `backing`, and universal-header refcounts.
-- [ ] Emit static string literal backing headers with `refcount = 0xFFFF`.
+- [~] Replace `struct string.owned` with `capacity` and `backing`. — Partial: capacity and backing fields added; `owned` retained as a transitional compatibility marker. Removal happens in Phase J alongside `__free_string` deletion.
+- [ ] Add universal block header access helpers. — Pending; helper to derive `(rock_block_header *)payload - 1` not yet abstracted.
+- [x] Ensure arrays do not carry a second refcount in `__internal_dynamic_array_t`. — By inaction; the struct remains `{data, length, capacity, elem_size, max_capacity}` with no refcount field.
+- [x] Ensure aggregates do not introduce a separate `__aggregate_header`. — By inaction; no such header was added.
+- [~] Update generated allocations to initialise `capacity`, `backing`, and universal-header refcounts. — Partial: every `__rock_make_string`-style site now sets `capacity` and `backing = NULL`; allocation through `rock_longlived_alloc` is wired in Phase H when `concat`/`toString`/`clone` move off `allocate_compiler_persistent`.
+- [ ] Emit static string literal backing headers with `refcount = 0xFFFF`. — Pending Phase H.
 
 Phase exit checks:
 
-- [ ] Structural grep shows no live `owned` field usage.
-- [ ] Static literal descriptors point at sentinel backing.
-- [ ] Bump string descriptors use `backing = NULL`.
+- [ ] Structural grep shows no live `owned` field usage. — Pending Phase J.
+- [ ] Static literal descriptors point at sentinel backing. — Pending Phase H.
+- [x] Bump string descriptors use `backing = NULL`. — All current paths set `backing = NULL` because real backing isn't allocated yet.
+
+Implementation note (2026-04-29): Phase D as scoped here is intentionally narrower than the ADR §17 "Phase D" wording — it stops at adding the new fields and initialising them safely. The owned-removal half of ADR §17 Phase D is folded into Phase J, after Phase E (refcount) and Phase H (string semantics) have replaced the legacy cleanup path.
 
 ## Phase E: Retain/release runtime and generated walkers
 

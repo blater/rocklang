@@ -19,6 +19,24 @@ int equals(string s1, string s2);
 void __get_abs_path_impl(string *out, string path);
 void __free_string(string *s);
 
+/* ADR-0003 §7.6 — refcount on long-lived string backing.
+ *
+ * Three lifetime classes per the descriptor's `backing` field:
+ *   - backing == NULL                  bump or pre-Phase-H string; no-op
+ *   - backing->refcount == 0xFFFF      static (literal); no-op
+ *   - backing->refcount  < 0xFFFF      longlived; inc/dec
+ *
+ * On release dropping refcount to zero, the block returns to its
+ * size-class freelist via rock_longlived_free.
+ *
+ * These helpers are call-site-safe at every site listed in §7.6:
+ *   variable initialiser, slot write, scope exit, parameter entry/exit,
+ *   return capture. Currently no generator path emits them — Phase E.b
+ *   wires the call sites; until then they are unreferenced exports
+ *   exercised only by C-level unit tests. */
+void __string_retain(string s);
+void __string_release(string s);
+
 // Configurable string index base (0 = zero-indexed, 1 = one-indexed)
 extern int __rock_substr_index_base;
 void set_string_index_base(int base);

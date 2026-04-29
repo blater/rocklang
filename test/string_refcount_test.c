@@ -1,0 +1,189 @@
+/*****************************************************
+ * Tests for __string_retain / __string_release.
+ * Phase E.a — verifies the three-class discriminant against synthesised
+ * backings since no Rock-language path populates `backing` yet.
+ *****************************************************/
+
+#include "../src/lib/pools.h"
+#include "../src/lib/typedefs.h"
+#include "../src/lib/fundefs.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define BUMP_CAP   (1u * 1024u * 1024u)
+#define LL_CAP     (1u * 1024u * 1024u)
+
+static int tests_run    = 0;
+static int tests_passed = 0;
+static int tests_failed = 0;
+
+#define EXPECT(cond, msg)                                                    \
+  do {                                                                        \
+    if (!(cond)) {                                                            \
+      fprintf(stderr, "  FAIL: %s (%s)\n", msg, #cond);                       \
+      tests_failed++;                                                         \
+      return;                                                                 \
+    }                                                                         \
+  } while (0)
+
+#define RUN(fn)                                                              \
+  do {                                                                        \
+    tests_run++;                                                              \
+    int before = tests_failed;                                                \
+    fn();                                                                     \
+    if (tests_failed == before) {                                             \
+      tests_passed++;                                                         \
+      printf("  ok %s\n", #fn);                                               \
+    } else {                                                                  \
+      printf("  FAIL %s\n", #fn);                                             \
+    }                                                                         \
+  } while (0)
+
+/* ---- Helpers to synthesise a longlived-backed string descriptor ---- */
+
+/* Allocate a longlived block of `payload_size` bytes, copy `data` into it,
+ * and return a string descriptor pointing at it with refcount = 1. */
+static string make_longlived_string(const char *data, size_t length) {
+  char *payload = (char *)rock_longlived_alloc(length + 1);
+  memcpy(payload, data, length);
+  payload[length] = 0;
+  string s;
+  s.data     = payload;
+  s.length   = length;
+  s.capacity = length;
+  s.backing  = ((rock_block_header *)payload) - 1;
+  s.owned    = 0;
+  return s;
+}
+
+/* ---- Tests ---- */
+
+static void retain_release_on_null_backing_is_noop(void) {
+  rock_pools_init(BUMP_CAP, LL_CAP);
+  string s;
+  s.data     = "hello";  /* static literal-ish */
+  s.length   = 5;
+  s.capacity = 0;
+  s.backing  = NULL;
+  s.owned    = 0;
+
+  /* Should be safe to call any number of times; no refcount, no free. */
+  __string_retain(s);
+  __string_retain(s);
+  __string_release(s);
+  __string_release(s);
+  __string_release(s);  /* extra releases also safe with NULL backing */
+
+  rock_pools_deinit();
+}
+
+static void retain_release_on_static_sentinel_is_noop(void) {
+  rock_pools_init(BUMP_CAP, LL_CAP);
+
+  /* Synthesise a static-sentinel block: header in static storage, refcount = 0xFFFF. */
+  static char static_block[sizeof(rock_block_header) + 8];
+  rock_block_header *h = (rock_block_header *)static_block;
+  h->size = 8;
+  h->refcount = ROCK_RC_STATIC;
+  char *payload = static_block + sizeof(rock_block_header);
+  memcpy(payload, "static!\0", 8);
+
+  string s;
+  s.data     = payload;
+  s.length   = 7;
+  s.capacity = 0;
+  s.backing  = h;
+  s.owned    = 0;
+
+  /* retain/release must NOT touch the refcount of a static block. */
+  __string_retain(s);
+  __string_retain(s);
+  EXPECT(h->refcount == ROCK_RC_STATIC, "static refcount changed by retain");
+  __string_release(s);
+  __string_release(s);
+  EXPECT(h->refcount == ROCK_RC_STATIC, "static refcount changed by release");
+
+  rock_pools_deinit();
+}
+
+static void retain_increments_longlived_refcount(void) {
+  rock_pools_init(BUMP_CAP, LL_CAP);
+  string s = make_longlived_string("hello", 5);
+  EXPECT(s.backing->refcount == 1, "fresh longlived block starts at rc=1");
+  __string_retain(s);
+  EXPECT(s.backing->refcount == 2, "retain should increment to 2");
+  __string_retain(s);
+  EXPECT(s.backing->refcount == 3, "second retain should increment to 3");
+  rock_pools_deinit();
+}
+
+static void release_decrements_longlived_refcount(void) {
+  rock_pools_init(BUMP_CAP, LL_CAP);
+  string s = make_longlived_string("hello", 5);
+  __string_retain(s);
+  __string_retain(s);
+  EXPECT(s.backing->refcount == 3, "after two retains rc should be 3");
+  __string_release(s);
+  EXPECT(s.backing->refcount == 2, "release should dec to 2");
+  __string_release(s);
+  EXPECT(s.backing->refcount == 1, "second release should dec to 1");
+  /* Don't drop to zero in this test so we can inspect the block. */
+  rock_pools_deinit();
+}
+
+static void release_to_zero_frees_block(void) {
+  rock_pools_init(BUMP_CAP, LL_CAP);
+  string s = make_longlived_string("hello", 5);
+  /* rc = 1 from make; release should drop to 0 and free. */
+  __string_release(s);
+  /* After free, the block's refcount is set to ROCK_RC_FREE by the
+   * pool runtime's freelist push. */
+  EXPECT(s.backing->refcount == ROCK_RC_FREE,
+         "freed block should be marked as free");
+  rock_pools_deinit();
+}
+
+static void freed_block_can_be_reallocated(void) {
+  rock_pools_init(BUMP_CAP, LL_CAP);
+  string s1 = make_longlived_string("first", 5);
+  void *first_payload = s1.data;
+  __string_release(s1);  /* freed */
+
+  /* Subsequent same-size alloc should reuse the freed block. */
+  string s2 = make_longlived_string("second", 6);
+  EXPECT(s2.data == first_payload,
+         "second alloc should reuse the freed block (same size class)");
+  EXPECT(s2.backing->refcount == 1, "reallocated block must start at rc=1");
+  rock_pools_deinit();
+}
+
+static void multiple_descriptors_share_backing(void) {
+  rock_pools_init(BUMP_CAP, LL_CAP);
+  string a = make_longlived_string("shared", 6);
+  string b = a;  /* descriptor copy; same backing */
+  __string_retain(b);  /* simulating an assignment that retains */
+  EXPECT(a.backing->refcount == 2, "after retain rc should be 2");
+  EXPECT(a.backing == b.backing, "both descriptors share backing");
+  __string_release(b);
+  EXPECT(a.backing->refcount == 1, "after release rc should be 1");
+  __string_release(a);
+  EXPECT(a.backing->refcount == ROCK_RC_FREE,
+         "second release should free the block");
+  rock_pools_deinit();
+}
+
+int main(void) {
+  printf("Phase E.a — string refcount tests\n\n");
+
+  RUN(retain_release_on_null_backing_is_noop);
+  RUN(retain_release_on_static_sentinel_is_noop);
+  RUN(retain_increments_longlived_refcount);
+  RUN(release_decrements_longlived_refcount);
+  RUN(release_to_zero_frees_block);
+  RUN(freed_block_can_be_reallocated);
+  RUN(multiple_descriptors_share_backing);
+
+  printf("\n%d/%d passed (%d failed)\n", tests_passed, tests_run, tests_failed);
+  return tests_failed == 0 ? 0 : 1;
+}

@@ -1,7 +1,9 @@
 #include "fundefs.h"
 #include "alloc.h"
 #include "fundefs_internal.h"
+#include "pools.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 // ============================================================================
@@ -181,6 +183,37 @@ void __free_string(string *s) {
     s->capacity = 0;
     s->backing = NULL;
     s->owned = 0;
+  }
+}
+
+/* ADR-0003 §7.6: retain/release on string backing. See header for the
+ * three-class discriminant. Until Phase H populates `backing` for
+ * concat/toString/clone/read_file results and for string literals, every
+ * descriptor in the wild has `backing == NULL` and these helpers no-op
+ * unconditionally. The C-level unit tests in test/pools_test.c synthesise
+ * fake backings to exercise the live paths. */
+
+void __string_retain(string s) {
+  if (s.backing == NULL) return;
+  if (s.backing->refcount == ROCK_RC_STATIC) return;
+  if (s.backing->refcount == ROCK_RC_FREE) {
+    fprintf(stderr, "rock: __string_retain on freed block\n");
+    exit(1);
+  }
+  s.backing->refcount++;
+}
+
+void __string_release(string s) {
+  if (s.backing == NULL) return;
+  if (s.backing->refcount == ROCK_RC_STATIC) return;
+  if (s.backing->refcount == ROCK_RC_FREE) {
+    fprintf(stderr, "rock: __string_release on already-freed block\n");
+    exit(1);
+  }
+  if (--s.backing->refcount == 0) {
+    /* Payload pointer is just past the header. */
+    void *payload = (void *)((char *)s.backing + sizeof(rock_block_header));
+    rock_longlived_free(payload);
   }
 }
 
