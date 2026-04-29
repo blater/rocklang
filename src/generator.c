@@ -138,8 +138,10 @@ static void track_record_var(generator_t *g, string_view name) {
 
 // Helper: nullify a string temp after ownership transfer (prevents double-free)
 static void emit_nullify_tmp(FILE *f, const char *tmp_name) {
-  fprintf(f, "%s.data = NULL; %s.length = 0; %s.owned = 0;\n",
-          tmp_name, tmp_name, tmp_name);
+  fprintf(f,
+          "%s.data = NULL; %s.length = 0; %s.capacity = 0; "
+          "%s.backing = NULL; %s.owned = 0;\n",
+          tmp_name, tmp_name, tmp_name, tmp_name, tmp_name);
 }
 
 static token_t token_for_expr(ast_t expr) {

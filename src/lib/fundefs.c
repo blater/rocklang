@@ -13,6 +13,8 @@ char *string_to_cstr(string s) { return s.data; }
 void __rock_make_string(string *out, const char *data, size_t length) {
   out->data = (char *)data;
   out->length = length;
+  out->capacity = 0;       /* read-only view by default */
+  out->backing = NULL;     /* no refcounted backing (Phase E will populate) */
   out->owned = 0;
 }
 
@@ -58,6 +60,7 @@ void __concat_char(string *out, string s, char c) {
     tmp[1] = 0;
     __rock_make_string(out, tmp, 1);
     out->owned = 1;
+  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
     return;
   }
   char *tmp = allocate_compiler_persistent(s.length + 2);
@@ -66,6 +69,7 @@ void __concat_char(string *out, string s, char c) {
   tmp[s.length + 1] = 0;
   __rock_make_string(out, tmp, s.length + 1);
   out->owned = 1;
+  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
 }
 
 void __concat_str(string *out, string s1, string s2) {
@@ -79,6 +83,7 @@ void __concat_str(string *out, string s1, string s2) {
   buffer[len1 + len2] = 0;
   __rock_make_string(out, buffer, len1 + len2);
   out->owned = 1;
+  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
 }
 
 void new_string(string *out, string s) {
@@ -87,6 +92,8 @@ void new_string(string *out, string s) {
   for (int i = 0; i < out->length; i++)
     out->data[i] = s.data[i];
   out->data[out->length] = 0;
+  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
+  out->backing = NULL;          /* refcount machinery wired in Phase E */
   out->owned = 1;
 }
 
@@ -132,6 +139,7 @@ void __read_file_impl(string *out, string filename) {
   fclose(f);
   __rock_make_string(out, buffer, length);
   out->owned = 1;
+  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
 }
 
 void write_string_to_file(string s, string filename) {
@@ -170,6 +178,8 @@ void __free_string(string *s) {
     free(s->data);
     s->data = NULL;
     s->length = 0;
+    s->capacity = 0;
+    s->backing = NULL;
     s->owned = 0;
   }
 }
@@ -201,6 +211,7 @@ void __substring_from(string *out, string s, int start) {
   buf[len] = 0;
   __rock_make_string(out, buf, (size_t)len);
   out->owned = 1;
+  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
 }
 
 void __substring_range(string *out, string s, int start, int end) {
@@ -222,6 +233,7 @@ void __substring_range(string *out, string s, int start, int end) {
   buf[len] = 0;
   __rock_make_string(out, buf, (size_t)len);
   out->owned = 1;
+  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
 }
 
 // ============================================================================
@@ -243,6 +255,7 @@ void __to_string_byte(string *out, byte b) {
   memcpy(out_buf, buf, len + 1);
   __rock_make_string(out, out_buf, (size_t)len);
   out->owned = 1;
+  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
 }
 
 void __to_string_int(string *out, int n) {
@@ -252,6 +265,7 @@ void __to_string_int(string *out, int n) {
   memcpy(out_buf, buf, len + 1);
   __rock_make_string(out, out_buf, (size_t)len);
   out->owned = 1;
+  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
 }
 
 int  __to_int_word(word w)  { return (int)w; }
@@ -264,6 +278,7 @@ void __to_string_word(string *out, word w) {
   memcpy(out_buf, buf, len + 1);
   __rock_make_string(out, out_buf, (size_t)len);
   out->owned = 1;
+  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
 }
 
 int   __to_int_dword(dword d)  { return (int)d; }
@@ -277,6 +292,7 @@ void __to_string_dword(string *out, dword d) {
   memcpy(out_buf, buf, len + 1);
   __rock_make_string(out, out_buf, (size_t)len);
   out->owned = 1;
+  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
 }
 
 void __to_string_float(string *out, float f) {
@@ -286,6 +302,7 @@ void __to_string_float(string *out, float f) {
   memcpy(out_buf, buf, len + 1);
   __rock_make_string(out, out_buf, (size_t)len);
   out->owned = 1;
+  out->capacity = out->length;  /* writable backing; ADR §7.1 transitional */
 }
 
 // ============================================================================
