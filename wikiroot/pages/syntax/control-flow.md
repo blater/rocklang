@@ -1,9 +1,9 @@
 ---
 title: Control Flow
 category: syntax
-tags: [control-flow, if, while, for, match, loop, iter]
+tags: [control-flow, if, while, for, case, loop, default]
 sources: []
-updated: 2026-04-16
+updated: 2026-04-25
 status: current
 ---
 
@@ -49,7 +49,7 @@ while condition do statement
 ```rock
 int i := 0;
 while i < 10 do {
-  print(to_string(i));
+  print(toString(i));
   i := i + 1;
 }
 ```
@@ -64,7 +64,7 @@ Inclusive range: iterates `i` from `start` to `end` (both inclusive). `i` is cre
 
 ```rock
 for i := 0 to 9 {
-  print(to_string(i));
+  print(toString(i));
 }
 ```
 
@@ -74,7 +74,7 @@ Generates C: `for(int i = 0; i <= 9; i++) { ... }`
 
 ```rock
 for x in arr statement
-iter x := arr statement    // alternate syntax, same behaviour
+for x := arr statement     // := also accepted as separator
 ```
 
 Iterates over all elements of array `arr`. `x` takes the value of each element in turn.
@@ -86,30 +86,52 @@ append(nums, 20);
 append(nums, 30);
 
 for n in nums {
-  print(to_string(n));
+  print(toString(n));
 }
 ```
 
-## match
+## case
 
 ```rock
-match expr {
-  -> value1 statement,
-  -> value2 statement
+case expr {
+  pattern1 : statement;
+  pattern2 : statement;
+  default: statement;
 }
 ```
 
-The parser accepts `match`, but code generation is not implemented: `generate_statement()` asserts when it sees a `match` node. Keep `match` examples as parser-facing syntax until generator semantics are added.
+Each arm is a pattern expression followed by `:` and a body statement (terminated with `;`). The `default` keyword matches anything and acts as a fallback branch.
 
 ```rock
-match colour {
-  -> Red   print("red"),
-  -> Green print("green"),
-  -> Blue  print("blue")
+case colour {
+  Red : print("red");
+  Green : print("green");
+  Blue : print("blue");
 }
 ```
 
-`match` is typically used with `enum` values.
+`case` works with integers, enums, strings, and unions. String matching uses `equals` for value comparison; scalar types use `==`. For unions, `case` automatically compares `->key`.
+
+```rock
+union Optional { int Some, None }
+Optional opt := Some(42);
+
+case opt {
+  Some : print("has value");
+  None : print("empty");
+  default: print("fallback");
+}
+```
+
+Generated C: an if-else chain with a temporary variable to avoid re-evaluating the case expression. For unions, the comparison uses `->key`:
+```c
+{ Optional __match_tmp = opt;
+if (__match_tmp->key == Some) { ... }
+else if (__match_tmp->key == None) { ... }
+}
+```
+
+> **TODO:** `case` does not yet support compound patterns (e.g. `1 | 2 : ...`), guard clauses, or union payload destructuring (e.g. `Some(x) : use(x)`). It only matches literal values and identifiers.
 
 ## Operators
 

@@ -1,0 +1,38 @@
+#ifndef ROCK_HOST_CAPS_H
+#define ROCK_HOST_CAPS_H
+
+#include "typedefs.h"
+
+/* Rock RTL capability flags.
+ *
+ * Every RTL component that has different fidelity between the real target
+ * (ZXN) and the host development build (gcc) exposes a capability flag
+ * here. Components read the flags; they never initialise themselves.
+ *
+ * `rock_rtl_init()` is called exactly once at program startup by the
+ * generator-emitted `main()` wrapper (see generator.c `transpile_fundef`),
+ * right after `fill_cmd_args`. It is the single place where host terminals
+ * are opened, capability probes run, and atexit hooks installed.
+ *
+ * On ZXN the init is trivial: every capability is set to 1.
+ * On the host target the init does real work (isatty check, tb_init, etc.).
+ *
+ * Components are forbidden from calling `tb_init`, `atexit`, or any other
+ * lifecycle primitive directly — those responsibilities live here.
+ */
+
+typedef struct rock_host_caps {
+  byte print_at;   /* positioned text output renders faithfully */
+  byte ink;        /* character-cell colour attributes available */
+  byte plot;       /* raster pixel plot renders via termbox2 quadrants */
+  /* Future: byte keyboard; byte border; byte sound; ... */
+} rock_host_caps;
+
+extern rock_host_caps host_caps;
+
+void rock_rtl_init(void);
+void rock_rtl_shutdown(void);
+void graphics_on(void);
+void graphics_off(void);
+
+#endif /* ROCK_HOST_CAPS_H */

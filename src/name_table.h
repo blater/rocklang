@@ -17,7 +17,7 @@ typedef enum nt_kind {
   NT_VAR,
   NT_BUILTIN_TYPE,
   NT_USER_TYPE,
-  // TODO: add support for type constructors
+  NT_ENUM_VARIANT,
 } nt_kind;
 
 typedef struct name_table_t {
@@ -31,6 +31,7 @@ typedef struct name_table_t {
 } name_table_t;
 
 ast_t get_ref(string_view name, name_table_t table);
+nt_kind get_nt_kind(string_view name, name_table_t table);
 void new_nt_scope(name_table_t *table);
 void end_nt_scope(name_table_t *table);
 void reallocate_table(name_table_t *table);

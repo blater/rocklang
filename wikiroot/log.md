@@ -4,6 +4,253 @@ Append-only chronological record of ingests, queries, lints, and updates.
 
 ---
 
+## [2026-04-29] update | ADR-0003 fourth-round amendments (return ABI critical fixes)
+
+Closed two engineer-review criticals against the third-round draft.
+
+Critical: pass-through return paths lost ownership accounting. Trace
+`globals.x := id(p)` where p starts at refcount 1: callee retain p → 2,
+callee release p (parameter ABI) → 1, caller transfer (no inc) → 1, but
+both p slot and globals.x now hold the descriptor — refcount should be 2.
+Off-by-one leak. Critical: `__result_region` could not safely be a caller
+bump region under a single LIFO bump pointer. Callee allocations made
+"in caller's region" during the call were above the callee's entry mark
+and got reclaimed on unwind. The model was not implementable as written.
+
+Combined fix: returns always materialise in `longlived`; promotion always
+produces an owned reference. Specifically, callees now invoke a generated
+`__return_T(retval)` helper before unwinding. The helper retain-and-returns
+longlived non-static sources (inc on no-copy path), returns static sources
+unchanged (eternal lifetime makes inc unnecessary), allocate-copies bump
+sources into longlived. Caller transfer is uniform. The hidden
+`__result_region` parameter is removed from the ABI entirely — callers do
+not pass a region for non-scalar returns; the runtime always uses
+`longlived`.
+
+Destination-driven allocation (§10.4) restricted to inline literal
+expressions only (record literals, union construction, array literals).
+Function-call results — including allocating builtins like `concat`,
+`toString`, `clone`, `read_file`, and user-defined subs returning
+non-scalars — always land in `longlived`. Section 9.2 split into "inline
+literal construction" (destination-driven) vs. "function-call constructors"
+(longlived). Section 11.8 loop-carried rule clarified to apply only to
+inline-literal writes; function-call writes are already in longlived per
+§10.3 and don't need the rule.
+
+Added new test `test/return_pass_through_bump_test.rkr`; clarified
+existing `test/return_borrowed_string_test.rkr` to assert refcount math.
+Updated §20 Negative consequences with hot-loop cost note and the
+literal-vs-call allocation asymmetry. No phase or LoC estimate change
+beyond the simplification of removing the `__result_region` threading
+machinery.
+
+---
+
+## [2026-04-28] update | ADR-0003 third-round amendments (soundness + cleanup)
+
+Closed eight engineer-review findings against the second-round draft.
+
+High: bump containers were not refcounted, so same-block aliasing of a
+bump-allocated array/record could double-release or leak nested longlived
+children. Fixed: bump containers carry the same {size, refcount} header as
+longlived; aliasing inc/dec is tracked. On dec-to-zero an address-range check
+selects between freelist-free (longlived) and walk-children-only (bump,
+storage reclaimed by bump restore at scope exit). High: loop-carried
+overwritten composite slots in outer bump scope grew the bump pool linearly
+with iteration count. Fixed: new §11.8 escape rule upgrades any composite
+slot whose declaring scope is an ancestor of a loop body and which is
+written from inside that body to longlived. Iteration-local declarations are
+unaffected. High: the §10.3 ABI text still said pass-through return paths
+"ignore __result_region", contradicting §7.6's unconditional promotion.
+Removed the contradictory wording.
+
+Medium: three competing refcount locations consolidated into one. The
+universal {size, refcount} block header (§8.5) is now the single canonical
+location. __internal_dynamic_array_t loses its refcount field;
+__aggregate_header is removed entirely; __string_block already follows the
+universal layout. Given any handle h, the header is at h - sizeof(__longlived
+_header). Medium: §7.2 table corrected to show static literals with the
+sentinel-header backing (not NULL) and substring-of-literal as inheriting
+that backing. Medium: cleanup_record was string-specific (string_view
+owned_locals[]). Generalised to a list of {name, type_descriptor} pairs that
+the generator dispatches per type at compile time, calling __string_release,
+__release_array_T, or __release_R as appropriate.
+
+Low: priority ordering wording was inverted ("higher-numbered wins" would
+make implementation effort outrank leak-freedom). Fixed to "lower-numbered
+wins". Low: setCharAt was listed under "Removed builtins" with a note
+saying it was kept. Removed the row entirely; setCharAt's capacity-gated
+behaviour is documented in §7.5.
+
+Two new tests: loop_carried_longlived_test.rkr and bump_alias_release_test
+.rkr. Phase F (escape analysis) updated to include the loop-carried rule.
+
+---
+
+## [2026-04-28] update | ADR-0003 second-round amendments (soundness)
+
+Closed seven engineer-review findings against the first-round draft.
+
+Critical: borrowed parameter ABI was unsound (callee could free caller's only
+strong reference). Fixed: callee retains every refcounted parameter on entry,
+releases on exit. Future borrow-safety analysis deferred to §19. Critical:
+returning bump-backed values to longer-lived destinations was unsound (caller
+retain no-op'd because backing == NULL was indistinguishable from static).
+Fixed: every non-scalar return is unconditionally promoted into __result_region
+by the callee; promotion is no-op when source ≥ destination. Critical
+addendum: static literals get compile-time-emitted __string_block headers in
+static rodata with a sentinel refcount (0xFFFF), so the static/bump
+distinction is recoverable from the descriptor.
+
+High: fresh-allocation refcount convention specified. New §10.6 defines the
+producer/borrower/transfer convention: fresh allocations start at refcount 1
+owned by the producing expression; capture into a stable slot is a transfer
+(no inc/dec); borrower-to-slot is retain-and-release; discarded refcounted
+producers release at statement boundary. High: backing == NULL ambiguity
+resolved by the static-sentinel header; promotion check distinguishes
+bump/static/longlived via two pointer dereferences.
+
+Medium: longlived allocator design pinned down. New §8.5 specifies 4-byte
+block headers {size, refcount}, per-class freelists, free-block sentinel
+(0xFFFE) and static-block sentinel (0xFFFF), and reclaim() as a linear pool
+scan merging adjacent free blocks via header inspection. Includes
+__string_block in the same allocation universe. Medium: early-exit unwinding
+specified in new §11.7. Per-scope cleanup-record stack; emit_unwind_to(target)
+helper applied at every return/halt/(future)break/continue site; replaces the
+removed emit_return_cleanup.
+
+Low: duplicate Phase G headings fixed. Phase plan renumbered A–O (was A–M
+with two phase-G entries); added Phase H "Early-exit unwinding" between
+promotion and string-semantics phases. Estimated scope updated to ~4,700 LoC.
+
+---
+
+## [2026-04-28] update | ADR-0003 amendments after design review
+
+Tightened ADR-0003 in response to a structured review. Added: refcount on
+long-lived string backing via new `__string_block` header and a `backing` field
+in the descriptor (8 bytes on Z80, was 6); per-type generated retain/release/
+promote walker functions to handle nested aggregates correctly; typechecker
+enforcement of structural acyclicity (rejects recursive type definitions even
+through array/handle indirection, with an explicit diagnostic and documented
+language limitation); statement-level region (re-introduced) with destination-
+driven allocation to skip statement scratch when the destination is known;
+explicit borrowed-return ABI rule (caller retains at destination, callee never
+adjusts on return edge); `__result_region` parameter determined by declared
+return type rather than per-path inference; `reclaim()` builtin for on-demand
+freelist coalescing; `--memory-profile=zxn` host build mode for budget testing
+before deployment; preserved `set_string_index_base` (1-based indexing remains
+default convention). Lifetime relation rewritten as a partial order over the
+scope tree rather than a total order. Test plan expanded with 9 new tests
+covering string backing reclamation, per-type release walks, recursive-type
+rejection, borrowed returns, destination-driven allocation, reclaim
+coalescing, and host-budget runs. Phase plan grew from 13 to 14 phases (added
+typechecker phase before generator changes); estimated scope updated to ~4,350
+LoC. Leak-freedom claim downgraded from absolute to conditional on enforced
+acyclicity, generator coverage, and absence of unmanaged `@embed asm` /
+pragma escape — all checkable conditions.
+
+---
+
+## [2026-04-28] update | ADR-0003 memory model plan; ADR-0002 superseded
+
+Drafted [[decisions/ADR-0003-memory-model]] capturing the full memory-model
+redesign agreed in conversation: named fixed-bounds pools (`bump`, `longlived`)
+with a per-target manifest and a contractually inviolate user-reserved range;
+block scopes as regions (no `region` keyword); descriptor-with-capacity strings
+permitting local mutation under a runtime capacity check; refcounted array and
+record headers; size-class freelists in `longlived`; compiler-driven escape
+analysis with implicit promotion at every short→long store; `clone(s)`,
+`clone(arr)`, `compact(arr)`, `remove(arr, i)` builtins; full removal of the
+`owned` flag, `__free_string`, `TRACK_STRING`, `is_string_array`, and related
+half-state machinery. Plan specifies atomic completion with no compatibility
+flags and no follow-up TODOs. Estimated scope ~3,500 LoC + tests + wiki.
+Marked [[decisions/ADR-0002-string-view-memory-model]] as superseded with a
+short note explaining the two key design shifts (string descriptors with
+capacity rather than strict immutable views; fixed-bounds pools rather than
+meeting-in-middle heap). Updated [[index]].
+
+---
+
+## [2026-04-25] update | rename match→case with new syntax
+
+Replaced `match` statement with `case`. New syntax uses `pattern : body;` arms
+and `default:` keyword instead of `-> pattern -> body;` and `_` wildcard.
+Token layer: `TOK_MATCH` now maps to keyword `case`; added `TOK_DEFAULT`.
+Parser: `parse_matchcase` handles `default` → synthesised wildcard AST node,
+expects `TOK_COLON` separator; `parse_match` loops until `TOK_CLOSE_BRACE`.
+Generator unchanged (AST nodes identical). Rewrote `match_test.rkr` and
+`tagged_enum_test.rkr`. 61/61 tests pass, 305 assertions, 0 regressions.
+
+---
+
+## [2026-04-25] update | rename string builtins to camelCase
+
+Renamed string builtins in C runtime (fundefs.c/h) and generator:
+- `str_eq(a, b)` → `equals(a, b)` — also updated match codegen
+- `get_nth_char(s, i)` → `charAt(s, i)`
+- `set_nth_char(s, i, c)` → `setCharAt(s, i, c)`
+- `get_string_length(s)` → retired; use `length(s)` (already dispatches via `_Generic`)
+
+58 tests pass, 0 regressions.
+
+---
+
+## [2026-04-25] update | remove legacy aliases (pro, iter, to_string)
+
+Removed three legacy aliases:
+- **`pro` keyword** — removed from lexer keywords and parser; `enum` with payloads is the only syntax for tagged unions
+- **`iter` keyword** — removed from lexer keywords and parser; `for ... in` is the only iterator loop syntax
+- **`to_string()` function** — removed; `toString()` is the canonical name. Migrated ~35 call sites across 9 test files.
+
+Token enum slots kept as dead entries to avoid renumbering. 58 tests pass, 0 regressions. Updated 7 wiki pages.
+
+---
+
+## [2026-04-25] update | tagged unions merged into enum, construction + match working
+
+`pro` keyword merged into `enum`: any enum with `: type` payloads becomes a tagged union (`TDEF_PRO`). Auto-generated constructors (`Some(42)` → `Optional_Some(42)`), tag matching in `match` (`->tag` comparison), and `NT_ENUM_VARIANT` name-table resolution all implemented. 6 new assertions in `tagged_enum_test.rkr`. Full test suite passes (56 files, 0 regressions). Updated `modules-and-records.md` and `control-flow.md`.
+
+**Remaining TODO:** payload destructuring in match (`-> Some(x) -> use(x)`).
+
+---
+
+## [2026-04-25] lint | wiki health check + undocumented builtins
+
+**Issues fixed (3):**
+- `testing/testing-overview.md` — test count 39→60; added 21 missing test rows; updated status to 299 assertions passing.
+- `generator/generator-overview.md` — added missing `ast_t program` field to `generator_t` struct; added `float` to type mapping; fixed ZXN embed-asm description ("passed through verbatim" → correct `#ifdef __SDCC` wrapper description); expanded builtins table from 14 entries to full categorised reference covering all registered builtins.
+- `index.md` — removed stale "Planned (draft)" label from `rtl-ink-paper` entry.
+
+**New pages (7) — previously undocumented RTL components:**
+- `rtl/rtl-cls.md` — `cls()` clear screen
+- `rtl/rtl-sound.md` — `beep(freq, dur)` beeper tone
+- `rtl/rtl-time.md` — `sleep(ms)` delay
+- `rtl/rtl-random.md` — `randomize`/`random_byte`/`random_word` LCG RNG
+- `rtl/rtl-nextreg.md` — `next_reg_set/get`, `cpu_speed_set/get`, `mmu_set`
+- `rtl/rtl-helpers.md` — `odd`/`even`/`hi`/`lo`/`swap`/`upcase`/`locase`/`abs_int`/`abs_word`
+- `rtl/rtl-fmath.md` — `float` type + `fsin`/`fcos`/`fsqrt`/`fabs_float`/`fpi`
+
+**Open TODOs (unchanged):** pro match semantics, nested sub definitions, sprite DMA length, Copper bank count, print_at raster replacement.
+
+---
+
+## [2026-04-25] update | match statement implemented + TODO/debt audit
+
+`match` code generation is now fully implemented (parser fix + generator).
+Supports integer, enum, string patterns and wildcard `_` default.
+Updated control-flow.md and modules-and-records.md with current status
+and remaining TODOs (compound patterns, guard clauses, pro destructuring).
+
+Also resolved in this session:
+- Removed dead `generate_sub` function (unreachable assert)
+- Replaced assert crash in `generate_expression` fallback with proper error
+- Updated typechecker from stale `ast_tupledef` to current `ast_type` API
+- Added `NT_ENUM_VARIANT` to name table; enum variants now registered
+- Fixed stale fmath.h comment (ZXN float is complete, not deferred)
+
+---
+
 ## [2026-04-14] update | RTL component: triangle + filled_triangle
 
 New `src/lib/triangle.{h,c}` exposes two Rock builtins:
@@ -741,3 +988,51 @@ Added "Operators Rock does NOT have" table to control-flow.md covering
 ==, !, and/or keywords, ternary, compound assignment, and ++/--.
 Collected during pasta80 RTL parity work when writing test fixtures.
 
+## [2026-04-28] update | correct string-array insert semantics in wiki
+
+Changed files: 3
+
+Updated `syntax/arrays.md`, `concepts/string-representation.md`, and
+`concepts/array-internals.md` to match the current runtime: `string[]`
+deep-copies on `append`, `get`, `pop`, and `set`, but `insert` does not yet
+deep-copy and may alias the source string buffer.
+
+## [2026-04-28] decision | draft string view memory model
+
+Changed files: 2
+
+Added `decisions/ADR-0002-string-view-memory-model.md` and indexed it.
+Critically reviews the proposed shallow string model for <40KB 8-bit targets,
+rejects half-measures such as leaving `owned` or `__free_string` as inert
+compatibility artifacts, and defines the implementation phases for immutable
+string views with region-owned backing storage.
+
+## [2026-04-28] update | explicit host graphics mode
+
+Changed files: 13
+
+Added `graphics on;` / `graphics off;` syntax. Host builds no longer initialise
+termbox2 at program startup; graphics mode is opt-in and falls back to
+plain-text when stdout is not a TTY. ZXN builds keep graphics capabilities
+enabled and treat the new commands as no-ops. Added `graphics_test.rkr` and
+updated the host capability, positioned print, syntax, and testing wiki pages.
+
+## [2026-04-28] query | aggregate region memory model
+
+Changed files: 3
+
+Extended ADR-0002 with the aggregate/container lifetime model for variables,
+arrays, records, unions, modules, and nested combinations such as arrays of
+records with embedded string arrays. Added the glossary definition for a
+runtime region. The plan now separates descriptor/handle copying from backing
+allocation, introduces promotion requirements for long-lived storage, and calls
+out the exact cases that would otherwise require reference counting or GC.
+
+## [2026-04-28] update | add ADR-0003 implementation checklist
+
+Changed files: 3
+
+Added `decisions/ADR-0003-implementation-plan.md` as the mutable execution
+checklist for the ADR-0003 memory model. Linked it from ADR-0003 and documented
+the rule that implementation lessons update the checklist immediately, with ADR
+changes made in the same change when a lesson changes the architecture.

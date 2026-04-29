@@ -3,7 +3,7 @@ title: Types and Variable Declarations
 category: syntax
 tags: [types, variables, declaration, default-values, globals]
 sources: []
-updated: 2026-04-11
+updated: 2026-04-27
 status: current
 ---
 
@@ -79,7 +79,7 @@ int n := to_int(some_byte);
 byte b := to_byte(some_int);
 word w := to_word(some_int);
 dword d := to_dword(some_int);
-string s := to_string(42);      // "42"
+string s := toString(42);       // "42"
 ```
 
 ## Literals
@@ -98,11 +98,11 @@ Numeric literals are decimal digits only; hexadecimal forms such as `0xff` are n
 ## Type Annotations in Sub Parameters
 
 ```rock
-sub add(a: int, b: int): int {
+sub add(int a, int b) returns int {
   return a + b;
 }
 ```
 
-All parameters require explicit type annotations. Both `name: type` and type-first `type name` parameter forms are accepted. Return type follows `:` after the parameter list. If omitted, return type defaults to `void`.
+All parameters require explicit type annotations using **type-first** syntax (`type name`). Return type, when present, is introduced by the `returns` keyword after the parameter list. If omitted, return type defaults to `void`.
 
 See [[syntax/functions-and-methods]] for full function syntax, [[syntax/arrays]] for array operations, and [[syntax/modules-and-records]] for composite types.

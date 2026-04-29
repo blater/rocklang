@@ -52,4 +52,6 @@ void* reallocate_compiler(void* ptr, size_t size);
 
 void* reallocate_compiler_persistent(void* ptr, size_t size);
 
+void deregister_compiler_persistent(void* ptr);
+
 #endif  // ALLOC_H

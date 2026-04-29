@@ -151,3 +151,12 @@ void* reallocate_compiler(void* ptr, size_t size) {
 void* reallocate_compiler_persistent(void* ptr, size_t size) {
   return reallocate_persistent(&global, ptr, size);
 }
+
+void deregister_compiler_persistent(void* ptr) {
+  for (int i = global.length_p - 1; i >= 0; i--) {
+    if (global.persistents[i] == ptr) {
+      global.persistents[i] = NULL;
+      return;
+    }
+  }
+}

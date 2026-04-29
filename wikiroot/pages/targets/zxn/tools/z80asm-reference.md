@@ -328,16 +328,16 @@ See [[targets/zxn/zxn-copper]] for the Copper co-processor.
 
 ## File Types
 
-| Extension | Purpose |
-|-----------|---------|
-| `.asm` | Assembly source file |
-| `.o` | Relocatable object file |
-| `.bin` | Linked binary output |
-| `.lis` | Listing file (source + object bytes) |
-| `.sym` | Symbol table |
-| `.map` | Address map with source locations |
-| `.def` | Global address definitions (includeable from other asm) |
-| `.reloc` | Relocation info for loaders |
+| Extension | Purpose                                                 |
+| --------- | ------------------------------------------------------- |
+| `.asm`    | Assembly source file                                    |
+| `.o`      | Relocatable object file                                 |
+| `.bin`    | Linked binary output                                    |
+| `.lis`    | Listing file (source + object bytes)                    |
+| `.sym`    | Symbol table                                            |
+| `.map`    | Address map with source locations                       |
+| `.def`    | Global address definitions (includeable from other asm) |
+| `.reloc`  | Relocation info for loaders                             |
 
 ---
 

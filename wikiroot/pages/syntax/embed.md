@@ -44,7 +44,7 @@ void c_hello(void) {
 }
 @end c
 
-sub main(): void {
+sub main() {
   c_hello();
 }
 ```
@@ -105,4 +105,4 @@ Because `__SDCC` is not defined when compiling with gcc, the entire block is pre
 - `test/embed_inline_test.rkr` — `@embed c` inside a function body modifying a local variable
 - `test/embed_asm_test.rkr` — `@embed asm` inside a function; verifies compile-clean on host
 
-See [[targets/zxn-z80]] for Z80 assembly context, [[targets/zxn/tools/z88dk-inline-asm]] for calling conventions when `@embed asm` blocks interact with function parameters, and [[lexer/lexer-overview]] for token handling detail.
+See [[targets/zxn-z80]] for Z80 assembly context, [[targets/zxn/tools/z88dk-inline-asm]] for calling conventions when `@embed asm` blocks interact with function parameters, and [[lexer-overview]] for token handling detail.

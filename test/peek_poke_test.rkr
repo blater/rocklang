@@ -1,6 +1,6 @@
 include "Assert.rkr"
 
-sub pokeval(address:int, val:int) {
+sub pokeval(int address, int val) {
   Assert a;
   byte pokeVal := to_byte(val);
   word addr := to_word(address);
@@ -10,9 +10,9 @@ sub pokeval(address:int, val:int) {
 
   // CLAUDE MUST NOT CHANGE THIS STRUCTURE
   byte result := peek(addr);
-  string desc := concat("pokeval(", to_string(address));
+  string desc := concat("pokeval(", toString(address));
   desc := concat(desc, ",");
-  desc := concat(desc, to_string(val));
+  desc := concat(desc, toString(val));
   desc := concat(desc, ")");
   a.AssertEQ(desc, val, to_int(result));
 }

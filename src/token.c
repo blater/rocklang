@@ -10,7 +10,7 @@ static string_view lexemes[TOK_COUNT] = {
     SV_Static("->"),      SV_Static("=>"),     SV_Static("{"),
     SV_Static("}"),       SV_Static("("),      SV_Static(")"),
     SV_Static("if"),      SV_Static("then"),   SV_Static("else"),
-    SV_Static("record"),  SV_Static("pro"),    SV_Static("match"),
+    SV_Static("record"),  SV_Static(""),        SV_Static("case"),
     SV_Static("return"),  SV_Static("*"),      SV_Static("-"),
     SV_Static("+"),       SV_Static("/"),      SV_Static("%"),
     SV_Static("||"),      SV_Static("&&"),     SV_Static("|"),
@@ -19,17 +19,20 @@ static string_view lexemes[TOK_COUNT] = {
     SV_Static("="),       SV_Static("!="),     SV_Static(":="),
     SV_Static("_"),       SV_Static("."),      SV_Static("::"),
     SV_Static(";"),       SV_Static("loop"),   SV_Static("while"),
-    SV_Static("do"),      SV_Static("iter"),   SV_Static("include"),
+    SV_Static("do"),      SV_Static(""),       SV_Static("include"),
     SV_Static("enum"),    SV_Static("[]"),     SV_Static("["),
     SV_Static("]"),       SV_Static("sub"),    SV_Static("for"),
     SV_Static("to"),      SV_Static("in"),     SV_Static("@embed"),
     SV_Static("@end"),    SV_Static("<embed body>"), SV_Static("module"),
-    SV_Static("<EOF>") };
+    SV_Static("default"), SV_Static("returns"), SV_Static("union"),
+    SV_Static("graphics"), SV_Static("<EOF>") };
 
 static token_type_t keywords[] = {
-    TOK_MATCH, TOK_PRO,     TOK_REC,     TOK_WILDCARD, TOK_RETURN,
-    TOK_IF,    TOK_THEN,    TOK_ELSE,    TOK_LOOP,    TOK_WHILE,
-    TOK_DO,    TOK_ITER,    TOK_INCLUDE, TOK_ENUM,     TOK_ARR_DECL, TOK_SUB, TOK_FOR, TOK_TO, TOK_IN, TOK_MODULE};
+    TOK_MATCH,  TOK_REC,     TOK_WILDCARD, TOK_DEFAULT, TOK_RETURN,
+    TOK_IF,     TOK_THEN,    TOK_ELSE,     TOK_LOOP,    TOK_WHILE,
+    TOK_DO,     TOK_INCLUDE, TOK_ENUM,     TOK_ARR_DECL, TOK_SUB,
+    TOK_FOR,    TOK_TO,      TOK_IN,       TOK_MODULE,  TOK_RETURNS,
+    TOK_UNION,  TOK_GRAPHICS};
 
 static token_type_t operators[] = {
     TOK_STAR,   TOK_MINUS,   TOK_PLUS,   TOK_DIV,     TOK_MODULO, TOK_LOG_AND,
@@ -132,7 +135,7 @@ int get_precedence(token_type_t t) {
 }
 
 int is_type_typ_def(token_type_t t) {
-  return t == TOK_PRO || t == TOK_REC || t == TOK_ENUM;
+  return t == TOK_REC || t == TOK_ENUM;
 }
 
 void token_array_push(token_array_t *arr, token_t tok) {

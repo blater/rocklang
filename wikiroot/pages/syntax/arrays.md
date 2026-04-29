@@ -3,7 +3,7 @@ title: Arrays
 category: syntax
 tags: [arrays, dynamic-array, fixed-array, append, insert, get, set, pop, length]
 sources: []
-updated: 2026-04-11
+updated: 2026-04-28
 status: current
 ---
 
@@ -119,7 +119,9 @@ Iterates over all elements. `elem` is scoped to the loop body. See [[syntax/cont
 
 ## String Arrays
 
-String arrays deep-copy strings on insert and push to prevent aliasing:
+String arrays currently deep-copy on `append`, `get`, `pop`, and `set`.
+`insert` does **not** deep-copy yet; it stores the `string` struct as-is, so an
+inserted value can still share its backing buffer with the source string.
 
 ```rock
 string[] words := [];

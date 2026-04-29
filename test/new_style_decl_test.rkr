@@ -1,11 +1,11 @@
 include "Assert.rkr"
 
 record Point {
-  x: int,
-  y: int,
+  int x,
+  int y
 }
 
-sub main(): void {
+sub main() returns void {
   Assert a;
 
   int n := 42;

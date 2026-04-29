@@ -1,9 +1,9 @@
 ---
 title: String Operations
 category: syntax
-tags: [string, concat, substring, to_string, char]
+tags: [string, concat, substring, toString, char]
 sources: []
-updated: 2026-04-11
+updated: 2026-04-25
 status: current
 ---
 
@@ -37,7 +37,7 @@ Concatenate two strings (or a string and a char). Returns a new string.
 
 ```rock
 string s := concat("Hello, ", "World!");
-string s2 := concat("Score: ", to_string(42));
+string s2 := concat("Score: ", toString(42));
 ```
 
 The generator infers whether the second argument is a `char` or `string` and calls `__concat_char` or `__concat_str` accordingly.
@@ -58,36 +58,35 @@ string tail := substring(s, -6, -1);  // "World!"
 
 Substring indexes are 1-based by default and negative indexes count back from the end. `set_string_index_base(0)` changes substring indexing to zero-based at runtime. The three-argument form passes `start` and inclusive `end` through to `__substring_range()`.
 
-## to_string
+## toString
 
 ```rock
-to_string(n)   // works for int, byte, word, dword
-toString(n)    // alias
+toString(n)   // works for int, byte, word, dword, float
 ```
 
 ```rock
-string s := to_string(42);            // "42"
-string b := to_string(to_byte(255));  // "255"
+string s := toString(42);            // "42"
+string b := toString(to_byte(255));  // "255"
 ```
 
-## get_nth_char / set_nth_char
+## charAt / setCharAt
 
 ```rock
-get_nth_char(s, index)          // returns char at index
-set_nth_char(s, index, c)       // mutate char at index
+charAt(s, index)          // returns char at index
+setCharAt(s, index, c)    // mutate char at index
 ```
 
 ```rock
-char c := get_nth_char("hello", 0);   // 'h'
+char c := charAt("hello", 0);   // 'h'
 ```
 
-## get_string_length
+## length
 
 ```rock
-get_string_length(s)   // returns int length
+length(s)   // returns int length (also works for arrays)
 ```
 
-On host builds, `length(s)` dispatches to string length through `_Generic`. On SDCC builds, `length` falls back to array length only, so use `get_string_length(s)` for target-neutral string length.
+`length()` uses `_Generic` on the host target to dispatch to string or array length. On SDCC builds, `length` falls back to array length only.
 
 ## print / printf
 

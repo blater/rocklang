@@ -5,5 +5,8 @@
   "strictLineBreaks": false,
   "foldHeading": false,
   "foldIndent": true,
-  "vimMode": false
+  "vimMode": false,
+  "showUnsupportedFiles": true,
+  "propertiesInDocument": "hidden",
+  "alwaysUpdateLinks": true
 }

@@ -92,8 +92,9 @@ Included files must begin with `module Name;`. The parser splices the included f
 | Integer | `int`, `byte`, `word`, `dword` |
 | Text | `string`, `char` |
 | Boolean | `boolean` |
-| Composite | `record`, `pro` (product/union-like) |
-| Enum | `enum` |
+| Composite | `record` |
+| Enum | `enum` (named integer constants) |
+| Union | `union` (one-of-N variants; auto-generated constructors) |
 | Array | `Type[]` (dynamic), `Type[N]` (fixed-size) |
 | Module | `module` (named singleton struct) |
 
@@ -105,4 +106,4 @@ Included files must begin with `module Name;`. The parser splices the included f
 - **Type-specific array wrappers** synthesised by generator — avoids generics in C whilst maintaining type safety.
 - **Statement splitting (pre_f)** for ZXN — emits setup statements before the statement that uses them.
 
-See [[domain-model]] for bounded context map and [[ubiquitous-language]] for term definitions.
+See [[domain-model]] for bounded context map and [[glossary]] for term definitions.

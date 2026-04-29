@@ -2,7 +2,7 @@ module Mod;
 
 int i := 0;
 
-sub Mod.get() : int {
+sub Mod.get() returns int {
   return i;
 }
 

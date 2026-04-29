@@ -7,6 +7,7 @@
 typedef struct string {
   char *data;
   size_t length;
+  char owned;    // 1 = data was heap-allocated and can be freed, 0 = static/borrowed
 } string;
 
 typedef struct __internal_dynamic_array *__internal_dynamic_array_t;

@@ -30,7 +30,7 @@ typedef struct name_table_t {
 NT_FUN          -- user-defined function
 NT_VAR          -- variable (local or global)
 NT_BUILTIN_TYPE -- built-in type (int, string, etc.)
-NT_USER_TYPE    -- user-defined type (record, module, enum, pro)
+NT_USER_TYPE    -- user-defined type (record, module, enum)
 ```
 
 ## Scope Model
@@ -93,4 +93,4 @@ The name table is the generator's primary mechanism for type inference. When the
 - **No shadowing warning.** If a name is re-declared in the same scope, the new entry silently shadows the old one.
 - **Latest entry wins.** With a flat array and forward-scan search, if the same name appears at multiple scopes, the most recent push wins — this is the correct behaviour for shadowing but is not explicitly documented in the code.
 
-See [[generator/generator-overview]] for how the name table is used during code generation, and [[ubiquitous-language]] for scope/symbol definitions.
+See [[generator-overview]] for how the name table is used during code generation, and [[glossary]] for scope/symbol definitions.

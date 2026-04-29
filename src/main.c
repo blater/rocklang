@@ -4,7 +4,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "token.h"
-// #include "typechecker.h"
+#include "typechecker.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,6 +17,7 @@ void usage(char *name) {
   printf("\t%s <input file> [output file] [options]\n", name);
   printf("Options:\n");
   printf("\t--target=zxn\t\tCompile for ZX Spectrum Next\n");
+  printf("\t--auto-cast\t\tWrap int args with (byte)/(word)/(dword) when callee param is narrower\n");
   // printf("\t%s [flags] <input file> [output file] [flags]\n", name);
   // printf("Possible flags:\n");
   // printf("\t-t:\t\tPrints the ast\n");
@@ -34,6 +35,7 @@ int main(int argc, char *argv[]) {
   // int print_tree = 0;
   int print_lexer = 0;
   int target_zxn = 0;
+  int auto_cast = 0;
 
   for (int i = 1; i < argc; i++) {
     char *arg = argv[i];
@@ -52,6 +54,9 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(arg + 9, "gcc") != 0) {
           printf("defaulting target to gcc");
         }
+      }
+      else if (strcmp(arg, "--auto-cast") == 0) {
+        auto_cast = 1;
       }
       //  else if (*(arg + 1) == 't' && !print_tree)
       //   print_tree = 1;
@@ -92,18 +97,20 @@ int main(int argc, char *argv[]) {
   p.source_length = l.length;
   parse_program(&p);
 
-  // // type checking
-  // int typecheck = tc_program(p.prog);
-  // if (!typecheck) {
-  //   printf("The program does not type checks\n");
-  // }
-  // if (print_tree)
-  //   print_ast(p.prog);
+  // ADR-0003 §9.4: structural-acyclicity check on user-defined types.
+  // Runs before generation; cycles are reported via error() and bail out
+  // through the get_error_count() check below.
+  check_acyclic_types(p.prog);
+  if (get_error_count() > 0) {
+    kill_compiler_stack();
+    return 1;
+  }
 
   char *cout = allocate_compiler_persistent(strlen(output) + 3);
   sprintf(cout, "%s.c", output);
   generator_t g = new_generator(cout);
   if (target_zxn) g.target = TARGET_ZXN;
+  g.auto_cast = auto_cast;
   transpile(&g, p.prog);
   kill_generator(g);
 

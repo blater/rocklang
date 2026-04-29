@@ -5,6 +5,19 @@ build/
 tmp/
 x/
 
+# Compiler binary and scratch output
+rockc
+out.c
+
+# ZXN target build artifacts
+*.nex
+*_CODE.bin
+*.lis
+*.sym
+
+# Generated dep files in vendored deps
+src/ext/src/termbox2/demo/*.d
+
 # Legacy docs are being retired in favor of wikiroot/
 docs/
 logs/

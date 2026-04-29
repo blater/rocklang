@@ -1,28 +1,28 @@
 ---
-title: Records, Product Types, Enums, and Modules
+title: Records, Enums, Unions, and Modules
 category: syntax
-tags: [record, pro, enum, module, composite-types, tdef]
+tags: [record, enum, union, module, composite-types, tdef]
 sources: []
-updated: 2026-04-11
+updated: 2026-04-27
 status: current
 ---
 
-# Records, Product Types, Enums, and Modules
+# Records, Enums, Unions, and Modules
 
 ## record
 
 A `record` is a named composite value type (C struct).
 
 ```rock
-record Point { x: int, y: int }
-record Person { name: string, age: int }
+record Point { int x, int y }
+record Person { string name, int age }
 ```
 
-Record fields support both the original `name: type` form and the newer type-first form:
+Record fields use **type-first** syntax (`type name`), the same shape as variable declarations and sub parameters:
 
 ```rock
 record Pair {
-  left: int,
+  int left,
   string right,
 }
 ```
@@ -45,33 +45,10 @@ p.y := 10;
 ### Methods on Records
 
 ```rock
-sub Point.magnitude(): int {
+sub Point.magnitude() returns int {
   return (this.x * this.x) + (this.y * this.y);
 }
 ```
-
-## pro (Product Type)
-
-A `pro` is a tagged-union-like construct. It declares a type with named constructors, each carrying a value.
-
-```rock
-pro Optional { Some: int, None: void }
-pro Shape { Circle: int, Rectangle: int }
-```
-
-The parser requires every product constructor to name a payload type. Use `void` for a constructor with no payload.
-
-`match` is typically used to inspect a `pro` value:
-```rock
-match opt {
-  -> Some print(to_string(opt.value)),
-  -> None print("empty")
-}
-```
-
-The generator emits the product type as a C struct with a `tag` enum and `data` union. `match` parsing exists, but `generate_statement()` still asserts for `match`, so product matching is not implemented yet.
-
-> **TODO:** The exact match semantics for `pro` types need clarification from the source and tests.
 
 ## enum
 
@@ -88,6 +65,71 @@ Enum values map to C integers (0, 1, 2, …).
 Colour c := Red;
 if c = Blue then print("blue");
 ```
+
+## union
+
+A `union` is a value that holds **exactly one of N named variants**. Each variant can carry an optional payload of its own type, written **type-first** before the variant name. The compiler auto-generates a constructor function for each variant.
+
+```rock
+union Optional { int Some, None }
+union Shape    { int Circle, int Rectangle }
+union Result   { int Ok, string Err }
+```
+
+Variants without a payload type get an implicit `void` payload (no constructor argument).
+
+The compiler emits a struct with a `key` field (an enum of all variant names — tells you which variant is active) and a `value` field (a union of all payload types). See [[concepts/generator/generator-overview]] for the lowered C representation.
+
+### Construction
+
+Constructor functions are auto-generated for each variant:
+
+```rock
+Optional opt := Some(42);
+Optional empty := None();
+```
+
+The generator emits `TypeName_VariantName(payload)` C functions. In Rock, you call variants by bare name: `Some(42)` resolves to `Optional_Some(42)` automatically via name-table lookup of `NT_ENUM_VARIANT` entries.
+
+### Generated C
+
+```c
+struct Optional {
+  enum { Some, None } key;
+  union { int Some; } value;
+};
+
+Optional Optional_Some(int payload) {
+  Optional __inst = allocate_compiler_persistent(sizeof(struct Optional));
+  __inst->key = Some;
+  __inst->value.Some = payload;
+  return __inst;
+}
+
+Optional Optional_None(void) {
+  Optional __inst = allocate_compiler_persistent(sizeof(struct Optional));
+  __inst->key = None;
+  return __inst;
+}
+```
+
+### Key Access and Case
+
+The active variant can be read directly via `.key`:
+```rock
+if opt.key = Some then print("has value");
+```
+
+`case` on a union compares `->key` automatically:
+```rock
+case opt {
+  Some : print("has value");
+  None : print("empty");
+  default: print("fallback");
+}
+```
+
+> **TODO:** `case` on unions currently matches the key only. Destructuring the payload (e.g. `Some(x) : use(x)`) is not yet supported. Access the payload via `.value.VariantName` after matching.
 
 ## module
 
@@ -111,10 +153,10 @@ state.score := 100;
 
 Modules can have methods:
 ```rock
-sub GameState.reset(): void {
+sub GameState.reset() {
   this.score := 0;
   this.lives := 3;
 }
 ```
 
-See [[syntax/functions-and-methods]] for method syntax, [[parser/parser-overview]] for how the parser handles `include` + `module Name;`, and [[generator/generator-overview]] for module initialisation deferral.
+See [[syntax/functions-and-methods]] for method syntax, [[parser-overview]] for how the parser handles `include` + `module Name;`, and [[generator-overview]] for module initialisation deferral.

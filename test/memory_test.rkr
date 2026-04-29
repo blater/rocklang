@@ -2,13 +2,13 @@ include "Assert.rkr"
 Assert a;
 
 record Person {
-  name: string,
-  age:  int
+  string name,
+  int age
 }
 
 record Team {
-  leader:  string,         // TODO allow    string leader,
-  members: string[]        // TODO allow    string[]  members
+  string leader,  // TODO allow    string leader,
+  string[] members  // TODO allow    string[]  members
 }
 
 sub main() {

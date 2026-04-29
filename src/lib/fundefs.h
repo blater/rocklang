@@ -8,17 +8,16 @@
 void print(string s);
 char *string_to_cstr(string s);
 void cstr_to_string(string *out, char *cstr);
-char get_nth_char(string s, int n);
+char charAt(string s, int n);
 void __concat_char(string *out, string s, char c);
 void __concat_str(string *out, string s1, string s2);
-int get_string_length(string s);
-void set_nth_char(string s, int n, char c);
+void setCharAt(string s, int n, char c);
 void __read_file_impl(string *out, string filename);
 void new_string(string *out, string s);
 void write_string_to_file(string s, string filename);
-int str_eq(string s1, string s2);
+int equals(string s1, string s2);
 void __get_abs_path_impl(string *out, string path);
-void __free_string(string s);
+void __free_string(string *s);
 
 // Configurable string index base (0 = zero-indexed, 1 = one-indexed)
 extern int __rock_substr_index_base;
@@ -64,13 +63,13 @@ static inline string get_abs_path(string path) {
 // Stubs for ZXN (file I/O not available on ZXN)
 static inline string read_file(string filename) {
   (void)filename;
-  string res = {NULL, 0};
+  string res = {NULL, 0, 0};
   return res;
 }
 
 static inline string get_abs_path(string path) {
   (void)path;
-  string res = {NULL, 0};
+  string res = {NULL, 0, 0};
   return res;
 }
 

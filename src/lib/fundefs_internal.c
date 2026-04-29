@@ -29,6 +29,23 @@ __internal_dynamic_array_t __internal_make_array(size_t size, size_t max_capacit
   return ptr;
 }
 
+void __internal_free_array(__internal_dynamic_array_t arr, int is_string_array) {
+  if (arr == NULL) return;
+  if (is_string_array && arr->data != NULL) {
+    for (size_t i = 0; i < arr->length; i++) {
+      string *s = (string *)((char *)arr->data + i * arr->elem_size);
+      __free_string(s);
+    }
+  }
+  if (arr->data != NULL) {
+    deregister_compiler_persistent(arr->data);
+    free(arr->data);
+    arr->data = NULL;
+  }
+  deregister_compiler_persistent(arr);
+  free(arr);
+}
+
 // We use the compiler version of thre
 //  allocator as well for convenience
 // but this may change btw reallocation
@@ -51,7 +68,7 @@ int __internal_push_array(__internal_dynamic_array_t arr, void *elem) {
     exit_rocker(1);
   }
 
-  if (arr->length > arr->capacity) {
+  if (arr->length >= arr->capacity) {
     // For dynamic arrays only, grow the capacity
     if (arr->max_capacity == 0) {
       arr->capacity *= 2;
@@ -290,8 +307,7 @@ void string_set_elem(__internal_dynamic_array_t arr, size_t index,
   string old;
   string_get_elem(&old, arr, index);
   if (old.data != NULL) {
-    // Old value will be overwritten; in a full implementation,
-    // we would free its persistent allocation here
+    __free_string(&old);
   }
   string copy;
   new_string(&copy, elem);

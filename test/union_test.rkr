@@ -1,0 +1,39 @@
+include "Assert.rkr"
+
+union Optional { int Some, None }
+
+sub main() {
+  Assert a;
+
+  // Construct union values
+  Optional opt := Some(42);
+  Optional empty := None();
+
+  a.AssertEQ("union parses", 1, 1);
+  a.AssertEQ("Some constructor sets key", opt.key, Some);
+  a.AssertEQ("None constructor sets key", empty.key, None);
+
+  // Case on a union
+  int result;
+  result := 0;
+  case opt {
+    Some : result := 1;
+    None : result := 2;
+  }
+  a.AssertEQ("case Some key", result, 1);
+
+  result := 0;
+  case empty {
+    Some : result := 1;
+    None : result := 2;
+  }
+  a.AssertEQ("case None key", result, 2);
+
+  // Case with default
+  result := 0;
+  case opt {
+    None : result := 1;
+    default: result := 99;
+  }
+  a.AssertEQ("case default on union", result, 99);
+}

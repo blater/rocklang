@@ -23,6 +23,8 @@ void *__internal_get_elem(__internal_dynamic_array_t arr, size_t index);
 void __internal_set_elem(__internal_dynamic_array_t arr, size_t index,
                          void *elem);
 
+void __internal_free_array(__internal_dynamic_array_t arr, int is_string_array);
+
 size_t __length_array(__internal_dynamic_array_t arr);
 size_t __length_string(string s);
 #ifndef __SDCC

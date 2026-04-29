@@ -29,11 +29,11 @@ sub main() {
 
   // to_string on int (default branch still works)
   int i := 42;
-  a.AssertEquals("to_string on an int", to_string(i), "42");
+  a.AssertEquals("to_string on an int", toString(i), "42");
 
   // to_string on byte still works (regression)
   byte b := to_byte(99);
-  a.AssertEquals("to_string on a byte", to_string(b), "99");
+  a.AssertEquals("to_string on a byte", toString(b), "99");
 
   print("Done\n");
 }

@@ -1,0 +1,14 @@
+// ADR-0003 §9.4: recursive type definitions are rejected at compile time,
+// even when the recursion goes through array indirection.
+//
+// Expected: compilation fails with diagnostic mentioning
+//   "recursive type definition 'Node' forbidden"
+
+record Node {
+  string name,
+  Node[] children
+}
+
+sub main() {
+  Node n := { name := "root", children := [] };
+}

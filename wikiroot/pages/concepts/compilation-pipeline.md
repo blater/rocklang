@@ -66,7 +66,7 @@ generator_t g = new_generator(cout);
 if (target == ZXN) g.target = TARGET_ZXN;
 transpile(&g, p.prog);
 ```
-Walks the AST, emits C to the output file. See [[generator/generator-overview]].
+Walks the AST, emits C to the output file. See [[generator-overview]].
 
 ### 7. Cleanup
 ```c
@@ -113,4 +113,4 @@ kill_compiler_stack()   -- all arena memory freed
 
 The output `.c` file is the only persistent output. All intermediate data structures (tokens, AST) are transient within the arena.
 
-See [[lexer/lexer-overview]], [[parser/parser-overview]], [[generator/generator-overview]] for phase detail, and [[overview]] for the architecture diagram.
+See [[lexer-overview]], [[parser-overview]], [[generator-overview]] for phase detail, and [[overview]] for the architecture diagram.

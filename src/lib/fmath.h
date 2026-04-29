@@ -3,16 +3,9 @@
 
 #include "typedefs.h"
 
-/* Floating-point math primitives. Wraps libm on host. ZXN support is
- * deferred — SDCC's float library works but requires a different link
- * recipe and the ZXN compile path is not yet wired up in compile.sh.
- *
- * fsin/fcos/fsqrt — angles are in radians.
- * fabs_float     — absolute value.
- * fpi            — constant π returned as a Rock float.
- *
- * Names are f-prefixed to avoid colliding with libm's sin/cos/sqrt
- * symbols and to match the pasta80 Real math convention.
+/* Floating-point math primitives.
+ * Host: wraps sinf/cosf/sqrtf.  ZXN: wraps z88dk genmath via -lm.
+ * Names are f-prefixed to avoid colliding with libm symbols.
  */
 
 float fsin(float x);

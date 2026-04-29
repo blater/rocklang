@@ -1,7 +1,7 @@
 include "Assert.rkr"
 Assert as;
 
-sub dynamicIntTest(){
+sub dynamicIntTest() {
   int [] arr;
   for i := 0 to 10 {
     append(arr, i);
@@ -13,11 +13,11 @@ sub dynamicIntTest(){
 }
 
 record array_wrapper {
-  int[] Items,      // new syntax
-  Names : string[], // old deprecated syntax
+  int[] Items,  // new syntax
+  string[] Names  // old deprecated syntax
 }
 
-sub wrapFn(): array_wrapper {
+sub wrapFn() returns array_wrapper {
   array_wrapper a := {
     Items := NULL,
     Names := NULL,

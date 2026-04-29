@@ -2,7 +2,7 @@ include "Assert.rkr"
 Assert as;
 
 
-sub main(): void {
+sub main() returns void {
   string[] args;
   args := get_args();
 

@@ -1,7 +1,7 @@
 include "Assert.rkr"
 Assert as;
 
-sub main(): void {
+sub main() returns void {
   int a := -1;
   as.AssertEQ("negative numbers", -1, a);
   int b := -(-2);

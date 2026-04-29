@@ -31,19 +31,19 @@ sub main() {
 
   byte b65 := to_byte(65);
   string s1 := "Value: ";
-  string s2 := concat(s1, to_string(b65));
+  string s2 := concat(s1, toString(b65));
   a.AssertEquals("byte to string in concatination", "Value: 65", s2);
 
 
   byte b42 := to_byte(42);
   int i42 := to_int(b42);
   byte b50 := to_byte(i42 + 8);
-  a.AssertEquals("type conversions in chain", "50", to_string(b50));
+  a.AssertEquals("type conversions in chain", "50", toString(b50));
 
   byte b_zero := to_byte(0);
   byte b_max := to_byte(255);
-  a.AssertEquals("Boundary value 0", "0", to_string(b_zero));
-  a.AssertEquals("Boundary value 255", "255", to_string(b_max));
+  a.AssertEquals("Boundary value 0", "0", toString(b_zero));
+  a.AssertEquals("Boundary value 255", "255", toString(b_max));
 
   byte b_almost_max := to_byte(250);
   byte b_add_result := to_byte(to_int(b_almost_max) + 10);

@@ -2,15 +2,15 @@ include "Assert.rkr"
 Assert as;
 
 record array_wrapper {
-  Items: int[],
-  Names: string[],
+  int[] Items,
+  string[] Names
 }
 
 record wrapper_holder {
-  Data: array_wrapper,
+  array_wrapper Data
 }
 
-sub make_wrapper(): array_wrapper {
+sub make_wrapper() returns array_wrapper {
   array_wrapper a := {
     Items := [],
     Names := []
@@ -25,14 +25,14 @@ sub make_wrapper(): array_wrapper {
   return a;
 }
 
-sub make_holder(): wrapper_holder {
+sub make_holder() returns wrapper_holder {
   wrapper_holder h := {
     Data := make_wrapper()
   };
   return h;
 }
 
-sub main(): void {
+sub main() returns void {
   string[] names := make_wrapper().Names;
   as.AssertEquals("funcall receiver field array first", "First", get(names, 0));
   as.AssertEquals("funcall receiver field array second", "Second", get(names, 1));

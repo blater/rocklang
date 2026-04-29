@@ -35,14 +35,14 @@ Included files must begin with a module declaration:
 module Assert;
 ```
 
-The include mechanism tracks files already included in the current parse session and skips duplicate includes. Include resolution is part of the parser layer; see [[parser/parser-overview]] for token splicing detail and [[concepts/compilation-pipeline]] for where include handling fits in the compile flow.
+The include mechanism tracks files already included in the current parse session and skips duplicate includes. Include resolution is part of the parser layer; see [[parser-overview]] for token splicing detail and [[concepts/compilation-pipeline]] for where include handling fits in the compile flow.
 
 ## Practical Pattern
 
 ```rock
 include "test/Assert.rkr"
 
-sub main(): void {
+sub main() {
   Assert a;
   a.AssertEQ("works", 1, 1);
 }

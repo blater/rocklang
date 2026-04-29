@@ -3,7 +3,7 @@ title: String Representation
 category: concepts
 tags: [string, rock_string, string-temporary, pre_f, string-literal]
 sources: []
-updated: 2026-04-10
+updated: 2026-04-28
 status: current
 ---
 
@@ -68,7 +68,11 @@ All result strings are heap-allocated via the arena allocator (`allocate_compile
 
 ## String Arrays
 
-Strings stored in arrays are **deep-copied** on insert to prevent aliasing:
+Strings stored in arrays are selectively **deep-copied** to prevent aliasing.
+In the current runtime, `string_push_array`, `string_get_elem`, `string_pop_array`,
+and `string_set_elem` all allocate a fresh backing buffer. `string_insert`
+currently does not; it forwards the `string` struct directly to the generic
+array insert helper.
 
 ```c
 // string_push_array copies the string's data before insertion
@@ -81,7 +85,8 @@ void string_push_array(__internal_dynamic_array_t *arr, rock_string elem) {
 }
 ```
 
-This ensures mutations to the original string don't corrupt the stored copy.
+This means `append`/`set` avoid shared storage, but `insert` is not yet aligned
+with that behaviour.
 
 ## Memory Lifecycle
 
@@ -91,4 +96,4 @@ All string data is allocated through the arena allocator. Strings are never free
 
 When the generator encounters a `concat(a, b)` call, it calls `infer_expr_type()` on `b` to determine whether to call `__concat_str` or `__concat_char`. If `b` resolves to `char`, `__concat_char` is used; otherwise `__concat_str`.
 
-See [[generator/generator-overview]] for the `pre_f` buffer pattern, [[concepts/array-internals]] for string array storage, and [[ubiquitous-language]] for the `rock_string` definition.
+See [[generator-overview]] for the `pre_f` buffer pattern, [[concepts/array-internals]] for string array storage, and [[glossary]] for the `rock_string` definition.

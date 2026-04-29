@@ -75,6 +75,10 @@ typedef enum token_type_t {
   TOK_END,
   TOK_EMBED_BODY,
   TOK_MODULE,
+  TOK_DEFAULT,
+  TOK_RETURNS,
+  TOK_UNION,
+  TOK_GRAPHICS,
   TOK_EOF,
   TOK_COUNT
 

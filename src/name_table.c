@@ -13,6 +13,15 @@ ast_t get_ref(string_view name, name_table_t table) {
   return res;
 }
 
+nt_kind get_nt_kind(string_view name, name_table_t table) {
+  nt_kind res = NT_VAR;
+  for (int i = 0; i < table.length; i++) {
+    if (svcmp(table.names[i], name) == 0)
+      res = table.kinds[i];
+  }
+  return res;
+}
+
 void new_nt_scope(name_table_t *table) {
   table->scope++;
   return;

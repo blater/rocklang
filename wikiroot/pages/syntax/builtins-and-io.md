@@ -3,7 +3,7 @@ title: Built-ins and I/O
 category: syntax
 tags: [builtins, io, file-io, args, memory, conversions]
 sources: []
-updated: 2026-04-11
+updated: 2026-04-28
 status: current
 ---
 
@@ -20,6 +20,19 @@ Rock's **built-in functions** are registered in `new_generator()` before user co
 | `putchar(c)` | Emit one character |
 | `exit(code)` | Exit the generated program |
 
+## Host Graphics Mode
+
+```rock
+graphics on;
+graphics off;
+```
+
+On the host target, `graphics on;` explicitly enables terminal-backed graphics
+mode for positioned text and raster-style RTL components. `graphics off;`
+tears that mode down and returns to ordinary stdout. If stdout is not a TTY,
+`graphics on;` leaves graphics disabled so test and redirected-output runs stay
+plain-text. On ZXN, both commands are no-ops.
+
 ## String Built-ins
 
 | Function | Behaviour |
@@ -27,11 +40,11 @@ Rock's **built-in functions** are registered in `new_generator()` before user co
 | `concat(s1, s2)` | Concatenate strings, or append a `char` to a string |
 | `substring(s, start)` | Slice from `start` to the end |
 | `substring(s, start, end)` | Slice from `start` through inclusive `end` |
-| `to_string(x)` / `toString(x)` | Convert `int`, `byte`, `word`, or `dword` to `string` |
-| `str_eq(a, b)` | Return non-zero when two strings have equal length and bytes |
-| `get_nth_char(s, index)` | Return the character at `index`, or `0` when out of range |
-| `set_nth_char(s, index, c)` | Mutate a string character when `index` is in range |
-| `get_string_length(s)` | Return the string length |
+| `toString(x)` | Convert `int`, `byte`, `word`, `dword`, or `float` to `string` |
+| `equals(a, b)` | Return non-zero when two strings have equal length and bytes |
+| `charAt(s, index)` | Return the character at `index`, or `0` when out of range |
+| `setCharAt(s, index, c)` | Mutate a string character when `index` is in range |
+| `length(s)` | Return the string length (also works for arrays) |
 | `set_string_index_base(base)` | Set substring index base (`1` by default, `0` for zero-based) |
 | `string_to_cstr(s)` | Runtime helper returning the backing C `char*`; used by generated `printf` paths |
 | `cstr_to_string(cstr)` | Runtime out-parameter helper for wrapping a C string |
@@ -93,4 +106,4 @@ poke(addr, to_byte(42));
 
 `peek` and `poke` are supplied by `asm_interop.c`. On ZXN they map to volatile memory access; on host they use a simulated 64K memory buffer.
 
-See [[targets/zxn-z80]] for target-specific context and [[generator/generator-overview]] for how built-ins are registered.
+See [[targets/zxn-z80]] for target-specific context and [[generator-overview]] for how built-ins are registered.

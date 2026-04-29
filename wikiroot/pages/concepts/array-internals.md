@@ -3,7 +3,7 @@ title: Array Internals
 category: concepts
 tags: [array, dynamic-array, fixed-array, runtime, fundefs_internal]
 sources: []
-updated: 2026-04-09
+updated: 2026-04-28
 status: current
 ---
 
@@ -109,7 +109,8 @@ void T_insert(__internal_dynamic_array_t *arr, int idx, T elem) {
 
 ### String Special Case
 
-`string_push_array` and `string_set_elem` perform a **deep copy** before insertion to prevent aliasing (important because `rock_string.data` is a pointer):
+`string_push_array` and `string_set_elem` perform a **deep copy** to prevent
+aliasing (important because `rock_string.data` is a pointer):
 
 ```c
 void string_push_array(__internal_dynamic_array_t *arr, rock_string elem) {
@@ -120,6 +121,10 @@ void string_push_array(__internal_dynamic_array_t *arr, rock_string elem) {
   __internal_push_array(arr, &copy);
 }
 ```
+
+`string_insert` currently does not deep-copy; it passes the `string` struct
+through to `__internal_insert`, so the inserted value may share its backing
+buffer with the source string until the runtime is changed.
 
 ## Memory Model
 
@@ -134,4 +139,4 @@ To select the correct wrapper, the generator must know the element type of an ar
 
 This is called at each `append`, `get`, `set`, `pop`, `insert` site. If inference fails (unknown type), the generator falls back to a default wrapper name, which may produce a C type error.
 
-See [[generator/generator-overview]] for array wrapper synthesis, [[syntax/arrays]] for Rock-level array syntax, and [[concepts/string-representation]] for string-specific deep copy behaviour.
+See [[generator-overview]] for array wrapper synthesis, [[syntax/arrays]] for Rock-level array syntax, and [[concepts/string-representation]] for string-specific deep copy behaviour.

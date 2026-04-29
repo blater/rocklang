@@ -12,6 +12,7 @@
 #include "stringview.h"
 #include "token.h"
 #include <assert.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +38,109 @@ int get_literal_string_length(token_t tok);
 
 // Helper: Flush accumulated pre-statements to destination and reset pre_f
 static void flush_pre_f(generator_t *g, FILE *dest);
+
+// Constant to avoid repeated SV_STRING + strlen
+static const string_view SV_STRING = {.data = "string", .length = 6};
+
+// Field names emitted into the C struct that backs every Rock `union`.
+// The discriminator is `key` (an enum); the payload is `value` (a C union).
+// Centralised so a future rename touches one place.
+#define UNION_KEY_FIELD   "key"
+#define UNION_VALUE_FIELD "value"
+
+// --- Unified scope tracking (linked lists, zero pre-allocation) ---
+
+static void push_scope(generator_t *g) {
+  scope_t *s = malloc(sizeof(scope_t));
+  s->prev = g->scope;
+  s->vars = NULL;
+  g->scope = s;
+}
+
+static void track_var(generator_t *g, string_view name, track_kind_t kind,
+                      int is_string_array, int owns_name) {
+  if (!g->scope) return;
+  tracked_var_t *v = malloc(sizeof(tracked_var_t));
+  v->name = name;
+  v->kind = kind;
+  v->is_string_array = is_string_array;
+  v->owns_name = owns_name;
+  v->next = g->scope->vars;
+  g->scope->vars = v;
+}
+
+static void emit_scope_cleanup(generator_t *g) {
+  if (!g->scope) return;
+  FILE *f = g->f;
+  for (tracked_var_t *v = g->scope->vars; v; v = v->next) {
+    switch (v->kind) {
+    case TRACK_STRING:
+      fprintf(f, "__free_string(&" SV_Fmt ");\n", SV_Arg(v->name));
+      break;
+    case TRACK_ARRAY:
+      fprintf(f, "__internal_free_array(" SV_Fmt ", %d);\n",
+              SV_Arg(v->name), v->is_string_array);
+      break;
+    case TRACK_RECORD:
+      fprintf(f, "deregister_compiler_persistent(" SV_Fmt "); free(" SV_Fmt ");\n",
+              SV_Arg(v->name), SV_Arg(v->name));
+      break;
+    }
+  }
+}
+
+static void pop_scope(generator_t *g) {
+  if (!g->scope) return;
+  scope_t *top = g->scope;
+  g->scope = top->prev;
+  tracked_var_t *v = top->vars;
+  while (v) {
+    tracked_var_t *next = v->next;
+    if (v->owns_name) free((char *)v->name.data);
+    free(v);
+    v = next;
+  }
+  free(top);
+}
+
+// Emit cleanup for ALL enclosing scopes (used before return).
+// Only frees strings — arrays/records may be aliased or returned.
+// Skips one named string variable (the return value).
+static void emit_return_cleanup(generator_t *g, string_view skip_name) {
+  FILE *f = g->f;
+  for (scope_t *s = g->scope; s; s = s->prev) {
+    for (tracked_var_t *v = s->vars; v; v = v->next) {
+      if (v->kind != TRACK_STRING) continue;
+      if (skip_name.length > 0 && svcmp(v->name, skip_name) == 0) continue;
+      fprintf(f, "__free_string(&" SV_Fmt ");\n", SV_Arg(v->name));
+    }
+  }
+}
+
+// --- Convenience wrappers (keep call sites readable) ---
+
+static void track_string_var(generator_t *g, string_view name) {
+  track_var(g, name, TRACK_STRING, 0, 0);
+}
+
+static void track_string_tmp(generator_t *g, const char *tmp_name) {
+  string_view sv = {.data = (char *)tmp_name, .length = strlen(tmp_name)};
+  track_var(g, sv, TRACK_STRING, 0, 1);  // owns_name: strdup'd by allocate_string_tmp
+}
+
+static void track_array_var(generator_t *g, string_view name, int is_string_array) {
+  track_var(g, name, TRACK_ARRAY, is_string_array, 0);
+}
+
+static void track_record_var(generator_t *g, string_view name) {
+  track_var(g, name, TRACK_RECORD, 0, 0);
+}
+
+// Helper: nullify a string temp after ownership transfer (prevents double-free)
+static void emit_nullify_tmp(FILE *f, const char *tmp_name) {
+  fprintf(f, "%s.data = NULL; %s.length = 0; %s.owned = 0;\n",
+          tmp_name, tmp_name, tmp_name);
+}
 
 static token_t token_for_expr(ast_t expr) {
   if (!expr) {
@@ -118,6 +222,29 @@ static void register_builtin(name_table_t *table, const char *name,
   push_nt(table, sv_from_cstr((char*)name), NT_FUN, new_ast(fn));
 }
 
+// Variadic variant: also records parameter types so --auto-cast can wrap
+// numeric args in `(byte)`/`(word)`/`(dword)` for matching callee params.
+// Caller passes type names as `const char *` after `n_params`.
+static void register_builtin_typed(name_table_t *table, const char *name,
+                                    const char *ret_type, int n_params, ...) {
+  node_t fn = {0};
+  fn.tag = fundef;
+  fn.data.fundef.name.lexeme = sv_from_cstr((char*)name);
+  fn.data.fundef.ret_type = make_type_node(ret_type);
+  if (n_params > 0) {
+    ast_array_t types = new_ast_array();
+    va_list ap;
+    va_start(ap, n_params);
+    for (int i = 0; i < n_params; i++) {
+      const char *pt = va_arg(ap, const char *);
+      push_ast_array(&types, make_type_node(pt));
+    }
+    va_end(ap);
+    fn.data.fundef.types = types;
+  }
+  push_nt(table, sv_from_cstr((char*)name), NT_FUN, new_ast(fn));
+}
+
 // Helper: Register a builtin that returns an array type (e.g. get_args → string[])
 static void register_builtin_array(name_table_t *table, const char *name,
                                    const char *elem_type) {
@@ -195,7 +322,7 @@ void emit_concat(generator_t *g, ast_funcall call) {
 
   free(arg0_buf);
   free(arg1_buf);
-  free((char*)tmp_var);
+  track_string_tmp(g, tmp_var);
 }
 
 void emit_to_string(generator_t *g, ast_funcall call) {
@@ -218,7 +345,7 @@ void emit_to_string(generator_t *g, ast_funcall call) {
   fprintf(g->f, "%s", tmp_var);
 
   free(arg_buf);
-  free((char*)tmp_var);
+  track_string_tmp(g, tmp_var);
 }
 
 void emit_substring(generator_t *g, ast_funcall call) {
@@ -235,7 +362,7 @@ void emit_substring(generator_t *g, ast_funcall call) {
 
     free(arg0_buf);
     free(arg1_buf);
-    free((char*)tmp_var);
+    track_string_tmp(g, tmp_var);
   } else if (call.args.length == 3) {
     char *arg0_buf = capture_expression(g, call.args.data[0]);
     char *arg1_buf = capture_expression(g, call.args.data[1]);
@@ -248,7 +375,7 @@ void emit_substring(generator_t *g, ast_funcall call) {
     free(arg0_buf);
     free(arg1_buf);
     free(arg2_buf);
-    free((char*)tmp_var);
+    track_string_tmp(g, tmp_var);
   } else {
     token_t tok = call.name;
     error(tok.filename, tok.line, tok.col, "substring() requires 2 or 3 arguments, got %d",
@@ -327,6 +454,8 @@ generator_t new_generator(char *filename) {
   res.deferred_global_init_count = 0;
   res.deferred_global_init_capacity = 0;
   res.program = NULL;
+  res.scope = NULL;
+  res.auto_cast = 0;
 
   // Register C library builtin functions with their return types
   // Stdlib / I/O
@@ -335,10 +464,9 @@ generator_t new_generator(char *filename) {
   // Array operations - handled specially by name lookup in generator
   register_builtin(&res.table, "length",               "int");
   // String operations from fundefs.h
-  register_builtin(&res.table, "get_nth_char",         "char");
-  register_builtin(&res.table, "set_nth_char",         "void");
-  register_builtin(&res.table, "get_string_length",    "int");
-  register_builtin(&res.table, "str_eq",               "int");
+  register_builtin(&res.table, "charAt",               "char");
+  register_builtin(&res.table, "setCharAt",            "void");
+  register_builtin(&res.table, "equals",               "int");
   register_builtin(&res.table, "string_to_cstr",       "void");
   register_builtin(&res.table, "cstr_to_string",       "string");
   register_builtin(&res.table, "new_string",           "string");
@@ -356,7 +484,6 @@ generator_t new_generator(char *filename) {
   // Built-in array/string functions with special code generation
   register_builtin(&res.table, "substring",            "string");
   register_builtin(&res.table, "concat",               "string");
-  register_builtin(&res.table, "to_string",            "string");
   register_builtin(&res.table, "toString",             "string");
   // Command-line argument access
   register_builtin_array(&res.table, "get_args",       "string");
@@ -371,38 +498,40 @@ generator_t new_generator(char *filename) {
   register_builtin(&res.table, "peek",                 "byte");
 
   register_builtin(&res.table, "scan_keyboard",        "void");
-  register_builtin(&res.table, "key_pressed",          "byte");
+  register_builtin_typed(&res.table, "key_pressed",    "byte", 1, "byte");
 
-  register_builtin(&res.table, "border",               "void");
+  register_builtin_typed(&res.table, "border",         "void", 1, "byte");
   register_builtin(&res.table, "border_get",           "byte");
 
-  register_builtin(&res.table, "ink",                  "void");
-  register_builtin(&res.table, "paper",                "void");
-  register_builtin(&res.table, "bright",               "void");
-  register_builtin(&res.table, "flash",                "void");
-  register_builtin(&res.table, "inverse",              "void");
-  register_builtin(&res.table, "over",                 "void");
+  register_builtin_typed(&res.table, "ink",            "void", 1, "byte");
+  register_builtin_typed(&res.table, "paper",          "void", 1, "byte");
+  register_builtin_typed(&res.table, "bright",         "void", 1, "byte");
+  register_builtin_typed(&res.table, "flash",          "void", 1, "byte");
+  register_builtin_typed(&res.table, "inverse",        "void", 1, "byte");
+  register_builtin_typed(&res.table, "over",           "void", 1, "byte");
+  register_builtin(&res.table, "graphics_on",          "void");
+  register_builtin(&res.table, "graphics_off",         "void");
 
   register_builtin(&res.table, "cls",                  "void");
 
-  register_builtin(&res.table, "plot",                 "void");
-  register_builtin(&res.table, "point",                "byte");
-  register_builtin(&res.table, "draw",                 "void");
+  register_builtin_typed(&res.table, "plot",           "void", 2, "byte", "byte");
+  register_builtin_typed(&res.table, "point",          "byte", 2, "byte", "byte");
+  register_builtin_typed(&res.table, "draw",           "void", 4, "byte", "byte", "byte", "byte");
   register_builtin(&res.table, "polyline",             "void");
-  register_builtin(&res.table, "circle",               "void");
-  register_builtin(&res.table, "fill",                 "void");
-  register_builtin(&res.table, "triangle",             "void");
-  register_builtin(&res.table, "trianglefill",         "void");
+  register_builtin_typed(&res.table, "circle",         "void", 3, "byte", "byte", "byte");
+  register_builtin_typed(&res.table, "fill",           "void", 4, "byte", "byte", "byte", "byte");
+  register_builtin_typed(&res.table, "triangle",       "void", 6, "byte", "byte", "byte", "byte", "byte", "byte");
+  register_builtin_typed(&res.table, "trianglefill",   "void", 6, "byte", "byte", "byte", "byte", "byte", "byte");
 
   register_builtin(&res.table, "randomize",            "void");
-  register_builtin(&res.table, "random_byte",          "byte");
-  register_builtin(&res.table, "random_word",          "word");
+  register_builtin_typed(&res.table, "random_byte",    "byte", 1, "byte");
+  register_builtin_typed(&res.table, "random_word",    "word", 1, "word");
 
-  register_builtin(&res.table, "next_reg_set",         "void");
-  register_builtin(&res.table, "next_reg_get",         "byte");
-  register_builtin(&res.table, "cpu_speed_set",        "void");
+  register_builtin_typed(&res.table, "next_reg_set",   "void", 2, "byte", "byte");
+  register_builtin_typed(&res.table, "next_reg_get",   "byte", 1, "byte");
+  register_builtin_typed(&res.table, "cpu_speed_set",  "void", 1, "byte");
   register_builtin(&res.table, "cpu_speed_get",        "byte");
-  register_builtin(&res.table, "mmu_set",              "void");
+  register_builtin_typed(&res.table, "mmu_set",        "void", 2, "byte", "byte");
 
   register_builtin(&res.table, "odd",                  "byte");
   register_builtin(&res.table, "even",                 "byte");
@@ -439,6 +568,8 @@ generator_t new_generator(char *filename) {
 }
 
 void kill_generator(generator_t g) {
+  // Free any remaining scope nodes (handles error-exit paths)
+  while (g.scope) pop_scope(&g);
   fclose(g.f);
   // Clean up pre_f buffer if initialized (ZXN target only)
   if (g.pre_f != NULL) {
@@ -519,6 +650,28 @@ string_view get_var_type(string_view name, name_table_t table) {
   return sv_from_cstr("");
 }
 
+// Returns 1 if the named variable is a scalar (non-array) string type
+static int is_scalar_string_var(string_view name, name_table_t table) {
+  ast_t ref = get_ref(name, table);
+  if (!ref) return 0;
+  if (ref->tag == vardef) {
+    ast_type type = ref->data.vardef.type->data.type;
+    if (type.is_array) return 0;
+    return svcmp(type.name.lexeme, SV_STRING) == 0;
+  }
+  if (ref->tag == fundef) {
+    ast_fundef fundef = ref->data.fundef;
+    for (int i = 0; i < fundef.args.length; i++) {
+      if (svcmp(fundef.args.data[i].lexeme, name) == 0) {
+        ast_type type = fundef.types.data[i]->data.type;
+        if (type.is_array) return 0;
+        return svcmp(type.name.lexeme, SV_STRING) == 0;
+      }
+    }
+  }
+  return 0;
+}
+
 // Helper: Build an array type name string_view, e.g. "int" → "int_array".
 static string_view make_array_type_sv(string_view base) {
   char *buf = allocate_compiler_persistent(base.length + 7);
@@ -544,6 +697,34 @@ string_view get_field_type(string_view base_type, string_view field_name,
       return c.type->data.type.name.lexeme;
   }
   return sv_from_cstr("");
+}
+
+// Returns 1 if the sub expression's terminal field is a scalar (non-array) string.
+static int is_sub_target_scalar_string(ast_t sub_expr, name_table_t table) {
+  if (!sub_expr || sub_expr->tag != sub) return 0;
+  ast_sub s = sub_expr->data.sub;
+  string_view current_type = infer_expr_type(s.receiver, table);
+  if (current_type.length == 0) return 0;
+  for (int i = 0; i < s.path.length; i++) {
+    current_type = get_field_type(current_type, s.path.data[i].lexeme, table);
+    if (current_type.length == 0) return 0;
+  }
+  // Look up the terminal field's full type info (including is_array)
+  string_view field_name = s.expr->data.identifier.id.lexeme;
+  ast_t tdef_ref = get_ref(current_type, table);
+  if (!tdef_ref || tdef_ref->tag != tdef) return 0;
+  ast_tdef td = tdef_ref->data.tdef;
+  for (int i = 0; i < td.constructors.length; i++) {
+    ast_t cons_ast = td.constructors.data[i];
+    if (cons_ast->tag != cons) continue;
+    ast_cons c = cons_ast->data.cons;
+    if (svcmp(c.name.lexeme, field_name) != 0) continue;
+    if (c.type && c.type->tag == type) {
+      ast_type ft = c.type->data.type;
+      return (!ft.is_array && svcmp(ft.name.lexeme, SV_STRING) == 0);
+    }
+  }
+  return 0;
 }
 
 // Helper: Infer the Rock type name of an arbitrary expression.
@@ -573,7 +754,7 @@ string_view infer_expr_type(ast_t expr, name_table_t table) {
 
   if (expr->tag == literal) {
     token_type_t t = expr->data.literal.lit.type;
-    if (t == TOK_STR_LIT) return sv_from_cstr("string");
+    if (t == TOK_STR_LIT) return SV_STRING;
     if (t == TOK_NUM_LIT) return sv_from_cstr("int");
     if (t == TOK_CHR_LIT) return sv_from_cstr("char");
     return sv_from_cstr("");
@@ -642,36 +823,7 @@ string_view infer_expr_type(ast_t expr, name_table_t table) {
 // Helper: Determine if an expression returns a string type
 // Returns 1 if expression type is "string", 0 otherwise
 int expr_returns_string(ast_t expr, name_table_t table) {
-  if (!expr) return 0;
-
-  // String literals always return string type
-  if (expr->tag == literal) {
-    return expr->data.literal.lit.type == TOK_STR_LIT;
-  }
-
-  if (expr->tag == funcall) {
-    // Function call - check return type
-    ast_funcall call = expr->data.funcall;
-    ast_t func_ref = get_ref(call.name.lexeme, table);
-
-    if (func_ref && func_ref->tag == fundef) {
-      ast_fundef fundef = func_ref->data.fundef;
-      if (fundef.ret_type) {
-        ast_type ret_type = fundef.ret_type->data.type;
-        return svcmp(ret_type.name.lexeme, sv_from_cstr("string")) == 0;
-      }
-    }
-    return 0;
-  }
-
-  if (expr->tag == identifier) {
-    // Variable - check its type
-    string_view type = get_var_type(expr->data.identifier.id.lexeme, table);
-    return svcmp(type, sv_from_cstr("string")) == 0;
-  }
-
-  // Other expression types don't return strings for our purposes
-  return 0;
+  return svcmp(infer_expr_type(expr, table), SV_STRING) == 0;
 }
 
 // Helper: Convert a Rock string expression to C string (const char*)
@@ -793,7 +945,7 @@ string_view get_array_element_type(ast_t arr, name_table_t table,
     token_t tok = arr->data.funcall.name;
     string_view func_name = tok.lexeme;
     if (svcmp(func_name, sv_from_cstr("get_args")) == 0) {
-      return sv_from_cstr("string");
+      return SV_STRING;
     } else {
       error(tok.filename, tok.line, tok.col, "Cannot infer array type from function call: " SV_Fmt,
             SV_Arg(func_name));
@@ -834,7 +986,7 @@ void generate_subscript(generator_t *g, ast_t expr) {
   string_view elem_type = get_array_element_type(sub.array, g->table, call_token);
 
   // For string arrays, use pre_f to emit setup statements
-  if (svcmp(elem_type, sv_from_cstr("string")) == 0) {
+  if (svcmp(elem_type, SV_STRING) == 0) {
     const char *tmp = allocate_string_tmp(g);
     char *arr_buf = capture_expression(g, sub.array);
     char *idx_buf = capture_expression(g, sub.index);
@@ -850,7 +1002,7 @@ void generate_subscript(generator_t *g, ast_t expr) {
       fprintf(f, "->");
       generate_expression(g, sub.field_expr);
     }
-    free((char*)tmp);
+    track_string_tmp(g, tmp);
   } else {
     // Non-string arrays: emit directly as before
     fprintf(f, SV_Fmt "_get_elem(", SV_Arg(elem_type));
@@ -893,7 +1045,7 @@ void generate_array_op(generator_t *g, ast_funcall call, array_op_t op) {
       get_array_element_type(call.args.data[0], g->table, call.name);
 
   // For string arrays with get_elem or pop_array, use pre_f for setup statements
-  if (svcmp(type_name, sv_from_cstr("string")) == 0 &&
+  if (svcmp(type_name, SV_STRING) == 0 &&
       (strcmp(op.suffix, "_get_elem") == 0 || strcmp(op.suffix, "_pop_array") == 0)) {
     const char *tmp = allocate_string_tmp(g);
     if (strcmp(op.suffix, "_get_elem") == 0) {
@@ -913,7 +1065,7 @@ void generate_array_op(generator_t *g, ast_funcall call, array_op_t op) {
       fprintf(f, "%s", tmp);
       free(arr_buf);
     }
-    free((char*)tmp);
+    track_string_tmp(g, tmp);
   } else {
     // Non-string or void-returning operations: emit directly
     fprintf(f, SV_Fmt "%s(", SV_Arg(type_name), op.suffix);
@@ -980,7 +1132,7 @@ void generate_concat(generator_t *g, ast_funcall call) {
 
 void generate_to_string(generator_t *g, ast_funcall call) {
   if (call.args.length != 1) {
-    error(call.name.filename, call.name.line, call.name.col, "to_string() requires 1 argument, got %d",
+    error(call.name.filename, call.name.line, call.name.col, "toString() requires 1 argument, got %d",
           call.args.length);
   }
   emit_to_string(g, call);
@@ -1003,8 +1155,7 @@ void generate_funcall(generator_t *g, ast_t fun) {
     generate_substring(g, funcall);
   } else if (svcmp(funcall.name.lexeme, sv_from_cstr("concat")) == 0) {
     generate_concat(g, funcall);
-  } else if (svcmp(funcall.name.lexeme, sv_from_cstr("to_string")) == 0 ||
-             svcmp(funcall.name.lexeme, sv_from_cstr("toString")) == 0) {
+  } else if (svcmp(funcall.name.lexeme, sv_from_cstr("toString")) == 0) {
     generate_to_string(g, funcall);
   } else if (svcmp(funcall.name.lexeme, sv_from_cstr("print")) == 0 &&
              funcall.args.length == 3) {
@@ -1055,15 +1206,41 @@ void generate_funcall(generator_t *g, ast_t fun) {
             "undefined function " SV_Fmt, SV_Arg(fname));
     }
 
-    // Emit plain function call (mangled if the name is overloaded)
-    emit_fun_name(f, g, funcall.name.lexeme, funcall.args.length);
-    fprintf(f, "(");
-    for (int i = 0; i < funcall.args.length; i++) {
-      if (i > 0)
-        fprintf(f, ", ");
-      generate_expression(g, funcall.args.data[i]);
+    // Tagged union constructor: Some(42) → Optional_Some(42)
+    if (get_nt_kind(fname, g->table) == NT_ENUM_VARIANT &&
+        func_ref->tag == tdef) {
+      string_view type_name = func_ref->data.tdef.name.lexeme;
+      fprintf(f, SV_Fmt "_" SV_Fmt "(", SV_Arg(type_name), SV_Arg(fname));
+      for (int i = 0; i < funcall.args.length; i++) {
+        if (i > 0)
+          fprintf(f, ", ");
+        generate_expression(g, funcall.args.data[i]);
+      }
+      fprintf(f, ")");
+    } else {
+      // Emit plain function call (mangled if the name is overloaded)
+      emit_fun_name(f, g, funcall.name.lexeme, funcall.args.length);
+      fprintf(f, "(");
+      ast_array_t param_types = func_ref->data.fundef.types;
+      for (int i = 0; i < funcall.args.length; i++) {
+        if (i > 0)
+          fprintf(f, ", ");
+        string_view cast = sv_from_cstr("");
+        if (g->auto_cast && i < param_types.length &&
+            param_types.data[i] && param_types.data[i]->tag == type) {
+          string_view ptn = param_types.data[i]->data.type.name.lexeme;
+          if (svcmp(ptn, sv_from_cstr("byte"))  == 0 ||
+              svcmp(ptn, sv_from_cstr("word"))  == 0 ||
+              svcmp(ptn, sv_from_cstr("dword")) == 0) {
+            cast = ptn;
+          }
+        }
+        if (cast.length > 0) fprintf(f, "(" SV_Fmt ")(", SV_Arg(cast));
+        generate_expression(g, funcall.args.data[i]);
+        if (cast.length > 0) fprintf(f, ")");
+      }
+      fprintf(f, ")");
     }
-    fprintf(f, ")");
   }
 }
 
@@ -1119,16 +1296,16 @@ void generate_if_statement(generator_t *g, ast_t stmt) {
 
   // Wrap non-compound bodies in braces to allow setup statements
   int wrap_body = (ifstmt.body->tag != compound);
-  if (wrap_body) fprintf(f, "{\n");
+  if (wrap_body) { fprintf(f, "{\n"); push_scope(g); }
   generate_statement(g, ifstmt.body);
-  if (wrap_body) fprintf(f, "}\n");
+  if (wrap_body) { emit_scope_cleanup(g); pop_scope(g); fprintf(f, "}\n"); }
 
   if (ifstmt.elsestmt != NULL) {
     fprintf(f, "else\n");
     int wrap_else = (ifstmt.elsestmt->tag != compound);
-    if (wrap_else) fprintf(f, "{\n");
+    if (wrap_else) { fprintf(f, "{\n"); push_scope(g); }
     generate_statement(g, ifstmt.elsestmt);
-    if (wrap_else) fprintf(f, "}\n");
+    if (wrap_else) { emit_scope_cleanup(g); pop_scope(g); fprintf(f, "}\n"); }
   }
 }
 
@@ -1180,26 +1357,6 @@ void generate_array_funcs(generator_t *g, char *type_name) {
   fprintf(f, "}\n\n");
 }
 
-void generate_sub(generator_t *g, ast_t sub_ast, int is_rec) {
-  FILE *f = g->f;
-  ast_sub sub = sub_ast->data.sub;
-  assert(sub.path.length == 1 && "TODO; implement nested subs");
-  if (is_rec) {
-    generate_sub_as_expression(g, sub_ast);
-  } else {
-    // We check if the expr is a wildcard
-    int is_wild = 0;
-    if (sub.expr->tag == literal)
-      if (sub.expr->data.literal.lit.type == TOK_WILDCARD)
-        is_wild = 1;
-    fprintf(f, "{.tag = " SV_Fmt, SV_Arg(sub.path.data[0].lexeme));
-    if (!is_wild) {
-      fprintf(f, ", .data = ");
-      generate_expression(g, sub.expr);
-    }
-    fprintf(f, "}");
-  }
-}
 
 void generate_loop(generator_t *g, ast_t loop_ast) {
   FILE *f = g->f;
@@ -1214,9 +1371,9 @@ void generate_loop(generator_t *g, ast_t loop_ast) {
 
   // Wrap non-compound bodies in braces to allow setup statements
   int wrap_body = (loop.statement->tag != compound);
-  if (wrap_body) fprintf(f, "{\n");
+  if (wrap_body) { fprintf(f, "{\n"); push_scope(g); }
   generate_statement(g, loop.statement);
-  if (wrap_body) fprintf(f, "}\n");
+  if (wrap_body) { emit_scope_cleanup(g); pop_scope(g); fprintf(f, "}\n"); }
 
   end_nt_scope(&g->table);
 }
@@ -1259,9 +1416,9 @@ void generate_while_loop(generator_t *g, ast_t loop) {
 
   // Wrap non-compound bodies in braces to allow setup statements
   int wrap_body = (while_loop.statement->tag != compound);
-  if (wrap_body) fprintf(f, "{\n");
+  if (wrap_body) { fprintf(f, "{\n"); push_scope(g); }
   generate_statement(g, while_loop.statement);
-  if (wrap_body) fprintf(f, "}\n");
+  if (wrap_body) { emit_scope_cleanup(g); pop_scope(g); fprintf(f, "}\n"); }
 }
 
 void generate_iter_loop(generator_t *g, ast_t loop) {
@@ -1315,7 +1472,10 @@ void generate_iter_loop(generator_t *g, ast_t loop) {
   }
 
   push_nt(&g->table, iter_loop.variable.lexeme, NT_VAR, loop);
+  push_scope(g);
   generate_statement(g, iter_loop.statement);
+  emit_scope_cleanup(g);
+  pop_scope(g);
 
   fprintf(f, "}\n");
   end_nt_scope(&g->table);
@@ -1329,6 +1489,7 @@ void generate_enum_tdef(generator_t *g, ast_t expr) {
     if (i > 0)
       fprintf(f, ",\n");
     fprintf(f, SV_Fmt, SV_Arg(enum_tdef.items.data[i].lexeme));
+    push_nt(&g->table, enum_tdef.items.data[i].lexeme, NT_ENUM_VARIANT, expr);
   }
   fprintf(f, "};\n");
 }
@@ -1342,7 +1503,7 @@ void generate_expression(generator_t *g, ast_t expr) {
     else {
       const char *tmp_var = allocate_string_tmp(g);
       emit_string_literal(g, tmp_var, tok);
-      free((char*)tmp_var);
+      track_string_tmp(g, tmp_var);
     }
   } else if (expr->tag == identifier) {
     string_view lexeme = expr->data.identifier.id.lexeme;
@@ -1387,8 +1548,9 @@ void generate_expression(generator_t *g, ast_t expr) {
     generate_method_call(g, expr);
 
   else {
-    printf("TAG is %d\n", expr->tag);
-    assert(0 && "TODO");
+    token_t tok = token_for_expr(expr);
+    error(tok.filename, tok.line, tok.col,
+          "unexpected AST node (tag %d) in expression context", expr->tag);
   }
 }
 
@@ -1408,6 +1570,51 @@ void generate_assignement(generator_t *g, ast_t assignment) {
     generate_expression(g, assign.expr);
     fprintf(f, ")");
   } else {
+    // For string reassignment, free the old value before overwriting
+    if (assign.target->tag == identifier &&
+        is_scalar_string_var(assign.target->data.identifier.id.lexeme, g->table)) {
+      {
+        // Capture RHS (populates pre_f with setup like __strtmp declarations)
+        char *rhs_text = capture_expression(g, assign.expr);
+        flush_pre_f(g, f);
+        fprintf(f, "__free_string(&" SV_Fmt ");\n",
+                SV_Arg(assign.target->data.identifier.id.lexeme));
+        // Deep-copy when RHS is a string identifier to prevent aliasing
+        if (assign.expr->tag == identifier) {
+          fprintf(f, "new_string(&" SV_Fmt ", %s)",
+                  SV_Arg(assign.target->data.identifier.id.lexeme), rhs_text);
+        } else {
+          fprintf(f, SV_Fmt " = %s;\n",
+                  SV_Arg(assign.target->data.identifier.id.lexeme), rhs_text);
+          // Transfer ownership from temp to user var (prevents double-free at scope exit)
+          if (strncmp(rhs_text, "__strtmp_", 9) == 0) {
+            emit_nullify_tmp(f, rhs_text);
+          }
+        }
+        free(rhs_text);
+        return;
+      }
+    }
+    // For string record field assignment (p.name := "Bob"), free old + deep-copy new
+    if (assign.target->tag == sub && is_sub_target_scalar_string(assign.target, g->table)) {
+      {
+        char *rhs_text = capture_expression(g, assign.expr);
+        char *target_text = capture_expression(g, assign.target);
+        flush_pre_f(g, f);
+        fprintf(f, "__free_string(&%s);\n", target_text);
+        if (assign.expr->tag == identifier) {
+          fprintf(f, "new_string(&%s, %s);\n", target_text, rhs_text);
+        } else {
+          fprintf(f, "%s = %s;\n", target_text, rhs_text);
+          if (strncmp(rhs_text, "__strtmp_", 9) == 0) {
+            emit_nullify_tmp(f, rhs_text);
+          }
+        }
+        free(rhs_text);
+        free(target_text);
+        return;
+      }
+    }
     generate_expression(g, assign.target);
     fprintf(f, " = ");
     generate_expression(g, assign.expr);
@@ -1418,6 +1625,16 @@ void generate_assignement(generator_t *g, ast_t assignment) {
 static int is_module_type(string_view type_name, name_table_t table) {
   ast_t ref = get_ref(type_name, table);
   return ref && ref->tag == tdef && ref->data.tdef.t == TDEF_MODULE;
+}
+
+// Returns 1 if the type is a pointer-allocated user type (module, record, or union)
+static int is_heap_allocated_type(string_view type_name, name_table_t table) {
+  if (is_builtin_typename(string_of_sv(type_name))) return 0;
+  ast_t ref = get_ref(type_name, table);
+  if (!ref) return 0;
+  // Modules (TDEF_MODULE), records (TDEF_REC), unions (TDEF_PRO)
+  if (ref->tag == tdef) return 1;
+  return 0;
 }
 
 void generate_vardef(generator_t *g, ast_t var) {
@@ -1467,6 +1684,11 @@ void generate_vardef(generator_t *g, ast_t var) {
       fprintf(f, "__internal_make_array(sizeof(" SV_Fmt "), %d);\n",
               SV_Arg(type_name), capacity);
     }
+    // Track array variable for scope cleanup (not global — those are freed at exit)
+    if (!g->in_global_scope) {
+      int is_str = (svcmp(type_name, SV_STRING) == 0);
+      track_array_var(g, vardef.name.lexeme, is_str);
+    }
   } else if (is_builtin_typename(string_of_sv(type_name))) {
     // Capture the expression reference in a temp buffer while accumulating
     // setup statements to pre_f
@@ -1487,8 +1709,28 @@ void generate_vardef(generator_t *g, ast_t var) {
 
     // Constant expression (e.g. integer literal) or inside a function: emit normally
     flush_pre_f(g, f);
-    generate_type(f, vardef.type);
-    fprintf(f, " " SV_Fmt " = %s;\n", SV_Arg(vardef.name.lexeme), expr_text);
+
+    // For string-to-string variable init, deep-copy to prevent aliasing
+    if (!g->in_global_scope && svcmp(type_name, SV_STRING) == 0
+        && !vardef.type->data.type.is_array && vardef.expr->tag == identifier) {
+      fprintf(f, "string " SV_Fmt "; new_string(&" SV_Fmt ", %s);\n",
+              SV_Arg(vardef.name.lexeme), SV_Arg(vardef.name.lexeme), expr_text);
+    } else {
+      generate_type(f, vardef.type);
+      fprintf(f, " " SV_Fmt " = %s;\n", SV_Arg(vardef.name.lexeme), expr_text);
+      // Transfer ownership from temp to user var (prevents double-free at scope exit)
+      if (!g->in_global_scope && svcmp(type_name, SV_STRING) == 0
+          && !vardef.type->data.type.is_array
+          && strncmp(expr_text, "__strtmp_", 9) == 0) {
+        emit_nullify_tmp(f, expr_text);
+      }
+    }
+
+    // Track string variables for scope-based cleanup (not arrays)
+    if (!g->in_global_scope && svcmp(type_name, SV_STRING) == 0
+        && !vardef.type->data.type.is_array) {
+      track_string_var(g, vardef.name.lexeme);
+    }
 
     free(expr_text);
   } else if (!is_builtin_typename(string_of_sv(type_name)) &&
@@ -1577,35 +1819,155 @@ void generate_vardef(generator_t *g, ast_t var) {
     fprintf(f, "));\n");
     fprintf(f, "*" SV_Fmt " = tmp_" SV_Fmt ";\n", SV_Arg(vardef.name.lexeme),
             SV_Arg(vardef.name.lexeme));
+    // Deep-copy string fields to prevent aliasing (the source may be a temp or variable
+    // that gets freed at scope exit, while the record may outlive the scope)
+    if (struct_ref && struct_ref->tag == tdef) {
+      ast_tdef td = struct_ref->data.tdef;
+      for (int j = 0; j < td.constructors.length; j++) {
+        ast_t cons_ast = td.constructors.data[j];
+        if (cons_ast->tag == cons) {
+          ast_cons c = cons_ast->data.cons;
+          if (c.type && c.type->tag == type) {
+            ast_type ft = c.type->data.type;
+            if (!ft.is_array && svcmp(ft.name.lexeme, SV_STRING) == 0) {
+              fprintf(f, "new_string(&" SV_Fmt "->" SV_Fmt ", tmp_" SV_Fmt "." SV_Fmt ");\n",
+                      SV_Arg(vardef.name.lexeme), SV_Arg(c.name.lexeme),
+                      SV_Arg(vardef.name.lexeme), SV_Arg(c.name.lexeme));
+            }
+          }
+        }
+      }
+    }
+    // Track record variable for scope cleanup
+    if (!g->in_global_scope) {
+      track_record_var(g, vardef.name.lexeme);
+    }
   } else {
+    // Capture expression to allow pre_f setup (e.g. string temps in function args)
+    char *expr_text = capture_expression(g, vardef.expr);
+    flush_pre_f(g, f);
     generate_type(f, vardef.type);
-    fprintf(f, " " SV_Fmt " = ", SV_Arg(vardef.name.lexeme));
-    // Temporary, we'll need to store the constructors in the name table, with
-    // a flag saying if it's void or not
-    if (vardef.expr->tag == sub)
-      generate_sub_as_expression(g, vardef.expr);
-    else
-      generate_expression(g, vardef.expr);
-    fprintf(f, ";\n");
+    fprintf(f, " " SV_Fmt " = %s;\n", SV_Arg(vardef.name.lexeme), expr_text);
+    free(expr_text);
+    // Track heap-allocated variable (module/union) for scope cleanup
+    if (!g->in_global_scope && is_heap_allocated_type(type_name, g->table)) {
+      track_record_var(g, vardef.name.lexeme);
+    }
   }
 }
 
-void generate_match(generator_t *g, ast_t match) {
-  (void)g;
-  (void)match;
+void generate_match(generator_t *g, ast_t match_ast) {
+  FILE *f = g->f;
+  ast_match m = match_ast->data.match;
+
+  char *expr_text = capture_expression(g, m.expr);
+  flush_pre_f(g, f);
+
+  string_view type = infer_expr_type(m.expr, g->table);
+  int is_string = svcmp(type, SV_STRING) == 0;
+
+  // For unions (TDEF_PRO), case arms compare against the discriminator key
+  // rather than the value as a whole.
+  int is_union = 0;
+  if (type.length > 0) {
+    ast_t type_ref = get_ref(type, g->table);
+    if (type_ref && type_ref->tag == tdef &&
+        type_ref->data.tdef.t == TDEF_PRO) {
+      is_union = 1;
+    }
+  }
+
+  if (type.length > 0) {
+    fprintf(f, "{ " SV_Fmt " __match_tmp = %s;\n", SV_Arg(type), expr_text);
+  } else {
+    fprintf(f, "{ int __match_tmp = %s;\n", expr_text);
+  }
+  free(expr_text);
+  push_scope(g);
+
+  // Pre-capture all case expressions and flush their setup statements
+  // before the if-else chain so string temporaries are declared in scope.
+  int n = m.cases.length;
+  char **case_texts = allocate_compiler_persistent(n * sizeof(char *));
+  int *wildcards = allocate_compiler_persistent(n * sizeof(int));
+  for (int i = 0; i < n; i++) {
+    ast_matchcase mc = m.cases.data[i]->data.matchcase;
+    wildcards[i] = (mc.expr->tag == literal &&
+                    mc.expr->data.literal.lit.type == TOK_WILDCARD);
+    if (!wildcards[i]) {
+      case_texts[i] = capture_expression(g, mc.expr);
+      flush_pre_f(g, f);
+    } else {
+      case_texts[i] = NULL;
+    }
+  }
+
+  int first = 1;
+  for (int i = 0; i < n; i++) {
+    ast_matchcase mc = m.cases.data[i]->data.matchcase;
+    if (wildcards[i]) {
+      if (!first)
+        fprintf(f, "else {\n");
+      else
+        fprintf(f, "{\n");
+    } else {
+      if (first) {
+        if (is_string)
+          fprintf(f, "if (equals(__match_tmp, %s)) {\n", case_texts[i]);
+        else if (is_union)
+          fprintf(f, "if (__match_tmp->" UNION_KEY_FIELD " == %s) {\n", case_texts[i]);
+        else
+          fprintf(f, "if (__match_tmp == %s) {\n", case_texts[i]);
+        first = 0;
+      } else {
+        if (is_string)
+          fprintf(f, "else if (equals(__match_tmp, %s)) {\n", case_texts[i]);
+        else if (is_union)
+          fprintf(f, "else if (__match_tmp->" UNION_KEY_FIELD " == %s) {\n", case_texts[i]);
+        else
+          fprintf(f, "else if (__match_tmp == %s) {\n", case_texts[i]);
+      }
+      free(case_texts[i]);
+    }
+    push_scope(g);
+    generate_statement(g, mc.body);
+    emit_scope_cleanup(g);
+    pop_scope(g);
+    fprintf(f, "}\n");
+  }
+  emit_scope_cleanup(g);
+  pop_scope(g);
+  fprintf(f, "}\n");
 }
 
 void generate_return(generator_t *g, ast_t ret_ast) {
   FILE *f = g->f;
-  // Capture return expression to collect setup statements
   if (ret_ast->data.ret.expr != NULL) {
     char *expr_text = capture_expression(g, ret_ast->data.ret.expr);
-    // Flush setup statements before emitting return
     flush_pre_f(g, f);
+
+    // Determine if we're returning a string variable or temp (to skip its cleanup)
+    string_view skip = sv_from_cstr("");
+    if (ret_ast->data.ret.expr->tag == identifier) {
+      string_view ret_name = ret_ast->data.ret.expr->data.identifier.id.lexeme;
+      if (is_scalar_string_var(ret_name, g->table))
+        skip = ret_name;
+    }
+    // If the return expression resolved to a __strtmp, skip that temp too
+    if (strncmp(expr_text, "__strtmp_", 9) == 0) {
+      skip = (string_view){.data = expr_text, .length = strlen(expr_text)};
+    }
+
+    // Emit cleanup for all enclosing scopes, skipping the returned variable
+    // Note: arrays are NOT freed on return — they may be aliased through records
+    // or returned indirectly. They are freed at block scope exit only.
+    emit_return_cleanup(g, skip);
+
     fprintf(f, "return %s;\n", expr_text);
     free(expr_text);
   } else {
-    // No expression, just return
+    // Void return — clean up all strings in all scopes (not arrays — see above)
+    emit_return_cleanup(g, sv_from_cstr(""));
     fprintf(f, "return;\n");
   }
 }
@@ -1646,7 +2008,6 @@ void generate_statement(generator_t *g, ast_t stmt) {
       generate_embed(g, stmt);
     }
   } else if (stmt->tag == match) {
-    assert(0 && "TODO");
     generate_match(g, stmt);
   } else if (stmt->tag == ret) {
     generate_return(g, stmt);
@@ -1659,9 +2020,9 @@ void generate_statement(generator_t *g, ast_t stmt) {
   } else if (stmt->tag == fundef) {
     generate_fundef(g, stmt);
 
-  } else if (stmt->tag == enum_tdef)
-    generate_enum_tdef(g, stmt);
-  else if (stmt->tag == iter_loop)
+  } else if (stmt->tag == enum_tdef) {
+    // Already emitted by generate_forward_defs(); skip.
+  } else if (stmt->tag == iter_loop)
     generate_iter_loop(g, stmt);
   else {
     // For expression statements, capture the expression (which fills pre_f with setup)
@@ -1677,11 +2038,21 @@ void generate_statement(generator_t *g, ast_t stmt) {
 void generate_compound(generator_t *g, ast_t comp) {
   FILE *f = g->f;
   fprintf(f, "{");
+  /* ADR-0003 §5.2: every block is a region. Bump save on entry, restore on
+   * exit. C scoping handles nested-block name shadowing of __bm. Early-exit
+   * paths (return, halt, future break/continue) are handled by Phase H
+   * unwinding and may skip these restores; the enclosing scope's restore
+   * catches the leak. */
+  fprintf(f, "rock_bump_mark __bm = rock_bump_save();\n");
   ast_compound compound = comp->data.compound;
   new_nt_scope(&g->table);
+  push_scope(g);
   for (int i = 0; i < compound.stmts.length; i++)
     generate_statement(g, compound.stmts.data[i]);
+  emit_scope_cleanup(g);
+  pop_scope(g);
   end_nt_scope(&g->table);
+  fprintf(f, "rock_bump_restore(__bm);\n");
   fprintf(f, "}");
 }
 
@@ -1731,6 +2102,13 @@ void generate_fundef(generator_t *g, ast_t fun) {
     fprintf(f, "\n\n");
   } else {
     fprintf(f, "int main(int argc, char **argv) {\n");
+    /* ADR-0003 §4: pool runtime init. Pool sizes are placeholders pending
+     * Phase A.1 measurement; ZXN target gets smaller defaults than host. */
+    if (g->target == TARGET_ZXN) {
+      fprintf(f, "rock_pools_init(7168, 3072);\n");
+    } else {
+      fprintf(f, "rock_pools_init(4u * 1024u * 1024u, 4u * 1024u * 1024u);\n");
+    }
     fprintf(f, "init_compiler_stack();\n");
     fprintf(f, "fill_cmd_args(argc, argv);\n");
     fprintf(f, "rock_rtl_init();\n");
@@ -1751,6 +2129,7 @@ void generate_fundef(generator_t *g, ast_t fun) {
     g->in_global_scope = saved_global;
     fprintf(f, "rock_rtl_shutdown();\n");
     fprintf(f, "kill_compiler_stack();\n");
+    fprintf(f, "rock_pools_deinit();\n");
     fprintf(f, "return 0;\n");
     fprintf(f, "}\n\n");
   }
@@ -1789,12 +2168,28 @@ void generate_forward_defs(generator_t *g, ast_t program) {
               SV_Arg(name));
       if (tdef.t == TDEF_MODULE)
         fprintf(f, SV_Fmt " " SV_Fmt "_new(void);\n", SV_Arg(name), SV_Arg(name));
+      if (tdef.t == TDEF_PRO) {
+        for (int j = 0; j < tdef.constructors.length; j++) {
+          ast_cons cons = tdef.constructors.data[j]->data.cons;
+          ast_type ctype = cons.type->data.type;
+          int is_void = svcmp(ctype.name.lexeme, sv_from_cstr("void")) == 0;
+          if (is_void) {
+            fprintf(f, SV_Fmt " " SV_Fmt "_" SV_Fmt "(void);\n",
+                    SV_Arg(name), SV_Arg(name), SV_Arg(cons.name.lexeme));
+          } else {
+            fprintf(f, SV_Fmt " " SV_Fmt "_" SV_Fmt "(",
+                    SV_Arg(name), SV_Arg(name), SV_Arg(cons.name.lexeme));
+            generate_type(f, cons.type);
+            fprintf(f, ");\n");
+          }
+        }
+      }
     }
     if (stmt->tag == enum_tdef) {
-      struct ast_tdef tdef = stmt->data.tdef;
-      string_view name = tdef.name.lexeme;
-      fprintf(f, "typedef enum " SV_Fmt " " SV_Fmt ";\n", SV_Arg(name),
-              SV_Arg(name));
+      generate_enum_tdef(g, stmt);
+      ast_enum_tdef etdef = stmt->data.enum_tdef;
+      fprintf(f, "typedef enum " SV_Fmt " " SV_Fmt ";\n",
+              SV_Arg(etdef.name.lexeme), SV_Arg(etdef.name.lexeme));
     }
     if (stmt->tag == embed) {
       ast_embed e = stmt->data.embed;
@@ -1926,17 +2321,17 @@ void generate_tdef(generator_t *g, ast_t tdef_ast) {
         fprintf(f, ",\n");
       fprintf(f, SV_Fmt, SV_Arg(cons.name.lexeme));
     }
-    fprintf(f, "\n} tag; \n");
+    fprintf(f, "\n} " UNION_KEY_FIELD "; \n");
     fprintf(f, "union {\n");
     for (int i = 0; i < tdef.constructors.length; i++) {
       ast_cons cons = tdef.constructors.data[i]->data.cons;
       ast_type type = cons.type->data.type;
       if (svcmp(type.name.lexeme, sv_from_cstr("void")) != 0) {
         generate_type(f, cons.type);
-        fprintf(f, SV_Fmt, SV_Arg(cons.name.lexeme));
+        fprintf(f, " " SV_Fmt ";\n", SV_Arg(cons.name.lexeme));
       }
     }
-    fprintf(f, "} data;");
+    fprintf(f, "} " UNION_VALUE_FIELD ";");
   } else {
     for (int i = 0; i < tdef.constructors.length; i++) {
       ast_cons cons = tdef.constructors.data[i]->data.cons;
@@ -1949,6 +2344,38 @@ void generate_tdef(generator_t *g, ast_t tdef_ast) {
   }
   fprintf(f, "};\n");
 
+  // Emit constructor functions for unions (TDEF_PRO)
+  if (tdef.t == TDEF_PRO) {
+    for (int i = 0; i < tdef.constructors.length; i++) {
+      ast_cons cons = tdef.constructors.data[i]->data.cons;
+      ast_type ctype = cons.type->data.type;
+      int is_void = svcmp(ctype.name.lexeme, sv_from_cstr("void")) == 0;
+
+      // Function signature: TypeName TypeName_VariantName(payload_type payload)
+      if (is_void) {
+        fprintf(f, SV_Fmt " " SV_Fmt "_" SV_Fmt "(void) {\n",
+                SV_Arg(name), SV_Arg(name), SV_Arg(cons.name.lexeme));
+      } else {
+        fprintf(f, SV_Fmt " " SV_Fmt "_" SV_Fmt "(",
+                SV_Arg(name), SV_Arg(name), SV_Arg(cons.name.lexeme));
+        generate_type(f, cons.type);
+        fprintf(f, " payload) {\n");
+      }
+
+      // Body: allocate, set tag, set data, return
+      fprintf(f, "  " SV_Fmt " __inst = allocate_compiler_persistent(sizeof(struct " SV_Fmt "));\n",
+              SV_Arg(name), SV_Arg(name));
+      fprintf(f, "  __inst->" UNION_KEY_FIELD " = " SV_Fmt ";\n", SV_Arg(cons.name.lexeme));
+      if (!is_void) {
+        fprintf(f, "  __inst->" UNION_VALUE_FIELD "." SV_Fmt " = payload;\n", SV_Arg(cons.name.lexeme));
+      }
+      fprintf(f, "  return __inst;\n}\n");
+
+      // Register variant as NT_ENUM_VARIANT with the tdef AST as ref
+      push_nt(&g->table, cons.name.lexeme, NT_ENUM_VARIANT, tdef_ast);
+    }
+  }
+
   return;
 }
 
@@ -1958,6 +2385,7 @@ void transpile(generator_t *g, ast_t program) {
   ast_array_t stmts = program->data.program.prog;
 
   fprintf(f, "#include \"alloc.h\"\n");
+  fprintf(f, "#include \"pools.h\"\n");
   fprintf(f, "#include \"fundefs.h\"\n");
   fprintf(f, "#include \"fundefs_internal.h\"\n");
   fprintf(f, "#include \"typedefs.h\"\n");

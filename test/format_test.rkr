@@ -1,11 +1,11 @@
 include "Assert.rkr"
 Assert a;
 
-sub fun_with_args(a1: int, names: string[]): string {
+sub fun_with_args(int a1, string[] names) returns string {
   string result :="arg count:";
-  result := concat(result, (to_string(length(names))));
+  result := concat(result, (toString(length(names))));
   result := concat(result, " value:");
-  result := concat(result,to_string(a1));
+  result := concat(result,toString(a1));
   return result;
 }
 

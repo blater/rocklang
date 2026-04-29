@@ -2,11 +2,11 @@ include "Assert.rkr"
 Assert as;
 
 record array_wrapper {
-  Items: int[],
-  Names: string[],
+  int[] Items,
+  string[] Names
 }
 
-sub make_wrapper(): array_wrapper {
+sub make_wrapper() returns array_wrapper {
   array_wrapper a := {
     Items := [],
     Names := []
@@ -23,7 +23,7 @@ sub make_wrapper(): array_wrapper {
   return a;
 }
 
-sub main(): void {
+sub main() returns void {
   array_wrapper a := make_wrapper();
 
   string direct_name := a.Names[0];

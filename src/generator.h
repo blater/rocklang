@@ -16,6 +16,27 @@ typedef enum {
   TARGET_ZXN
 } target_t;
 
+// --- Unified scope tracking (linked lists, zero pre-allocation) ---
+
+typedef enum {
+  TRACK_STRING,   // emit __free_string(&name)
+  TRACK_ARRAY,    // emit __internal_free_array(name, is_string_array)
+  TRACK_RECORD    // emit deregister_compiler_persistent(name); free(name)
+} track_kind_t;
+
+typedef struct tracked_var {
+  struct tracked_var *next;
+  string_view name;
+  track_kind_t kind;
+  int is_string_array;   // only meaningful when kind == TRACK_ARRAY
+  int owns_name;         // 1 if name.data was strdup'd and must be freed
+} tracked_var_t;
+
+typedef struct scope {
+  struct scope *prev;       // outer scope (NULL at bottom of stack)
+  tracked_var_t *vars;      // linked list head (most-recently-added first)
+} scope_t;
+
 typedef struct generator_t generator_t;
 
 typedef struct generator_t {
@@ -33,6 +54,8 @@ typedef struct generator_t {
   int deferred_global_init_count;
   int deferred_global_init_capacity;
   ast_t program;             // top-level program node, set at top of transpile()
+  scope_t *scope;             // top of scope stack (NULL when empty)
+  int auto_cast;             // when set, wrap int args with (byte)/(word)/(dword) for matching callee params
 } generator_t;
 
 generator_t new_generator(char *filename);

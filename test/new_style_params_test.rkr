@@ -1,31 +1,31 @@
 include "Assert.rkr"
 
 record Point {
-  x: int,
-  y: int,
+  int x,
+  int y
 }
 
-sub Point.distance(int dx, int dy): int {
+sub Point.distance(int dx, int dy) returns int {
   return this.x + dx + this.y + dy;
 }
 
-sub add(int x, int y): int {
+sub add(int x, int y) returns int {
   return x + y;
 }
 
-sub greet(string name): string {
+sub greet(string name) returns string {
   return concat("hello ", name);
 }
 
-sub first(string[] arr): string {
+sub first(string[] arr) returns string {
   return get(arr, 0);
 }
 
-sub mixed(int x, y: int): int {
+sub mixed(int x, int y) returns int {
   return x + y;
 }
 
-sub main(): void {
+sub main() returns void {
   Assert a;
   a.AssertEQ("int params", 7, add(3, 4));
   a.AssertEquals("string param", "hello world", greet("world"));

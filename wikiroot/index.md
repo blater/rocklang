@@ -7,26 +7,26 @@ Organised by category. Each entry: `page-name — one-line description`.
 ## Overview
 
 - [[overview]] — High-level architecture synthesis: pipeline, components, targets, memory model
-- [[ubiquitous-language]] — Canonical domain glossary (alphabetical)
+- [[glossary]] — Canonical domain glossary (alphabetical)
 - [[domain-model]] — Bounded context map with Mermaid diagram and integration table
 
 ---
 
 ## Lexer
 
-- [[lexer/lexer-overview]] — Token types, scanning algorithm, escape handling, data structures
+- [[lexer-overview]] — Token types, scanning algorithm, escape handling, data structures
 
 ---
 
 ## Parser
 
-- [[parser/parser-overview]] — Grammar rules, AST node types, precedence climbing, include splicing
+- [[parser-overview]] — Grammar rules, AST node types, precedence climbing, include splicing
 
 ---
 
 ## Generator
 
-- [[generator/generator-overview]] — AST → C emission, pre_f buffer, type-specific wrapper synthesis, builtins
+- [[generator-overview]] — AST → C emission, pre_f buffer, type-specific wrapper synthesis, builtins
 
 ---
 
@@ -91,20 +91,53 @@ Organised by category. Each entry: `page-name — one-line description`.
 - [[syntax/control-flow]] — if/then/else, while, for counter loop, for-in iterator, match, operators
 - [[syntax/functions-and-methods]] — sub, parameters, return, method syntax, name mangling
 - [[syntax/arrays]] — Declaration, append/get/set/pop/insert/length, iteration, fixed vs dynamic
-- [[syntax/strings]] — concat, substring, to_string, get_nth_char, print, char type
+- [[syntax/strings]] — concat, substring, toString, charAt, equals, print, char type
 - [[syntax/builtins-and-io]] — Output, file I/O, command-line args, conversions, peek/poke
-- [[syntax/modules-and-records]] — record, pro (product type), enum, module singleton
+- [[syntax/modules-and-records]] — record, enum (simple + tagged union), module singleton
 - [[syntax/embed]] — @embed c / @embed asm inline blocks
 
 ---
 
 ## PASTA/80 (Reference Project)
 
-- [[pasta80/pasta80-overview]] — Project overview: Pascal cross-compiler for Z80, RTL design, target platforms
-- [[pasta80/pasta80-rtl-architecture]] — 4-layer RTL architecture, Block* HAL pattern, mixed Pascal/ASM strategy
-- [[pasta80/pasta80-rtl-api]] — Full RTL API reference (~115 symbols) organised by category and platform
-- [[pasta80/pasta80-target-platforms]] — CP/M, ZX48, ZX128, Next, Agon: composition, FCB design, platform APIs
-- [[pasta80/pasta80-lessons-for-rock]] — Patterns to adopt, pitfalls to improve on, Rock RTL strategy recommendations
+- [[pasta80-overview]] — Project overview: Pascal cross-compiler for Z80, RTL design, target platforms
+- [[pasta80-rtl-architecture]] — 4-layer RTL architecture, Block* HAL pattern, mixed Pascal/ASM strategy
+- [[pasta80-rtl-api]] — Full RTL API reference (~115 symbols) organised by category and platform
+- [[pasta80-target-platforms]] — CP/M, ZX48, ZX128, Next, Agon: composition, FCB design, platform APIs
+- [[pasta80-lessons-for-rock]] — Patterns to adopt, pitfalls to improve on, Rock RTL strategy recommendations
+
+---
+
+## Rock RTL
+
+- [[rtl-overview]] — Cross-platform RTL strategy, component conventions, SDCC symbol rules
+- [[rtl-keyboard]] — Matrix scanner for simultaneous key-holds (action games; ZXN + host stub)
+- [[rtl-input]] — ASCII `inkey`/`keypress` via ROM key-scan (menus, text; ZXN + termbox2)
+- [[rtl-border]] — Second component: border colour via `<z80.h>` port I/O (C-only, no asm file)
+- [[rtl-print-at]] — Third component: positioned text via ROM RST 10h (pasta80-style; raster replacement planned)
+- [[rtl-host-caps]] — Centralised host capability + lifecycle layer (rule 11; runs once at program startup)
+- [[rtl-ink-paper]] — `ink`/`paper`/`bright`/`flash`/`inverse`/`over` via ROM channel #2 control codes
+- [[rtl-plot]] — Raster pixel `plot(x,y)` via Z80N PIXELAD/SETAE (host: termbox2 quadrant blocks)
+- [[rtl-draw]] — Raster line `draw(x0,y0,x1,y1)` with H/V fast paths + shallow/steep Bresenham
+- [[rtl-polyline]] — Connected segments `polyline(byte[] xs, byte[] ys)` — thin wrapper over `draw`
+- [[rtl-circle]] — Circle outline `circle(cx, cy, r)` via integer midpoint algorithm with 8-way symmetry
+- [[rtl-fill]] — Rectangle fill `fill_rect(x0,y0,x1,y1)` delegating rows to `draw`'s H fast path
+- [[rtl-triangle]] — Triangle outline + scanline-rasterised `filled_triangle` with 16-bit-safe edge interpolation
+- [[rtl-cls]] — `cls()` — clear screen via ROM CLS on ZXN, termbox2 on host
+- [[rtl-sound]] — `beep(freq, dur)` — square-wave tone via ROM BEEPER on ZXN, terminal bell on host
+- [[rtl-time]] — `sleep(ms)` — delay via z88dk `z80_delay_ms` on ZXN, `usleep` on host
+- [[rtl-random]] — `randomize`/`random_byte`/`random_word` — 16-bit LCG, R-register seed on ZXN
+- [[rtl-nextreg]] — `next_reg_set/get`, `cpu_speed_set/get`, `mmu_set` — ZXN Next register access
+- [[rtl-helpers]] — `odd`/`even`/`hi`/`lo`/`swap`/`upcase`/`locase`/`abs_int`/`abs_word` — scalar utilities
+- [[rtl-fmath]] — `float` type + `fsin`/`fcos`/`fsqrt`/`fabs_float`/`fpi` — float math
+
+---
+
+## Decisions
+
+- [[decisions/ADR-0001-function-overloading-arity-only]] — Arity-based overloading shipped; type-based deferred to Phase 3
+- [[decisions/ADR-0002-string-view-memory-model]] — *Superseded by ADR-0003.* Original draft of immutable string views.
+- [[decisions/ADR-0003-memory-model]] — Draft plan: named fixed-bounds pools, block-scoped regions, refcounted handles, descriptor-with-capacity strings, escape-driven implicit promotion
 
 ---
 

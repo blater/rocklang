@@ -73,8 +73,8 @@ Headers: `alloc.h`, `fundefs.h`, `fundefs_internal.h`, `typedefs.h`
 
 All Rock language features are supported on the host target:
 - Dynamic and fixed-size arrays
-- String operations (concat, substring, to_string)
-- Records, product types, enums, modules
+- String operations (concat, substring, toString, equals, charAt)
+- Records, enums, unions, modules
 - Inline C embed blocks (`@embed c … @end c`)
 - Include system
 - peek / poke (supported on host as direct memory access helpers)

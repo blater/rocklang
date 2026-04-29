@@ -120,7 +120,7 @@ uint8_t read_port(uint16_t port) {
 }
 @end c
 
-sub main(): void {
+sub main() {
   wait_10ms();
 }
 ```

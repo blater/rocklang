@@ -11,7 +11,7 @@ sub main() {
 
   if taken = 1 {
     // Unreachable: proves halt() is a valid builtin call-site.
-    halt(to_byte(42));
+    halt(42);
   }
 
   a.AssertEQ("halt linked", 0, taken);

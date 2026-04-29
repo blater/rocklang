@@ -1,0 +1,11 @@
+// ADR-0003 §9.4: a record cannot contain a field of its own type directly.
+//
+// Expected: compilation fails with diagnostic mentioning
+//   "recursive type definition 'Loop' forbidden"
+
+record Loop {
+  Loop self_field
+}
+
+sub main() {
+}

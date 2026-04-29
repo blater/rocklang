@@ -3,10 +3,10 @@ Assert as;
 
 record array_wrapper {
   int[] Items,
-  string[] Names,
+  string[] Names
 }
 
-sub wrapFn(): array_wrapper {
+sub wrapFn() returns array_wrapper {
   array_wrapper a := {
     Items := [],
     Names := []
@@ -23,7 +23,7 @@ sub wrapFn(): array_wrapper {
   return a;
 }
 
-sub main(): void {
+sub main() returns void {
   array_wrapper a := wrapFn();
 
   int[] items := a.Items;

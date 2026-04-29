@@ -66,6 +66,7 @@ for test in $FILES; do
 
   # compile it...
   EXE="$TESTS/${gName}.exe"
+  echo "$COMPILER $test $EXE 2>&1 >$TMP"
   $COMPILER $test $EXE 2>&1 >$TMP
   if [ $? -ne 0 ]; then
     # its a fail if it doesnt compile

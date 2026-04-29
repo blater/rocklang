@@ -13,17 +13,16 @@ char *string_to_cstr(string s) { return s.data; }
 void __rock_make_string(string *out, const char *data, size_t length) {
   out->data = (char *)data;
   out->length = length;
+  out->owned = 0;
 }
 
-char get_nth_char(string s, int n) {
+char charAt(string s, int n) {
   if (s.data == NULL || n >= s.length)
     return 0;
   return s.data[n];
 }
 
-int get_string_length(string s) { return s.length; }
-
-int str_eq(string s1, string s2) {
+int equals(string s1, string s2) {
   if (s1.data == NULL && s2.data == NULL)
     return 1;
   if (s1.data == NULL || s2.data == NULL)
@@ -58,6 +57,7 @@ void __concat_char(string *out, string s, char c) {
     tmp[0] = c;
     tmp[1] = 0;
     __rock_make_string(out, tmp, 1);
+    out->owned = 1;
     return;
   }
   char *tmp = allocate_compiler_persistent(s.length + 2);
@@ -65,6 +65,7 @@ void __concat_char(string *out, string s, char c) {
   tmp[s.length] = c;
   tmp[s.length + 1] = 0;
   __rock_make_string(out, tmp, s.length + 1);
+  out->owned = 1;
 }
 
 void __concat_str(string *out, string s1, string s2) {
@@ -77,6 +78,7 @@ void __concat_str(string *out, string s1, string s2) {
     memcpy(&buffer[len1], s2.data, len2);
   buffer[len1 + len2] = 0;
   __rock_make_string(out, buffer, len1 + len2);
+  out->owned = 1;
 }
 
 void new_string(string *out, string s) {
@@ -85,15 +87,12 @@ void new_string(string *out, string s) {
   for (int i = 0; i < out->length; i++)
     out->data[i] = s.data[i];
   out->data[out->length] = 0;
+  out->owned = 1;
 }
 
-void set_nth_char(string s, int n, char c) {
+void setCharAt(string s, int n, char c) {
   if (s.length > n)
     s.data[n] = c;
-  else {
-    string tmp;
-    __concat_char(&tmp, s, c);
-  }
 }
 
 // ============================================================================
@@ -132,6 +131,7 @@ void __read_file_impl(string *out, string filename) {
   buffer[length] = 0;
   fclose(f);
   __rock_make_string(out, buffer, length);
+  out->owned = 1;
 }
 
 void write_string_to_file(string s, string filename) {
@@ -164,10 +164,13 @@ void __get_abs_path_impl(string *out, string path) {
 }
 #endif
 
-void __free_string(string s) {
-  if (s.data != NULL) {
-    // In the current implementation, we don't free strings
-    // because they may point to static data or be managed by the allocator
+void __free_string(string *s) {
+  if (s->data != NULL && s->owned) {
+    deregister_compiler_persistent(s->data);
+    free(s->data);
+    s->data = NULL;
+    s->length = 0;
+    s->owned = 0;
   }
 }
 
@@ -197,6 +200,7 @@ void __substring_from(string *out, string s, int start) {
   memcpy(buf, s.data + c_start, len);
   buf[len] = 0;
   __rock_make_string(out, buf, (size_t)len);
+  out->owned = 1;
 }
 
 void __substring_range(string *out, string s, int start, int end) {
@@ -217,6 +221,7 @@ void __substring_range(string *out, string s, int start, int end) {
   memcpy(buf, s.data + c_start, len);
   buf[len] = 0;
   __rock_make_string(out, buf, (size_t)len);
+  out->owned = 1;
 }
 
 // ============================================================================
@@ -237,6 +242,7 @@ void __to_string_byte(string *out, byte b) {
   char *out_buf = allocate_compiler_persistent(len + 1);
   memcpy(out_buf, buf, len + 1);
   __rock_make_string(out, out_buf, (size_t)len);
+  out->owned = 1;
 }
 
 void __to_string_int(string *out, int n) {
@@ -245,6 +251,7 @@ void __to_string_int(string *out, int n) {
   char *out_buf = allocate_compiler_persistent(len + 1);
   memcpy(out_buf, buf, len + 1);
   __rock_make_string(out, out_buf, (size_t)len);
+  out->owned = 1;
 }
 
 int  __to_int_word(word w)  { return (int)w; }
@@ -256,6 +263,7 @@ void __to_string_word(string *out, word w) {
   char *out_buf = allocate_compiler_persistent(len + 1);
   memcpy(out_buf, buf, len + 1);
   __rock_make_string(out, out_buf, (size_t)len);
+  out->owned = 1;
 }
 
 int   __to_int_dword(dword d)  { return (int)d; }
@@ -268,6 +276,7 @@ void __to_string_dword(string *out, dword d) {
   char *out_buf = allocate_compiler_persistent(len + 1);
   memcpy(out_buf, buf, len + 1);
   __rock_make_string(out, out_buf, (size_t)len);
+  out->owned = 1;
 }
 
 void __to_string_float(string *out, float f) {
@@ -276,6 +285,7 @@ void __to_string_float(string *out, float f) {
   char *out_buf = allocate_compiler_persistent(len + 1);
   memcpy(out_buf, buf, len + 1);
   __rock_make_string(out, out_buf, (size_t)len);
+  out->owned = 1;
 }
 
 // ============================================================================

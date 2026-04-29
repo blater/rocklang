@@ -3,13 +3,13 @@ module Test;
 int TRUE := 1;
 int FALSE := 0;
 
-sub printPass(desc: string) {
+sub printPass(string desc) {
     printf("PASS: ");
     printf(desc);
     printf("\n");
 }
 
-sub printFail(desc: string, expected: string, actual: string) {
+sub printFail(string desc, string expected, string actual) {
     printf("FAIL: ");
     printf(desc);
     printf(" (expected:");
@@ -19,7 +19,7 @@ sub printFail(desc: string, expected: string, actual: string) {
     printf(")\n");
 }
 
-sub printResult(res: int, desc: string, expected: string, actual: string): int {
+sub printResult(int res, string desc, string expected, string actual) returns int {
   if (res = 1) {
     printPass(desc);
   } else {
@@ -28,13 +28,13 @@ sub printResult(res: int, desc: string, expected: string, actual: string): int {
   return res;
 }
 
-sub printIntResult(res: int, desc: string, expected: int, actual: int): int {
-  return printResult(res, desc, to_string(expected), to_string(actual));
+sub printIntResult(int res, string desc, int expected, int actual) returns int {
+  return printResult(res, desc, toString(expected), toString(actual));
 }
 
-sub Test.assertFalse(desc: string, value: int): int {
+sub Test.assertFalse(string desc, int value) returns int {
   if (value = 1) {
-    printFail(desc, "False(0)", to_string(value));
+    printFail(desc, "False(0)", toString(value));
     return 0;
   } else {
     printPass(desc);
@@ -42,9 +42,9 @@ sub Test.assertFalse(desc: string, value: int): int {
   }
 }
 
-sub Test.assertTrue(desc: string, value: int): int {
+sub Test.assertTrue(string desc, int value) returns int {
   if (value = 0) {
-    printFail(desc, "TRUE(1)", to_string(value));
+    printFail(desc, "TRUE(1)", toString(value));
     return 0;
   } else {
     printPass(desc);
@@ -52,20 +52,20 @@ sub Test.assertTrue(desc: string, value: int): int {
   }
 }
 
-sub Test.assertEQ(desc: string, expected: int, actual: int): int {
+sub Test.assertEQ(string desc, int expected, int actual) returns int {
   return printIntResult((expected = actual), desc, expected, actual);
 }
 
-sub Test.assertNEQ(desc: string, expected: int, actual: int): int {
+sub Test.assertNEQ(string desc, int expected, int actual) returns int {
   return printIntResult((expected != actual), desc, expected, actual);
 }
 
-sub Test.assertEquals(desc: string, expected: string, actual: string): int {
-  return printResult(str_eq(expected, actual)!=0, desc, expected, actual);
+sub Test.assertEquals(string desc, string expected, string actual) returns int {
+  return printResult(equals(expected, actual)!=0, desc, expected, actual);
 }
 
-sub Test.assertNotEquals(desc: string, expected: string, actual: string): int {
-  return printResult(str_eq(expected, actual)=0, desc, expected, actual);
+sub Test.assertNotEquals(string desc, string expected, string actual) returns int {
+  return printResult(equals(expected, actual)=0, desc, expected, actual);
 }
 
 sub testRkrUnit() {

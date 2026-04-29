@@ -1,16 +1,16 @@
 include "Assert.rkr"
 
 record Point {
-  x: int,
-  y: int,
+  int x,
+  int y
 }
 
 record Person {
-  name: string,
-  age: int,
+  string name,
+  int age
 }
 
-sub main(): void {
+sub main() returns void {
   Assert a;
   Point p1 := {x := 10, y := 20};
   a.AssertEQ("record init x", 10, p1.x);

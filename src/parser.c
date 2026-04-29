@@ -50,6 +50,7 @@ ast_t parse_while_loop(parser_t *p);
 ast_t parse_iter_loop(parser_t *p);
 ast_t parse_leaf(parser_t *p);
 ast_t parse_embed(parser_t *p);
+static ast_t parse_graphics_statement(parser_t *p);
 
 void print_error_prefix(parser_t p) {
   token_t tok = peek_token(p);
@@ -156,8 +157,6 @@ int is_assign(parser_t p) {
       break;
     else if (current == TOK_LOOP || current == TOK_FOR)
       break;
-    else if (current == TOK_ITER || current == TOK_FOR)
-      break;
     else if (current == TOK_EOF)  // Safety: don't loop past EOF
       break;
     current = consume_token(&p).type;
@@ -196,25 +195,9 @@ ast_t parse_cons(parser_t *p) {
 }
 
 static ast_t parse_record_field(parser_t *p) {
-  token_t name;
-  ast_t type;
-
-  // Disambiguate old style `field: Type` from type-first `Type field`.
-  parser_t la = *p;
-  expect(la, TOK_IDENTIFIER);
-  consume_token(&la);
-
-  if (peek_type(la) == TOK_COLON) {
-    expect(*p, TOK_IDENTIFIER);
-    name = consume_token(p);
-    consume_token(p);  // consume ':'
-    type = parse_type(p);
-  } else {
-    type = parse_type(p);
-    expect(*p, TOK_IDENTIFIER);
-    name = consume_token(p);
-  }
-
+  ast_t type = parse_type(p);
+  expect(*p, TOK_IDENTIFIER);
+  token_t name = consume_token(p);
   if (peek_type(*p) == TOK_COMMA)
     consume_token(p);
   return new_ast((node_t){cons, {.cons = {name, type}}});
@@ -224,8 +207,6 @@ ast_t parse_tdef(parser_t *p) {
   tdef_type_t type = -1;
   if (peek_type(*p) == TOK_REC)
     type = TDEF_REC;
-  else if (peek_type(*p) == TOK_PRO)
-    type = TDEF_PRO;
   else
     expect(*p, TOK_REC); // Error reporting purposes
   consume_token(p);
@@ -368,19 +349,68 @@ ast_t parse_embed(parser_t *p) {
   }}});
 }
 
-ast_t parse_enum(parser_t *p) {
-  expect(*p, TOK_ENUM);
+static ast_t make_void_type_ast(token_t origin) {
+  token_t void_tok = origin;
+  void_tok.lexeme = sv_from_cstr("void");
+  void_tok.type = TOK_IDENTIFIER;
+  return new_ast((node_t){type, {.type = {void_tok, 0, 0}}});
+}
+
+// Consume `KEYWORD IDENT {`, returning the IDENT. Leaves `*p` positioned at
+// the first token inside the braces.
+static token_t parse_tdef_header(parser_t *p, token_type_t keyword) {
+  expect(*p, keyword);
   consume_token(p);
   expect(*p, TOK_IDENTIFIER);
   token_t name = consume_token(p);
   expect(*p, TOK_OPEN_BRACE);
   consume_token(p);
+  return name;
+}
+
+static ast_t parse_union_variant(parser_t *p) {
+  expect(*p, TOK_IDENTIFIER);
+  parser_t la = *p;
+  consume_token(&la);
+  if (peek_type(la) == TOK_ARR_DECL) consume_token(&la);
+  else if (peek_type(la) == TOK_OPEN_BRACKET) {
+    consume_token(&la);
+    if (peek_type(la) == TOK_NUM_LIT) consume_token(&la);
+    if (peek_type(la) == TOK_CLOSE_BRACKET) consume_token(&la);
+  }
+  int is_typed = (peek_type(la) == TOK_IDENTIFIER);
+
+  token_t name;
+  ast_t payload_type;
+  if (is_typed) {
+    payload_type = parse_type(p);
+    expect(*p, TOK_IDENTIFIER);
+    name = consume_token(p);
+  } else {
+    name = consume_token(p);
+    payload_type = make_void_type_ast(name);
+  }
+  if (peek_type(*p) == TOK_COMMA) consume_token(p);
+  return new_ast((node_t){cons, {.cons = {name, payload_type}}});
+}
+
+ast_t parse_union(parser_t *p) {
+  token_t name = parse_tdef_header(p, TOK_UNION);
+  ast_array_t conss = new_ast_array();
+  while (peek_type(*p) != TOK_CLOSE_BRACE) {
+    push_ast_array(&conss, parse_union_variant(p));
+  }
+  consume_token(p);
+  return new_ast((node_t){tdef, {.tdef = {name, TDEF_PRO, conss, new_ast_array()}}});
+}
+
+ast_t parse_enum(parser_t *p) {
+  token_t name = parse_tdef_header(p, TOK_ENUM);
   token_array_t elems = new_token_array();
   while (peek_type(*p) != TOK_CLOSE_BRACE) {
     expect(*p, TOK_IDENTIFIER);
     token_array_push(&elems, consume_token(p));
-    if (peek_type(*p) != TOK_COMMA)
-      break;
+    if (peek_type(*p) != TOK_COMMA) break;
     consume_token(p);
   }
   expect(*p, TOK_CLOSE_BRACE);
@@ -397,7 +427,9 @@ ast_t parse_statement(parser_t *p) {
     return parse_if(p);
   else if (a == TOK_ENUM)
     return parse_enum(p);
-  else if (a == TOK_PRO || a == TOK_REC)
+  else if (a == TOK_UNION)
+    return parse_union(p);
+  else if (a == TOK_REC)
     return parse_tdef(p);
   else if (a == TOK_MODULE)
     return parse_module(p);
@@ -458,14 +490,14 @@ ast_t parse_statement(parser_t *p) {
     }
     return parse_loop(p);
   }
-  else if (a == TOK_ITER)
-    return parse_iter_loop(p);
   else if (a == TOK_RETURN) {
     return parse_ret(p);
   } else if (a == TOK_MATCH)
     return parse_match(p);
   else if (a == TOK_EMBED)
     return parse_embed(p);
+  else if (a == TOK_GRAPHICS)
+    return parse_graphics_statement(p);
   else if (a == TOK_OPEN_BRACE) {
     return parse_compound(p);
   } else {
@@ -477,9 +509,38 @@ ast_t parse_statement(parser_t *p) {
   return NULL;
 }
 
+static ast_t parse_graphics_statement(parser_t *p) {
+  token_t graphics_tok = consume_token(p);
+  expect(*p, TOK_IDENTIFIER);
+  token_t mode_tok = consume_token(p);
+  int is_on = svcmp(mode_tok.lexeme, sv_from_cstr("on")) == 0;
+  int is_off = svcmp(mode_tok.lexeme, sv_from_cstr("off")) == 0;
+  if (!is_on && !is_off) {
+    error(mode_tok.filename, mode_tok.line, mode_tok.col,
+          "Expected 'on' or 'off' after 'graphics'");
+  }
+  expect(*p, TOK_SEMICOL);
+  consume_token(p);
+
+  char *fn = is_on ? "graphics_on" : "graphics_off";
+  graphics_tok.type = TOK_IDENTIFIER;
+  graphics_tok.lexeme = sv_from_cstr(fn);
+  return new_ast((node_t){funcall,
+                          {.funcall = {graphics_tok, new_ast_array()}}});
+}
+
 ast_t parse_matchcase(parser_t *p) {
-  ast_t expr = parse_expression(p);
-  expect(*p, TOK_SMALL_ARROW);
+  ast_t expr;
+  if (peek_type(*p) == TOK_DEFAULT) {
+    // default: → synthesize a wildcard literal node
+    token_t def_tok = consume_token(p);
+    def_tok.type = TOK_WILDCARD;
+    expr = new_ast((node_t){literal, {.literal = {def_tok}}});
+  } else {
+    expr = parse_expression(p);
+  }
+  expect(*p, TOK_COLON);
+  consume_token(p);
   ast_t stmt = parse_statement(p);
   return new_ast(
       (node_t){matchcase, {.matchcase = {.body = stmt, .expr = expr}}});
@@ -492,8 +553,7 @@ ast_t parse_match(parser_t *p) {
   expect(*p, TOK_OPEN_BRACE);
   consume_token(p);
   ast_array_t cases = new_ast_array();
-  while (peek_type(*p) == TOK_SMALL_ARROW) {
-    consume_token(p);
+  while (peek_type(*p) != TOK_CLOSE_BRACE) {
     push_ast_array(&cases, parse_matchcase(p));
   }
   expect(*p, TOK_CLOSE_BRACE);
@@ -560,9 +620,9 @@ ast_t parse_while_loop(parser_t *p) {
 ast_t parse_iter_loop(parser_t *p) {
   // Accept both 'iter' and 'for' keywords
   token_type_t t = peek_type(*p);
-  if (t != TOK_ITER && t != TOK_FOR) {
+  if (t != TOK_FOR) {
     print_error_prefix(*p);
-    printf("Expected 'iter' or 'for' keyword\n");
+    printf("Expected 'for' keyword\n");
     exit(1);
   }
   consume_token(p);
@@ -862,25 +922,9 @@ ast_t parse_fundef(parser_t *p) {
   }
 
   while (peek_type(*p) != TOK_CLOSE_PAREN) {
-    token_t arg;
-    ast_t param_type;
-
-    // Disambiguate: old style "name: type" vs new style "type name"
-    // Peek two tokens ahead — if second is ':', it's old style.
-    parser_t la = *p;
-    consume_token(&la);  // skip first identifier
-    if (peek_type(la) == TOK_COLON) {
-      // Old style: name : type
-      expect(*p, TOK_IDENTIFIER);
-      arg = consume_token(p);
-      consume_token(p);  // consume ':'
-      param_type = parse_type(p);
-    } else {
-      // New style: type name
-      param_type = parse_type(p);
-      expect(*p, TOK_IDENTIFIER);
-      arg = consume_token(p);
-    }
+    ast_t param_type = parse_type(p);
+    expect(*p, TOK_IDENTIFIER);
+    token_t arg = consume_token(p);
 
     token_array_push(&args, arg);
     push_ast_array(&types, param_type);
@@ -893,15 +937,12 @@ ast_t parse_fundef(parser_t *p) {
   expect(*p, TOK_CLOSE_PAREN);
   consume_token(p);
 
-  // Determine return type: either explicit (: type) or void (implicit)
   ast_t ret_type;
-  if (peek_type(*p) == TOK_COLON) {
+  if (peek_type(*p) == TOK_RETURNS) {
     consume_token(p);
     ret_type = parse_type(p);
   } else {
-    // Default to void type
-    token_t void_token = {TOK_IDENTIFIER, (string_view)SV_Static("void"), 0, 0, "", NULL, NULL};
-    ret_type = new_ast((node_t){type, {.type = {void_token, 0, 0}}});
+    ret_type = make_void_type_ast(id);
   }
 
   ast_t body = parse_compound(p);

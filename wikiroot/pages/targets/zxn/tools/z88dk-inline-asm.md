@@ -114,7 +114,7 @@ Safe inline patterns that do not conflict with SDCC register tracking:
 
 ```rock
 // Flash the border — LD A, n / OUT touches only A, no conflict
-sub flash_border(): void {
+sub flash_border() {
   @embed asm
     ld  a, 7
     out (0xfe), a
@@ -122,7 +122,7 @@ sub flash_border(): void {
 }
 
 // Delay loop — uses only B internally
-sub short_delay(): void {
+sub short_delay() {
   @embed asm
     ld  b, 255
   .loop:

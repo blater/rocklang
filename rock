@@ -20,6 +20,7 @@ RT="${ROCK_ROOT}/src"
 # Core runtime — always linked on both host and ZXN targets.
 RTL_CORE_SRCS="\
   $RT/lib/alloc.c \
+  $RT/lib/pools.c \
   $RT/lib/fundefs.c \
   $RT/lib/fundefs_internal.c \
   $RT/lib/asm_interop.c \
@@ -55,8 +56,10 @@ RTL_ZXN_ASM="\
   $RT/lib/zxn/keyboard.asm"
 
 transpile() {
-  local target="$1" exe_abs="$2" source_abs="$3"
-  "$ROCK_ROOT/rockc" "${source_abs}" "${exe_abs}" "--target=${target}"
+  local target="$1" exe_abs="$2" source_abs="$3" auto_cast="$4"
+  local extra=""
+  [ -n "$auto_cast" ] && extra="--auto-cast"
+  "$ROCK_ROOT/rockc" "${source_abs}" "${exe_abs}" "--target=${target}" $extra
 }
 
 build() {
@@ -92,6 +95,7 @@ build() {
 
 set -e
 DEBUG=0
+AUTO_CAST=""
 
 sourcefile=""
 target="gcc"
@@ -107,6 +111,9 @@ while [ $# -gt 0 ]; do
       target="${1#--target=}"
       shift
       ;;
+
+    --auto-cast)
+      AUTO_CAST=1; shift;;
 
     --debug)
       DEBUG=1; shift;;
@@ -124,8 +131,8 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-[ $DEBUG -eq 1 ] && echo "target=$target exe=$exe_abs"
-transpile "$target" "$exe_abs" "$source_abs"
+[ $DEBUG -eq 1 ] && echo "target=$target exe=$exe_abs auto_cast=$AUTO_CAST"
+transpile "$target" "$exe_abs" "$source_abs" "$AUTO_CAST"
 build "$target" "$exe_abs" "$sourcefile"
 
 if [ $DEBUG -eq 0 ]; then

@@ -45,19 +45,19 @@ sub main() {
   x := fpi();
   a.AssertEQ("fpi -> 3", 3, to_int(x));
 
-  // to_string(float) round-trip.
+  // toString(float) round-trip.
   string s;
   x := 3.14;
-  s := to_string(x);
-  a.AssertEQ("to_string(3.14)", 1, str_eq(s, "3.14"));
+  s := toString(x);
+  a.AssertEQ("toString(3.14)", 1, equals(s, "3.14"));
 
   x := 0.0;
-  s := to_string(x);
-  a.AssertEQ("to_string(0.0)", 1, str_eq(s, "0"));
+  s := toString(x);
+  a.AssertEQ("toString(0.0)", 1, equals(s, "0"));
 
   x := 0.0 - 2.5;
-  s := to_string(x);
-  a.AssertEQ("to_string(-2.5)", 1, str_eq(s, "-2.5"));
+  s := toString(x);
+  a.AssertEQ("toString(-2.5)", 1, equals(s, "-2.5"));
 
   // float[] arrays.
   float[] arr;

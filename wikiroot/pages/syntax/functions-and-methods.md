@@ -3,7 +3,7 @@ title: Functions and Methods
 category: syntax
 tags: [functions, methods, sub, return, method-call, this]
 sources: []
-updated: 2026-04-11
+updated: 2026-04-27
 status: current
 ---
 
@@ -12,28 +12,28 @@ status: current
 ## Function Definition
 
 ```rock
-sub name(param1: type1, param2: type2): returnType {
+sub name(type1 param1, type2 param2) returns returnType {
   // body
   return value;
 }
 ```
 
 - `sub` introduces a function.
-- Parameters require explicit type annotations. Both `name: type` and type-first `type name` forms are accepted.
-- Return type follows `:` after the closing `)`.
-- If return type is omitted, it defaults to `void`.
+- Parameters require explicit type annotations in **type-first** form (`type name`).
+- Return type, when present, is introduced by the `returns` keyword after the closing `)`.
+- If `returns` is omitted, the return type defaults to `void`.
 - `return expr;` exits the function with a value.
 
 ```rock
-sub add(a: int, b: int): int {
+sub add(int a, int b) returns int {
   return a + b;
 }
 
-sub multiply(int a, int b): int {
+sub multiply(int a, int b) returns int {
   return a * b;
 }
 
-sub greet(name: string): void {
+sub greet(string name) {
   print(concat("Hello, ", name));
 }
 ```
@@ -51,7 +51,7 @@ Arguments are passed positionally. No named parameters.
 
 ### Instance method (on a type)
 ```rock
-sub TypeName.methodName(param: type): returnType {
+sub TypeName.methodName(type param) returns returnType {
   // 'this' refers to the receiver
 }
 ```
@@ -59,7 +59,7 @@ sub TypeName.methodName(param: type): returnType {
 `this` is an implicit first parameter of type `TypeName`. The method is callable as `instance.methodName(args)`.
 
 ```rock
-sub string.shout(): string {
+sub string.shout() returns string {
   return concat(this, "!");
 }
 
@@ -69,13 +69,13 @@ string loud := s.shout();   // "hello!"
 
 ### Array method (on a typed array)
 ```rock
-sub TypeName[].methodName(param: type): returnType {
+sub TypeName[].methodName(type param) returns returnType {
   // 'this' refers to the array
 }
 ```
 
 ```rock
-sub int[].sum(): int {
+sub int[].sum() returns int {
   int total := 0;
   for n in this {
     total := total + n;
@@ -101,7 +101,7 @@ Methods are emitted as free C functions with mangled names:
 
 | Rock | Generated C |
 |------|------------|
-| `sub Foo.bar(x: int)` | `void Foo_bar(Foo this, int x)` |
+| `sub Foo.bar(int x)` | `void Foo_bar(Foo this, int x)` |
 | `sub Foo[].baz()` | `void Foo_array_baz(Foo_array this)` |
 
 The `this` parameter is the first generated C parameter.
@@ -119,9 +119,9 @@ Direct recursion is supported. Forward declarations are not needed within a sing
 ## Example: Record Method
 
 ```rock
-record Point { x: int, y: int }
+record Point { int x, int y }
 
-sub Point.translate(dx: int, dy: int): Point {
+sub Point.translate(int dx, int dy) returns Point {
   return { x := this.x + dx, y := this.y + dy };
 }
 

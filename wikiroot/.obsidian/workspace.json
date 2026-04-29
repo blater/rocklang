@@ -13,12 +13,40 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "pages/targets/zxn/samples/zxn-copper-sample-summary.md",
+                "file": "pages/runtime-library/rtl-draw.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "zxn-copper-sample-summary"
+              "title": "rtl-draw"
+            }
+          },
+          {
+            "id": "5abdb819efe53520",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "pages/concepts/string-representation.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "string-representation"
+            }
+          },
+          {
+            "id": "3cd1e5c82aaa3e05",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "pages/syntax/modules-and-records.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "modules-and-records"
             }
           }
         ]
@@ -78,7 +106,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 353.5
+    "width": 200
   },
   "right": {
     "id": "364645e4bf79364b",
@@ -164,8 +192,21 @@
               "icon": "lucide-list",
               "title": "Outline of zxn-copper-sample-summary"
             }
+          },
+          {
+            "id": "94697ca49e9afa4b",
+            "type": "leaf",
+            "state": {
+              "type": "file-properties",
+              "state": {
+                "file": "pages/runtime-library/rtl-draw.md"
+              },
+              "icon": "lucide-info",
+              "title": "File properties for rtl-draw"
+            }
           }
-        ]
+        ],
+        "currentTab": 5
       }
     ],
     "direction": "horizontal",
@@ -185,17 +226,42 @@
   },
   "active": "f419ccdbc3878be6",
   "lastOpenFiles": [
+    "pages/decisions/ADR-0003-implementation-plan.md",
+    "pages/decisions/ADR-0003-memory-model.md",
+    "pages/decisions/ADR-0002-string-view-memory-model.md",
+    "pages/ubiquitous-language.md",
+    "pages/rtl/rtl-triangle.md",
+    "pages/rtl/rtl-print-at.md",
+    "pages/rtl/rtl-polyline.md",
+    "pages/rtl/rtl-plot.md",
+    "pages/rtl/rtl-keyboard.md",
+    "pages/rtl/rtl-overview.md",
+    "pages/rtl/rtl-host-caps.md",
+    "pages/rtl/rtl-input.md",
+    "pages/rtl/rtl-ink-paper.md",
+    "pages/rtl/rtl-fill.md",
+    "pages/rtl/rtl-circle.md",
+    "pages/rtl/rtl-draw.md",
+    "pages/rtl/rtl-border.md",
+    "pages/rtl",
+    "pages/pasta80/pasta80-target-platforms.md",
+    "pages/pasta80/pasta80-rtl-architecture.md",
+    "pages/pasta80/pasta80-rtl-api.md",
+    "pages/pasta80/pasta80-overview.md",
+    "pages/pasta80/pasta80-lessons-for-rock.md",
+    "pages/pasta80",
+    "pages/parser/parser-overview.md",
+    "pages/parser",
+    "pages/lexer/lexer-overview.md",
+    "pages/lexer",
+    "pages/generator/generator-overview.md",
+    "pages/generator",
+    "pages/domain-model.md",
+    "pages/research",
+    "raw/samples/copper/main.asm",
+    "raw/samples/im2hw/main.asm",
+    "pages/runtime-library",
     "new/keyboard_example/main.c",
-    "new/keyboard_example/keyboard.h",
-    "new/keyboard_example/keyboard.asm",
-    "new/keyboard_example",
-    "raw/pasta80/examples/mc/mcdemo.mcs",
-    "raw/pasta80/examples/mc/mc.pas",
-    "raw/pasta80/examples/mc/mc.hlp",
-    "raw/pasta80/examples/mc/mc-mod05.inc",
-    "raw/pasta80/examples/mc/mc-mod04.inc",
-    "raw/pasta80/examples/mc/mc-mod03.inc",
-    "raw/pasta80/examples/mc/mc-mod02.inc",
     "raw/pasta80/docs/images/vsc.png",
     "raw/pasta80/docs/images/tests.png",
     "raw/pasta80/docs/images/pqformula.png",
@@ -205,21 +271,6 @@
     "raw/pasta80/docs/images/mandelbrot.png",
     "raw/pasta80/docs/images/lifezx.png",
     "raw/pasta80/docs/images/life.png",
-    "raw/pasta80/docs/images/jacques.png",
-    "raw/pasta80/docs/rtl-reference.md",
-    "raw/pasta80/README.md",
-    "pages/pasta80/pasta80-lessons-for-rock.md",
-    "pages/pasta80/pasta80-target-platforms.md",
-    "pages/pasta80/pasta80-rtl-api.md",
-    "pages/pasta80/pasta80-rtl-architecture.md",
-    "pages/pasta80/pasta80-overview.md",
-    "new/pasta80/docs/rtl-reference.md",
-    "new/pasta80/README.md",
-    "pages/targets/zxn/zxn-copper.md",
-    "pages/targets/zxn/samples/zxn-im1-sample-summary.md",
-    "pages/targets/zxn/samples/zxn-interrupt-samples.md",
-    "pages/ubiquitous-language.md",
-    "pages/overview.md",
-    "index.md"
+    "raw/pasta80/docs/images/jacques.png"
   ]
 }

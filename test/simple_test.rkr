@@ -1,9 +1,14 @@
 include "Assert.rkr"
 
-sub main(): void {
+sub main() returns void {
   Assert a;
-  string x := "hello";
-  a.AssertEquals("test_simple", "hello", x);
 
-  
+  string x := "hello";
+
+  int i:=0;
+  for i := 1 to 5 {
+    print(x);
+  }
+
+  a.AssertEquals("test_simple", "hello", x);
 }

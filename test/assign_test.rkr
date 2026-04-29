@@ -2,11 +2,11 @@ include "Assert.rkr"
 Assert as;
 
 record t {
-  a:int, 
-  b:string,
+  int a,
+  string b
 }
 
-sub modify_t(arg: t) {
+sub modify_t(t arg) {
   arg.b := "hooo\n";
 }
 

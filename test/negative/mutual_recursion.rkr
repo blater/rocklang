@@ -1,0 +1,15 @@
+// ADR-0003 §9.4: mutually recursive type definitions are rejected.
+//
+// Expected: compilation fails with diagnostic mentioning
+//   "recursive type definition" for both A and B.
+
+record A {
+  B b_field
+}
+
+record B {
+  A a_field
+}
+
+sub main() {
+}
