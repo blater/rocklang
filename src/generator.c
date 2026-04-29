@@ -396,10 +396,23 @@ void emit_substring(generator_t *g, ast_funcall call) {
 }
 
 void emit_string_literal(generator_t *g, const char *tmp_var, token_t tok) {
-  // Write string setup to pre_f, emit just variable name to main output
-  fprintf(g->pre_f, "string %s; __rock_make_string(&%s, " SV_Fmt ", %d);\n",
-          tmp_var, tmp_var, SV_Arg(tok.lexeme),
-          get_literal_string_length(tok) - 1);
+  /* ADR-0003 §7.1: emit a static __string_block per literal with refcount =
+   * ROCK_RC_STATIC (0xFFFF), then point the descriptor's `backing` at it.
+   * The block is emitted as an anonymous struct so the layout matches
+   * `rock_block_header` (size, refcount) followed by the bytes. The cast
+   * to `rock_block_header *` is sound because the first 4 bytes of the
+   * struct exactly match the header. function-local `static` gives the
+   * block program lifetime even though it lives inside a function body. */
+  int byte_len = get_literal_string_length(tok) - 1;
+  int id = g->lit_counter++;
+  fprintf(g->pre_f,
+          "static struct { uint16_t size; uint16_t refcount; char data[%d]; } "
+          "__rock_lit_%d = {%d, 0xFFFFu, " SV_Fmt "};\n",
+          byte_len + 1, id, byte_len, SV_Arg(tok.lexeme));
+  fprintf(g->pre_f,
+          "string %s; __rock_make_string(&%s, __rock_lit_%d.data, %d); "
+          "%s.backing = (rock_block_header *)&__rock_lit_%d;\n",
+          tmp_var, tmp_var, id, byte_len, tmp_var, id);
   fprintf(g->f, "%s", tmp_var);
 }
 
@@ -468,6 +481,7 @@ generator_t new_generator(char *filename) {
   res.program = NULL;
   res.scope = NULL;
   res.auto_cast = 0;
+  res.lit_counter = 0;
 
   // Register C library builtin functions with their return types
   // Stdlib / I/O
