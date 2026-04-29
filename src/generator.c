@@ -75,6 +75,14 @@ static void emit_scope_cleanup(generator_t *g) {
   for (tracked_var_t *v = g->scope->vars; v; v = v->next) {
     switch (v->kind) {
     case TRACK_STRING:
+      /* ADR-0003 §7.6: drop the refcount on any longlived string backing
+       * before the legacy `owned`-driven free. Both calls are paired during
+       * the Phase E→J transition; __string_release no-ops when backing is
+       * NULL (current state for nearly every string) and the legacy
+       * __free_string handles allocate_compiler_persistent buffers. Phase
+       * J removes __free_string and the `owned` field after Phase H makes
+       * `backing` the canonical lifetime marker. */
+      fprintf(f, "__string_release(" SV_Fmt ");\n", SV_Arg(v->name));
       fprintf(f, "__free_string(&" SV_Fmt ");\n", SV_Arg(v->name));
       break;
     case TRACK_ARRAY:
@@ -112,6 +120,8 @@ static void emit_return_cleanup(generator_t *g, string_view skip_name) {
     for (tracked_var_t *v = s->vars; v; v = v->next) {
       if (v->kind != TRACK_STRING) continue;
       if (skip_name.length > 0 && svcmp(v->name, skip_name) == 0) continue;
+      /* Paired release + legacy free; see emit_scope_cleanup for rationale. */
+      fprintf(f, "__string_release(" SV_Fmt ");\n", SV_Arg(v->name));
       fprintf(f, "__free_string(&" SV_Fmt ");\n", SV_Arg(v->name));
     }
   }
@@ -1579,6 +1589,10 @@ void generate_assignement(generator_t *g, ast_t assignment) {
         // Capture RHS (populates pre_f with setup like __strtmp declarations)
         char *rhs_text = capture_expression(g, assign.expr);
         flush_pre_f(g, f);
+        /* ADR-0003 §7.6: release old backing before overwriting. Paired with
+         * legacy __free_string during the Phase E→J transition. */
+        fprintf(f, "__string_release(" SV_Fmt ");\n",
+                SV_Arg(assign.target->data.identifier.id.lexeme));
         fprintf(f, "__free_string(&" SV_Fmt ");\n",
                 SV_Arg(assign.target->data.identifier.id.lexeme));
         // Deep-copy when RHS is a string identifier to prevent aliasing
@@ -1603,6 +1617,8 @@ void generate_assignement(generator_t *g, ast_t assignment) {
         char *rhs_text = capture_expression(g, assign.expr);
         char *target_text = capture_expression(g, assign.target);
         flush_pre_f(g, f);
+        /* Paired release + legacy free; see scope-cleanup site for rationale. */
+        fprintf(f, "__string_release(%s);\n", target_text);
         fprintf(f, "__free_string(&%s);\n", target_text);
         if (assign.expr->tag == identifier) {
           fprintf(f, "new_string(&%s, %s);\n", target_text, rhs_text);
