@@ -155,23 +155,25 @@ Implementation note (2026-04-29): Phase D as scoped here is intentionally narrow
 
 ## Phase E: Retain/release runtime and generated walkers
 
-- [ ] Implement `__string_retain` and `__string_release`.
-- [ ] Implement array retain/release using universal headers.
-- [ ] Implement aggregate retain/release using universal headers.
-- [ ] Generate `__retain_T` and `__release_T` for every used record, union, and module type.
-- [ ] Generate `__release_array_T` for every used array element type.
-- [ ] Ensure bump-container dec-to-zero releases children but does not freelist-free physical storage.
-- [ ] Ensure longlived-container dec-to-zero releases children, then frees physical storage.
-- [ ] Emit retain/release on assignment, overwrite, slot write, field write, scope exit, and discarded producer temporaries.
-- [ ] Emit callee-side retain/release for every refcounted parameter.
+- [x] Implement `__string_retain` and `__string_release`. — `src/lib/fundefs.{c,h}` with three-class discriminant; C-level tests in `test/string_refcount_test.c` cover NULL backing, static sentinel, and longlived inc/dec/free-on-zero/reuse.
+- [!] Implement array retain/release using universal headers. — Blocked on Phase D completion: `__internal_dynamic_array_t` does not yet sit inside a universal block header. Needed for the `array_retain/release` pair.
+- [!] Implement aggregate retain/release using universal headers. — Blocked on Phase D completion: records/unions/modules still allocated via `allocate_compiler_persistent`, no header.
+- [!] Generate `__retain_T` and `__release_T` for every used record, union, and module type. — Blocked on aggregate header layout.
+- [!] Generate `__release_array_T` for every used array element type. — Blocked on array header layout.
+- [!] Ensure bump-container dec-to-zero releases children but does not freelist-free physical storage. — Blocked on bump-allocated containers having headers (Phase H).
+- [!] Ensure longlived-container dec-to-zero releases children, then frees physical storage. — Blocked on the same.
+- [~] Emit retain/release on assignment, overwrite, slot write, field write, scope exit, and discarded producer temporaries. — Partial: `__string_release` is paired with every `__free_string` emission (scope-cleanup, return-cleanup, inline string reassignment, inline field reassignment). Producer/borrower-driven retain emission at the new assignment sites is deferred to Phase H, when the legacy `new_string` deep-copy path is replaced and `backing` becomes the canonical lifetime marker.
+- [!] Emit callee-side retain/release for every refcounted parameter. — Blocked on Phase F: parameter release on exit must run after `__return_T` materialises the return value, otherwise returning a parameter would release its backing before the caller captures it.
 
 Phase exit checks:
 
-- [ ] `test/string_backing_refcount_test.rkr` passes.
-- [ ] `test/string_substring_retain_test.rkr` passes.
-- [ ] `test/record_with_string_release_test.rkr` passes.
-- [ ] `test/array_of_records_with_strings_test.rkr` passes.
-- [ ] `test/bump_alias_release_test.rkr` passes.
+- [!] `test/string_backing_refcount_test.rkr` passes. — Blocked on Phase H (literals with sentinel backing; `concat` allocating via rock_longlived_alloc).
+- [!] `test/string_substring_retain_test.rkr` passes. — Blocked on Phase H (substring inheriting source backing).
+- [!] `test/record_with_string_release_test.rkr` passes. — Blocked on aggregate headers + per-type walkers.
+- [!] `test/array_of_records_with_strings_test.rkr` passes. — Blocked on the same.
+- [!] `test/bump_alias_release_test.rkr` passes. — Blocked on bump containers carrying headers.
+
+Implementation note (2026-04-29): Phase E's foundational pieces (E.a runtime helpers, E.b release pairing) landed. The remaining items couple to data layout (Phase H must give literals/concat-results/etc. real `backing`) and to ABI semantics (Phase F must define return materialisation before parameter retain/release is sound). Dependency chain: Phase D-extension → Phase F → Phase H → re-open Phase E to add the new retain emissions and per-type walkers, then verify the five behavioural tests.
 
 ## Phase F: Return materialisation
 
