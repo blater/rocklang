@@ -102,8 +102,20 @@ void new_string(string *out, string s) {
 }
 
 void setCharAt(string s, int n, char c) {
-  if (s.length > n)
-    s.data[n] = c;
+  /* ADR-0003 §7.3: setCharAt requires writable backing. capacity == 0
+   * means the descriptor is a read-only view (string literal, substring
+   * of any source). Mutation through such a descriptor would corrupt
+   * shared bytes (literal in rodata; the source of a substring). */
+  if (s.capacity == 0) {
+    printf("setCharAt: cannot mutate read-only string view "
+           "(literal or substring; capacity == 0)\n");
+    exit_rocker(1);
+  }
+  if (n < 0 || (size_t)n >= s.length) {
+    printf("setCharAt: index %d out of bounds (length=%zu)\n", n, s.length);
+    exit_rocker(1);
+  }
+  s.data[n] = c;
 }
 
 // ============================================================================

@@ -1,0 +1,12 @@
+// ADR-0003 §7.3: setCharAt on a read-only view (capacity == 0) halts.
+// Literals have capacity = 0 with their static-sentinel backing, so
+// attempting to mutate them must produce a runtime diagnostic.
+//
+// This is a runtime-failure test rather than a compile-failure test.
+// run_negative.sh extension: see harness for runtime-halt support.
+
+sub main() {
+  string s := "hello";
+  setCharAt(s, 1, 'X');
+  printf("should not reach here\n");
+}
