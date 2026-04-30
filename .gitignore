@@ -27,6 +27,7 @@ RELATIVE_PATH_FIX_PLAN.md
 .bak/docs/
 .bak/examples/
 .obsidian/
+.DS_Store
 
 # Local Claude session state; committed project memory lives under .claude/projects/
 .claude/settings.local.json

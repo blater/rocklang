@@ -178,7 +178,7 @@ Implementation note (2026-04-29): Phase E's foundational pieces (E.a runtime hel
 ## Phase F: Return materialisation
 
 - [x] Implement `__return_string`. — `src/lib/fundefs.c:235`. Three-class discriminant: static pass-through, longlived inc, bump→longlived copy. C-level coverage in `test/string_refcount_test.c`.
-- [x] Generate `__return_T` for every returned record, union, and module type. — Single `__return_handle` (universal-header retain) covers all three since Phase D extension routes them through `rock_longlived_alloc`. `generate_return` detects the aggregate case via `ret_type_is_handle_aggregate` and emits `T __retval = __return_handle(<expr>);` followed by cleanup + return.
+- [x] Generate `__return_T` for every returned record, union, and module type. — Single `__return_handle` (static-inline forwarder to `__handle_retain`) covers all three since Phase D extension routes them through `rock_longlived_alloc`. `generate_return` detects the aggregate case using `is_heap_allocated_type` and emits `T __retval = __return_handle(<expr>);` followed by cleanup + return.
 - [ ] Generate `__return_array_T` for every returned array element type. — Pending; arrays still use `__internal_dynamic_array_t` without a universal header (Phase D array work).
 - [x] Ensure static returns are unchanged. — `__return_string` and `__handle_retain` both detect `ROCK_RC_STATIC` and pass through.
 - [x] Ensure longlived non-static returns retain once for the caller. — Both `__return_string` and `__return_handle` increment refcount.
@@ -189,11 +189,11 @@ Implementation note (2026-04-29): Phase E's foundational pieces (E.a runtime hel
 
 Phase exit checks:
 
-- [ ] `test/return_borrowed_string_test.rkr` passes.
-- [ ] `test/return_longlived_borrower_test.rkr` passes.
-- [ ] `test/return_fresh_producer_loop_test.rkr` passes.
-- [ ] `test/escape_return_substring_test.rkr` passes.
-- [ ] Structural grep confirms no hidden `__result_region` ABI remains.
+- [x] Returning a borrowed (parameter) string — `test/string_return_test.rkr::returnParam`.
+- [x] Returning a longlived borrower — `test/string_return_test.rkr::returnLocal` and `returnConcat`.
+- [x] Producing fresh values in a loop without leaking — `test/string_return_test.rkr` 1000-iter loop and `test/aggregate_return_test.rkr` 200-iter record loop.
+- [~] Returning a substring view — `test/substring_view_test.rkr` covers the alias-via-retain path; a dedicated escape-from-callee variant would land alongside the array escape work.
+- [x] Structural grep confirms no hidden `__result_region` ABI remains. — `grep -rn __result_region src/` returns no matches.
 
 ## Phase G: Store promotion and escape analysis
 
