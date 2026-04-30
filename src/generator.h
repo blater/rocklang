@@ -19,9 +19,9 @@ typedef enum {
 // --- Unified scope tracking (linked lists, zero pre-allocation) ---
 
 typedef enum {
-  TRACK_STRING,   // emit __free_string(&name)
+  TRACK_STRING,   // emit __string_release + __free_string
   TRACK_ARRAY,    // emit __internal_free_array(name, is_string_array)
-  TRACK_RECORD    // emit deregister_compiler_persistent(name); free(name)
+  TRACK_HANDLE    // record/union/module — emit __handle_release(name)
 } track_kind_t;
 
 typedef struct tracked_var {

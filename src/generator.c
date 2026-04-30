@@ -89,7 +89,7 @@ static void emit_scope_cleanup(generator_t *g) {
       fprintf(f, "__internal_free_array(" SV_Fmt ", %d);\n",
               SV_Arg(v->name), v->is_string_array);
       break;
-    case TRACK_RECORD:
+    case TRACK_HANDLE:
       fprintf(f, "__handle_release(" SV_Fmt ");\n", SV_Arg(v->name));
       break;
     }
@@ -127,7 +127,7 @@ static void emit_return_cleanup(generator_t *g, string_view skip_name) {
         fprintf(f, "__string_release(" SV_Fmt ");\n", SV_Arg(v->name));
         fprintf(f, "__free_string(&" SV_Fmt ");\n", SV_Arg(v->name));
         break;
-      case TRACK_RECORD:
+      case TRACK_HANDLE:
         fprintf(f, "__handle_release(" SV_Fmt ");\n", SV_Arg(v->name));
         break;
       case TRACK_ARRAY:
@@ -154,8 +154,8 @@ static void track_array_var(generator_t *g, string_view name, int is_string_arra
   track_var(g, name, TRACK_ARRAY, is_string_array, 0);
 }
 
-static void track_record_var(generator_t *g, string_view name) {
-  track_var(g, name, TRACK_RECORD, 0, 0);
+static void track_handle_var(generator_t *g, string_view name) {
+  track_var(g, name, TRACK_HANDLE, 0, 0);
 }
 
 // Helper: nullify a string temp after ownership transfer (prevents double-free)
@@ -1899,7 +1899,7 @@ void generate_vardef(generator_t *g, ast_t var) {
     }
     // Track record variable for scope cleanup
     if (!g->in_global_scope) {
-      track_record_var(g, vardef.name.lexeme);
+      track_handle_var(g, vardef.name.lexeme);
     }
   } else {
     // Capture expression to allow pre_f setup (e.g. string temps in function args)
@@ -1910,7 +1910,7 @@ void generate_vardef(generator_t *g, ast_t var) {
     free(expr_text);
     // Track heap-allocated variable (module/union) for scope cleanup
     if (!g->in_global_scope && is_heap_allocated_type(type_name, g->table)) {
-      track_record_var(g, vardef.name.lexeme);
+      track_handle_var(g, vardef.name.lexeme);
     }
   }
 }
@@ -2155,16 +2155,11 @@ void generate_compound(generator_t *g, ast_t comp) {
   fprintf(f, "}");
 }
 
-/* ADR-0003 §7.6 / §10.3: function body emission with parameter retain/release.
- *
- * Callee retains every refcounted parameter on entry (so the caller can
- * release the only outside reference to the value during the call without
- * dangling the callee's local view). Cleanup at function exit releases
- * each parameter — handled automatically by tracking each as TRACK_STRING
- * which emit_scope_cleanup picks up.
- *
- * Same structure as generate_compound but with the retain/track step
- * inserted right after push_scope. */
+/* Same structure as generate_compound, plus a parameter retain/release
+ * step after push_scope. The entry retain protects the callee's local
+ * view if the caller drops their only outside reference during the call;
+ * tracking the param hands the matching release to emit_scope_cleanup
+ * and emit_return_cleanup. */
 void generate_function_body(generator_t *g, ast_t fun) {
   FILE *f = g->f;
   ast_fundef fundef = fun->data.fundef;
@@ -2181,10 +2176,6 @@ void generate_function_body(generator_t *g, ast_t fun) {
   ast_t saved_fundef = g->current_fundef;
   g->current_fundef = fun;
 
-  /* Parameter ABI: retain every refcounted parameter on entry so the
-   * caller can drop their only outside reference during the call without
-   * dangling our local view. Tracking the param ensures emit_scope_cleanup
-   * (and emit_return_cleanup) emit the matching release on every exit. */
   for (int i = 0; i < fundef.args.length; i++) {
     if (i >= fundef.types.length) continue;
     ast_t t = fundef.types.data[i];
@@ -2197,7 +2188,7 @@ void generate_function_body(generator_t *g, ast_t fun) {
       track_string_var(g, pname);
     } else if (is_heap_allocated_type(tname, g->table)) {
       fprintf(f, "__handle_retain(" SV_Fmt ");\n", SV_Arg(pname));
-      track_record_var(g, pname);
+      track_handle_var(g, pname);
     }
   }
 
