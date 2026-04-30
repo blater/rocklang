@@ -1,9 +1,3 @@
-// ADR-0003 Phase F step 3: aggregate return materialisation.
-// Records, unions, and modules returned from a function must survive past
-// the callee's scope cleanup (which now does refcount-aware release).
-// Without __return_handle, the callee's __handle_release would free the
-// returned block before the caller's slot captures it.
-
 include "Assert.rkr"
 
 Assert as;

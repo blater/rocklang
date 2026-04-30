@@ -90,10 +90,6 @@ static void emit_scope_cleanup(generator_t *g) {
               SV_Arg(v->name), v->is_string_array);
       break;
     case TRACK_RECORD:
-      /* ADR-0003 Phase F: refcount-aware release. Retained references
-       * (e.g. from __return_handle on the way out of a returning callee)
-       * survive past this dec; otherwise this is the only owner and the
-       * dec to zero returns the block to its size-class freelist. */
       fprintf(f, "__handle_release(" SV_Fmt ");\n", SV_Arg(v->name));
       break;
     }
@@ -132,16 +128,11 @@ static void emit_return_cleanup(generator_t *g, string_view skip_name) {
         fprintf(f, "__free_string(&" SV_Fmt ");\n", SV_Arg(v->name));
         break;
       case TRACK_RECORD:
-        /* ADR-0003 §10.3: dec the local's owned reference. If the value
-         * is being returned, generate_return has already called
-         * __return_handle to bump the refcount, so this dec leaves the
-         * caller with an owned reference. */
         fprintf(f, "__handle_release(" SV_Fmt ");\n", SV_Arg(v->name));
         break;
       case TRACK_ARRAY:
-        /* Arrays: no retain/release wired yet (Phase E item is blocked
-         * on universal-header layout for arrays). Skip — current model
-         * leaves the caller responsible for cleanup, same as before. */
+        /* Arrays have no retain/release until the array universal-header
+         * phase lands; falling through would double-free aliased slots. */
         break;
       }
     }
@@ -2008,19 +1999,6 @@ void generate_match(generator_t *g, ast_t match_ast) {
   fprintf(f, "}\n");
 }
 
-/* ADR-0003 §10.3 helper: returns 1 iff `ret_type` names a record, union,
- * or module — the aggregate-handle types that allocate via
- * rock_longlived_alloc and therefore route through __return_handle. */
-static int ret_type_is_handle_aggregate(ast_t ret_type, name_table_t table) {
-  if (!ret_type || ret_type->tag != type) return 0;
-  ast_type t = ret_type->data.type;
-  if (t.is_array) return 0;
-  ast_t ref = get_ref(t.name.lexeme, table);
-  if (!ref || ref->tag != tdef) return 0;
-  /* TDEF_REC, TDEF_PRO (union), TDEF_MODULE all allocate handles. */
-  return 1;
-}
-
 void generate_return(generator_t *g, ast_t ret_ast) {
   FILE *f = g->f;
   if (ret_ast->data.ret.expr != NULL) {
@@ -2049,29 +2027,24 @@ void generate_return(generator_t *g, ast_t ret_ast) {
       return;
     }
 
-    /* Non-string returns: capture into a typed temp BEFORE cleanup so the
-     * cleanup pass can safely release parameters/locals that the return
-     * expression references. Without this, a function returning an int
-     * computed from a string parameter would have the parameter freed
-     * by emit_return_cleanup before the int expression evaluates.
-     *
-     * For aggregate handle returns (record/union/module), the temp is
-     * initialised through __return_handle, which bumps the universal-
-     * header refcount so the subsequent cleanup pass can __handle_release
-     * the original local without freeing the value the caller is about
-     * to take ownership of. */
+    /* Capture into a typed temp before cleanup so the cleanup pass can
+     * release parameters/locals the return expression still references.
+     * For aggregate handles, route the capture through __return_handle so
+     * the subsequent release leaves the caller with an owned reference. */
     if (g->current_fundef != NULL
         && g->current_fundef->data.fundef.ret_type != NULL) {
       ast_t ret_type_node = g->current_fundef->data.fundef.ret_type;
-      int is_aggregate = ret_type_is_handle_aggregate(ret_type_node, g->table);
+      int is_aggregate =
+          ret_type_node->tag == type
+          && !ret_type_node->data.type.is_array
+          && is_heap_allocated_type(ret_type_node->data.type.name.lexeme, g->table);
       char retval[32];
       snprintf(retval, sizeof(retval), "__retval_%d", g->str_tmp_counter++);
       generate_type(f, ret_type_node);
-      if (is_aggregate) {
-        fprintf(f, " %s = __return_handle(%s);\n", retval, expr_text);
-      } else {
-        fprintf(f, " %s = %s;\n", retval, expr_text);
-      }
+      fprintf(f, " %s = %s%s%s;\n", retval,
+              is_aggregate ? "__return_handle(" : "",
+              expr_text,
+              is_aggregate ? ")" : "");
       emit_return_cleanup(g, sv_from_cstr(""));
       fprintf(f, "return %s;\n", retval);
       free(expr_text);

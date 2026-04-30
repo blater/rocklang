@@ -256,11 +256,6 @@ string __return_string(string s) {
   return s;
 }
 
-/* ADR-0003 §7.6 — aggregate handle retain/release. The universal block
- * header sits immediately before the payload at
- * `(rock_block_header *)payload - 1`. Static handles (refcount =
- * ROCK_RC_STATIC) are eternal and ignored. NULL payloads are no-ops so
- * uninitialised handles don't crash these helpers. */
 void *__handle_retain(void *payload) {
   if (!payload) return payload;
   rock_block_header *h = ((rock_block_header *)payload) - 1;
@@ -284,13 +279,6 @@ void __handle_release(void *payload) {
   if (--h->refcount == 0) {
     rock_longlived_free(payload);
   }
-}
-
-/* ADR-0003 §10.3 — same body as retain. Distinct entry point so the
- * structural greps in §16.3 can tell return materialisation apart from
- * generic retain calls. */
-void *__return_handle(void *payload) {
-  return __handle_retain(payload);
 }
 
 // ============================================================================
