@@ -1,4 +1,4 @@
-.DS_Store
+
 
 # Build and generated test output
 build/
@@ -31,4 +31,7 @@ RELATIVE_PATH_FIX_PLAN.md
 # Local Claude session state; committed project memory lives under .claude/projects/
 .claude/settings.local.json
 .claude/worktrees/
+CLAUDE.md
+AGENTS.md
 
+wikiroot/.obsidian/
