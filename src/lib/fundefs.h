@@ -37,6 +37,21 @@ void __free_string(string *s);
 void __string_retain(string s);
 void __string_release(string s);
 
+/* ADR-0003 §7.6 — return materialisation.
+ *
+ * Every non-scalar function return must materialise as an owned producer
+ * in `longlived` so the caller's transfer-into-destination is sound under
+ * a single LIFO bump pointer. Three runtime cases:
+ *   - static source        return unchanged (eternal; no inc needed)
+ *   - longlived source     inc refcount; return same descriptor
+ *   - bump source (NULL)   allocate fresh longlived block; copy bytes;
+ *                          return new descriptor
+ *
+ * Caller side: the returned descriptor is treated as a producer
+ * (rc-1 owned). The caller's destination capture is a transfer
+ * (no inc, no dec). */
+string __return_string(string s);
+
 // Configurable string index base (0 = zero-indexed, 1 = one-indexed)
 extern int __rock_substr_index_base;
 void set_string_index_base(int base);

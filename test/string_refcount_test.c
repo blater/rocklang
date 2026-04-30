@@ -173,8 +173,73 @@ static void multiple_descriptors_share_backing(void) {
   rock_pools_deinit();
 }
 
+/* ---- Phase F: __return_string ---- */
+
+static void return_static_passes_through_unchanged(void) {
+  rock_pools_init(BUMP_CAP, LL_CAP);
+  static char static_block[sizeof(rock_block_header) + 8];
+  rock_block_header *h = (rock_block_header *)static_block;
+  h->size = 8;
+  h->refcount = ROCK_RC_STATIC;
+  char *payload = static_block + sizeof(rock_block_header);
+  memcpy(payload, "static!\0", 8);
+
+  string s;
+  s.data     = payload;
+  s.length   = 7;
+  s.capacity = 0;
+  s.backing  = h;
+  s.owned    = 0;
+
+  string r = __return_string(s);
+  EXPECT(r.backing == h, "static return should preserve backing pointer");
+  EXPECT(r.data == payload, "static return should preserve data pointer");
+  EXPECT(h->refcount == ROCK_RC_STATIC, "static refcount must be unchanged");
+  rock_pools_deinit();
+}
+
+static void return_longlived_increments_refcount(void) {
+  rock_pools_init(BUMP_CAP, LL_CAP);
+  string s = make_longlived_string("hello", 5);
+  EXPECT(s.backing->refcount == 1, "fresh block starts at rc=1");
+  string r = __return_string(s);
+  EXPECT(r.backing == s.backing, "longlived return must share backing");
+  EXPECT(s.backing->refcount == 2, "longlived return must inc refcount");
+  /* Two independent owners now; release one, the block survives. */
+  __string_release(s);
+  EXPECT(r.backing->refcount == 1, "after one release rc=1, block alive");
+  __string_release(r);
+  EXPECT(r.backing->refcount == ROCK_RC_FREE, "second release frees");
+  rock_pools_deinit();
+}
+
+static void return_bump_allocates_longlived_copy(void) {
+  rock_pools_init(BUMP_CAP, LL_CAP);
+  /* Synthesise a bump-backed descriptor: backing == NULL, data points at
+   * a buffer we allocate from the bump pool. */
+  char *bump_payload = (char *)rock_bump_alloc(8);
+  memcpy(bump_payload, "bump!", 5);
+
+  string s;
+  s.data     = bump_payload;
+  s.length   = 5;
+  s.capacity = 0;
+  s.backing  = NULL;
+  s.owned    = 0;
+
+  string r = __return_string(s);
+  EXPECT(r.backing != NULL, "bump return must allocate fresh backing");
+  EXPECT(r.backing->refcount == 1, "fresh longlived backing starts at rc=1");
+  EXPECT(r.length == 5, "length preserved");
+  EXPECT(r.data != bump_payload, "data must point at new longlived block");
+  EXPECT(memcmp(r.data, "bump!", 5) == 0, "bytes copied");
+  __string_release(r);
+  EXPECT(r.backing->refcount == ROCK_RC_FREE, "release frees the copy");
+  rock_pools_deinit();
+}
+
 int main(void) {
-  printf("Phase E.a — string refcount tests\n\n");
+  printf("Phase E.a / F — string refcount + return tests\n\n");
 
   RUN(retain_release_on_null_backing_is_noop);
   RUN(retain_release_on_static_sentinel_is_noop);
@@ -183,6 +248,10 @@ int main(void) {
   RUN(release_to_zero_frees_block);
   RUN(freed_block_can_be_reallocated);
   RUN(multiple_descriptors_share_backing);
+
+  RUN(return_static_passes_through_unchanged);
+  RUN(return_longlived_increments_refcount);
+  RUN(return_bump_allocates_longlived_copy);
 
   printf("\n%d/%d passed (%d failed)\n", tests_passed, tests_run, tests_failed);
   return tests_failed == 0 ? 0 : 1;

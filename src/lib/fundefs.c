@@ -229,6 +229,33 @@ void __string_release(string s) {
   }
 }
 
+/* ADR-0003 §7.6: return materialisation. See header for case breakdown.
+ * Always returns a descriptor with caller-owned ownership semantics —
+ * caller transfers (no inc, no dec) into the destination slot. */
+string __return_string(string s) {
+  if (s.backing == NULL) {
+    /* Bump source (or NULL data). Allocate a fresh longlived block and
+     * copy the bytes. The new descriptor is owned (rc=1 from
+     * rock_longlived_alloc). */
+    string out;
+    __rock_make_longlived_string(&out, s.length);
+    if (s.length > 0 && s.data != NULL) {
+      memcpy(out.data, s.data, s.length);
+    }
+    out.data[s.length] = 0;
+    return out;
+  }
+  if (s.backing->refcount == ROCK_RC_STATIC) {
+    /* Static source — eternal lifetime, no inc needed. The caller's
+     * transfer is sound because static blocks can't be released. */
+    return s;
+  }
+  /* Longlived source — inc refcount so the caller has an owned reference
+   * independent of any other live alias. */
+  s.backing->refcount++;
+  return s;
+}
+
 // ============================================================================
 // STRING SLICING
 // ============================================================================

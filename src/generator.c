@@ -1988,23 +1988,41 @@ void generate_return(generator_t *g, ast_t ret_ast) {
     char *expr_text = capture_expression(g, ret_ast->data.ret.expr);
     flush_pre_f(g, f);
 
-    // Determine if we're returning a string variable or temp (to skip its cleanup)
+    /* ADR-0003 §10.3: non-scalar returns are materialised into longlived
+     * via the per-type return helper. For strings: __return_string inc's
+     * the longlived refcount (or copies bump→longlived; or returns static
+     * unchanged). The caller transfers the producer into its destination.
+     *
+     * Sequencing: capture the wrap result BEFORE the cleanup pass. The
+     * cleanup releases every owned local in every enclosing scope; the
+     * wrap captured an extra reference to the return value's backing so
+     * the release dec's it back to its pre-call refcount, then the
+     * caller's transfer takes ownership. */
+    if (expr_returns_string(ret_ast->data.ret.expr, g->table)) {
+      char retval[32];
+      snprintf(retval, sizeof(retval), "__retval_%d", g->str_tmp_counter++);
+      fprintf(f, "string %s = __return_string(%s);\n", retval, expr_text);
+      /* No skip: release every owned local. The wrap captured the value
+       * we need so the cleanup safely dec's everything else. */
+      emit_return_cleanup(g, sv_from_cstr(""));
+      fprintf(f, "return %s;\n", retval);
+      free(expr_text);
+      return;
+    }
+
+    /* Non-string returns keep the legacy skip-and-return path. Phase F
+     * step 3 will add __return_T for record/union/module/array returns. */
     string_view skip = sv_from_cstr("");
     if (ret_ast->data.ret.expr->tag == identifier) {
       string_view ret_name = ret_ast->data.ret.expr->data.identifier.id.lexeme;
       if (is_scalar_string_var(ret_name, g->table))
         skip = ret_name;
     }
-    // If the return expression resolved to a __strtmp, skip that temp too
     if (strncmp(expr_text, "__strtmp_", 9) == 0) {
       skip = (string_view){.data = expr_text, .length = strlen(expr_text)};
     }
 
-    // Emit cleanup for all enclosing scopes, skipping the returned variable
-    // Note: arrays are NOT freed on return — they may be aliased through records
-    // or returned indirectly. They are freed at block scope exit only.
     emit_return_cleanup(g, skip);
-
     fprintf(f, "return %s;\n", expr_text);
     free(expr_text);
   } else {
