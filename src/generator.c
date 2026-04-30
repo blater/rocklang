@@ -2163,10 +2163,6 @@ void generate_compound(generator_t *g, ast_t comp) {
  * each parameter — handled automatically by tracking each as TRACK_STRING
  * which emit_scope_cleanup picks up.
  *
- * Currently only string parameters are refcount-tracked; aggregate
- * parameter ABI lands when records/unions/modules get per-type
- * __retain_T / __release_T walkers in a future phase.
- *
  * Same structure as generate_compound but with the retain/track step
  * inserted right after push_scope. */
 void generate_function_body(generator_t *g, ast_t fun) {
@@ -2185,20 +2181,24 @@ void generate_function_body(generator_t *g, ast_t fun) {
   ast_t saved_fundef = g->current_fundef;
   g->current_fundef = fun;
 
-  /* Parameter ABI: retain every refcounted parameter on entry. The
-   * track_string_var call ensures emit_scope_cleanup releases them on
-   * function exit (and on every return, via emit_return_cleanup). */
+  /* Parameter ABI: retain every refcounted parameter on entry so the
+   * caller can drop their only outside reference during the call without
+   * dangling our local view. Tracking the param ensures emit_scope_cleanup
+   * (and emit_return_cleanup) emit the matching release on every exit. */
   for (int i = 0; i < fundef.args.length; i++) {
     if (i >= fundef.types.length) continue;
     ast_t t = fundef.types.data[i];
     if (t == NULL || t->tag != type) continue;
+    if (t->data.type.is_array) continue;  /* arrays not refcount-tracked yet */
     string_view tname = t->data.type.name.lexeme;
-    if (svcmp(tname, SV_STRING) != 0) continue;
-    /* Skip array-of-string: tracked separately (not yet wired). */
-    if (t->data.type.is_array) continue;
     string_view pname = fundef.args.data[i].lexeme;
-    fprintf(f, "__string_retain(" SV_Fmt ");\n", SV_Arg(pname));
-    track_string_var(g, pname);
+    if (svcmp(tname, SV_STRING) == 0) {
+      fprintf(f, "__string_retain(" SV_Fmt ");\n", SV_Arg(pname));
+      track_string_var(g, pname);
+    } else if (is_heap_allocated_type(tname, g->table)) {
+      fprintf(f, "__handle_retain(" SV_Fmt ");\n", SV_Arg(pname));
+      track_record_var(g, pname);
+    }
   }
 
   for (int i = 0; i < compound.stmts.length; i++)

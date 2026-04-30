@@ -163,7 +163,7 @@ Implementation note (2026-04-29): Phase D as scoped here is intentionally narrow
 - [!] Ensure bump-container dec-to-zero releases children but does not freelist-free physical storage. — Blocked on bump-allocated containers having headers (Phase H).
 - [!] Ensure longlived-container dec-to-zero releases children, then frees physical storage. — Blocked on the same.
 - [~] Emit retain/release on assignment, overwrite, slot write, field write, scope exit, and discarded producer temporaries. — Partial: `__string_release` is paired with every `__free_string` emission (scope-cleanup, return-cleanup, inline string reassignment, inline field reassignment). Producer/borrower-driven retain emission at the new assignment sites is deferred to Phase H, when the legacy `new_string` deep-copy path is replaced and `backing` becomes the canonical lifetime marker.
-- [!] Emit callee-side retain/release for every refcounted parameter. — Blocked on Phase F: parameter release on exit must run after `__return_T` materialises the return value, otherwise returning a parameter would release its backing before the caller captures it.
+- [x] Emit callee-side retain/release for every refcounted parameter. — `generate_function_body` retains every string parameter (`__string_retain`) and every record/union/module parameter (`__handle_retain`) on entry, and tracks each so `emit_scope_cleanup` / `emit_return_cleanup` emit the matching release on exit. Returning a parameter is sound because `__return_handle` / `__return_string` runs before the cleanup release. Arrays still skipped (no array universal-header phase yet). `test/aggregate_return_test.rkr::identity` exercises the param-as-return path end-to-end.
 
 Phase exit checks:
 

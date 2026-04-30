@@ -22,6 +22,13 @@ sub makeErr(string msg) returns Result {
   return Err(msg);
 }
 
+// Returning a parameter exercises the entry-retain + return-handle pattern.
+// Without entry retain, the callee's release on exit would dec the only
+// outside reference to zero before the caller's slot captures the value.
+sub identity(Point p) returns Point {
+  return p;
+}
+
 sub main() {
   // Single record return
   Point p := makePoint(3, 4);
@@ -50,4 +57,12 @@ sub main() {
   }
   as.AssertEQ("loop returns last x", 200, last.x);
   as.AssertEQ("loop returns last y", 201, last.y);
+
+  // Param-as-return: caller's source must outlive the call.
+  Point original := makePoint(7, 11);
+  Point passed := identity(original);
+  as.AssertEQ("identity preserves x", 7, passed.x);
+  as.AssertEQ("identity preserves y", 11, passed.y);
+  as.AssertEQ("source still readable x", 7, original.x);
+  as.AssertEQ("source still readable y", 11, original.y);
 }
