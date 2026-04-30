@@ -2,13 +2,18 @@
 
 #include "alloc.h"
 #include "fundefs.h"
+#include "pools.h"
 #include "typedefs.h"
 #include <stdio.h>
 #include <string.h>
 
 __internal_dynamic_array_t __internal_make_array(size_t size, size_t max_capacity) {
+  /* ADR-0003 Phase D extension: array header struct lives inside a
+   * universal block header in the longlived pool. The handle returned to
+   * Rock code is a pointer to the payload (the struct itself); the
+   * rock_block_header sits at handle - sizeof(rock_block_header). */
   __internal_dynamic_array_t ptr =
-      allocate_compiler_persistent(sizeof(struct __internal_dynamic_array));
+      rock_longlived_alloc(sizeof(struct __internal_dynamic_array));
   if (size == 0) {
     printf("Could not pop elem out of dynamic array: BAD ELEMENT SIZE\n");
     return ptr;
@@ -24,7 +29,8 @@ __internal_dynamic_array_t __internal_make_array(size_t size, size_t max_capacit
     (*ptr).capacity = __INTERNAL_DYNAMIC_ARRAY_CAP;
   }
 
-  (*ptr).data = allocate_compiler_persistent(ptr->elem_size * ptr->capacity);
+  /* Element buffer is a separate longlived block. */
+  (*ptr).data = rock_longlived_alloc(ptr->elem_size * ptr->capacity);
   (*ptr).length = 0;
   return ptr;
 }
@@ -34,16 +40,17 @@ void __internal_free_array(__internal_dynamic_array_t arr, int is_string_array) 
   if (is_string_array && arr->data != NULL) {
     for (size_t i = 0; i < arr->length; i++) {
       string *s = (string *)((char *)arr->data + i * arr->elem_size);
+      /* Pair the new __string_release with the legacy __free_string per
+       * the E.b transition pattern; both no-op on the other's strings. */
+      __string_release(*s);
       __free_string(s);
     }
   }
   if (arr->data != NULL) {
-    deregister_compiler_persistent(arr->data);
-    free(arr->data);
+    rock_longlived_free(arr->data);
     arr->data = NULL;
   }
-  deregister_compiler_persistent(arr);
-  free(arr);
+  rock_longlived_free(arr);
 }
 
 // We use the compiler version of thre
@@ -71,9 +78,16 @@ int __internal_push_array(__internal_dynamic_array_t arr, void *elem) {
   if (arr->length >= arr->capacity) {
     // For dynamic arrays only, grow the capacity
     if (arr->max_capacity == 0) {
-      arr->capacity *= 2;
-      arr->data = reallocate_compiler_persistent(arr->data,
-                                                 arr->capacity * arr->elem_size);
+      /* No realloc in the longlived pool — allocate fresh, copy, free old.
+       * ADR-0003 §8.4 already mandates fixed-capacity arrays for long-lived
+       * use cases; this growth path remains for transitional bump-only
+       * arrays during Phase D extension. */
+      size_t new_capacity = arr->capacity * 2;
+      void *new_data = rock_longlived_alloc(new_capacity * arr->elem_size);
+      memcpy(new_data, arr->data, arr->length * arr->elem_size);
+      rock_longlived_free(arr->data);
+      arr->data = new_data;
+      arr->capacity = new_capacity;
     } else {
       printf("Error: Array capacity exceeded\n");
       exit_rocker(1);
@@ -159,9 +173,13 @@ void __internal_insert(__internal_dynamic_array_t arr, size_t index,
   if (arr->length >= arr->capacity) {
     // For dynamic arrays only, grow capacity
     if (arr->max_capacity == 0) {
-      arr->capacity *= 2;
-      arr->data = reallocate_compiler_persistent(arr->data,
-                                                 arr->capacity * arr->elem_size);
+      /* alloc-copy-free pattern; see __internal_push_array. */
+      size_t new_capacity = arr->capacity * 2;
+      void *new_data = rock_longlived_alloc(new_capacity * arr->elem_size);
+      memcpy(new_data, arr->data, arr->length * arr->elem_size);
+      rock_longlived_free(arr->data);
+      arr->data = new_data;
+      arr->capacity = new_capacity;
     } else {
       printf("Error: Array capacity exceeded, cannot insert\n");
       exit_rocker(1);

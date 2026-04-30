@@ -90,8 +90,10 @@ static void emit_scope_cleanup(generator_t *g) {
               SV_Arg(v->name), v->is_string_array);
       break;
     case TRACK_RECORD:
-      fprintf(f, "deregister_compiler_persistent(" SV_Fmt "); free(" SV_Fmt ");\n",
-              SV_Arg(v->name), SV_Arg(v->name));
+      /* ADR-0003 Phase D extension: aggregates live in longlived; free
+       * via the pool's freelist. The legacy deregister + free path is
+       * gone — these blocks were never on the compiler-stack tracker. */
+      fprintf(f, "rock_longlived_free(" SV_Fmt ");\n", SV_Arg(v->name));
       break;
     }
   }
@@ -1854,8 +1856,12 @@ void generate_vardef(generator_t *g, ast_t var) {
       }
       fprintf(f, ";\n");
     }
+    /* ADR-0003 Phase D extension: record body lives in the longlived
+     * pool with a universal block header preceding it. The handle (the
+     * pointer to the body) is the payload pointer returned by
+     * rock_longlived_alloc; the header is at handle - sizeof(rock_block_header). */
     generate_type(f, vardef.type);
-    fprintf(f, " " SV_Fmt " = allocate_compiler_persistent(sizeof(struct ",
+    fprintf(f, " " SV_Fmt " = rock_longlived_alloc(sizeof(struct ",
             SV_Arg(vardef.name.lexeme));
     generate_type(f, vardef.type);
     fprintf(f, "));\n");
@@ -2359,7 +2365,8 @@ void generate_tdef(generator_t *g, ast_t tdef_ast) {
     }
     // Emit allocator: TypeName TypeName_new(void) { ... }
     fprintf(f, SV_Fmt " " SV_Fmt "_new(void) {\n", SV_Arg(name), SV_Arg(name));
-    fprintf(f, "  " SV_Fmt " __inst = (" SV_Fmt ")malloc(sizeof(struct " SV_Fmt "));\n",
+    /* ADR-0003 Phase D extension: module body in the longlived pool. */
+    fprintf(f, "  " SV_Fmt " __inst = (" SV_Fmt ")rock_longlived_alloc(sizeof(struct " SV_Fmt "));\n",
             SV_Arg(name), SV_Arg(name), SV_Arg(name));
     for (int i = 0; i < tdef.module_fields.length; i++) {
       ast_vardef vd = tdef.module_fields.data[i]->data.vardef;
@@ -2423,7 +2430,8 @@ void generate_tdef(generator_t *g, ast_t tdef_ast) {
       }
 
       // Body: allocate, set tag, set data, return
-      fprintf(f, "  " SV_Fmt " __inst = allocate_compiler_persistent(sizeof(struct " SV_Fmt "));\n",
+      /* ADR-0003 Phase D extension: union body in the longlived pool. */
+      fprintf(f, "  " SV_Fmt " __inst = rock_longlived_alloc(sizeof(struct " SV_Fmt "));\n",
               SV_Arg(name), SV_Arg(name));
       fprintf(f, "  __inst->" UNION_KEY_FIELD " = " SV_Fmt ";\n", SV_Arg(cons.name.lexeme));
       if (!is_void) {
