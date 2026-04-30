@@ -1,0 +1,59 @@
+// ADR-0003 Phase F step 3: aggregate return materialisation.
+// Records, unions, and modules returned from a function must survive past
+// the callee's scope cleanup (which now does refcount-aware release).
+// Without __return_handle, the callee's __handle_release would free the
+// returned block before the caller's slot captures it.
+
+include "Assert.rkr"
+
+Assert as;
+
+record Point {
+  int x,
+  int y
+}
+
+union Result { int Ok, string Err }
+
+sub makePoint(int xv, int yv) returns Point {
+  Point p := {x := xv, y := yv};
+  return p;
+}
+
+sub makeOk(int v) returns Result {
+  return Ok(v);
+}
+
+sub makeErr(string msg) returns Result {
+  return Err(msg);
+}
+
+sub main() {
+  // Single record return
+  Point p := makePoint(3, 4);
+  as.AssertEQ("returned record x", 3, p.x);
+  as.AssertEQ("returned record y", 4, p.y);
+
+  // Union return — Ok variant
+  Result r1 := makeOk(42);
+  case r1 {
+    Ok  : as.AssertEQ("union Ok branch", 1, 1);
+    Err : as.AssertEQ("union Ok branch", 1, 0);
+  }
+
+  // Union return — Err variant carrying a string
+  Result r2 := makeErr("bad input");
+  case r2 {
+    Ok  : as.AssertEQ("union Err branch", 1, 0);
+    Err : as.AssertEQ("union Err branch", 1, 1);
+  }
+
+  // Loop test: producing fresh records repeatedly must not leak the
+  // previous iteration's allocation past the freelist's reclaim path.
+  Point last := makePoint(0, 0);
+  for i := 1 to 200 {
+    last := makePoint(i, i + 1);
+  }
+  as.AssertEQ("loop returns last x", 200, last.x);
+  as.AssertEQ("loop returns last y", 201, last.y);
+}

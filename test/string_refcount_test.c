@@ -238,8 +238,49 @@ static void return_bump_allocates_longlived_copy(void) {
   rock_pools_deinit();
 }
 
+/* ---- Aggregate handle helpers (Phase F step 3) ---- */
+
+static void handle_retain_release_on_null_is_noop(void) {
+  rock_pools_init(BUMP_CAP, LL_CAP);
+  EXPECT(__handle_retain(NULL) == NULL, "retain(NULL) returns NULL");
+  __handle_release(NULL);  /* must not crash */
+  rock_pools_deinit();
+}
+
+static void handle_retain_increments_refcount(void) {
+  rock_pools_init(BUMP_CAP, LL_CAP);
+  void *payload = rock_longlived_alloc(64);
+  rock_block_header *h = ((rock_block_header *)payload) - 1;
+  EXPECT(h->refcount == 1, "fresh handle rc=1");
+  void *p2 = __handle_retain(payload);
+  EXPECT(p2 == payload, "retain returns same pointer");
+  EXPECT(h->refcount == 2, "retain bumps rc");
+  __handle_release(payload);
+  EXPECT(h->refcount == 1, "release dec rc");
+  __handle_release(payload);
+  EXPECT(h->refcount == ROCK_RC_FREE, "second release frees");
+  rock_pools_deinit();
+}
+
+static void return_handle_increments_refcount(void) {
+  rock_pools_init(BUMP_CAP, LL_CAP);
+  void *payload = rock_longlived_alloc(32);
+  rock_block_header *h = ((rock_block_header *)payload) - 1;
+  EXPECT(h->refcount == 1, "fresh rc=1");
+  void *r = __return_handle(payload);
+  EXPECT(r == payload, "return passes the handle through");
+  EXPECT(h->refcount == 2, "return bumps rc for caller ownership");
+  /* Simulate callee-side cleanup releasing its local. */
+  __handle_release(payload);
+  EXPECT(h->refcount == 1, "after callee release, caller still owns rc=1");
+  /* Simulate caller scope exit. */
+  __handle_release(r);
+  EXPECT(h->refcount == ROCK_RC_FREE, "caller's release frees");
+  rock_pools_deinit();
+}
+
 int main(void) {
-  printf("Phase E.a / F — string refcount + return tests\n\n");
+  printf("Phase E.a / F — string + aggregate refcount tests\n\n");
 
   RUN(retain_release_on_null_backing_is_noop);
   RUN(retain_release_on_static_sentinel_is_noop);
@@ -252,6 +293,10 @@ int main(void) {
   RUN(return_static_passes_through_unchanged);
   RUN(return_longlived_increments_refcount);
   RUN(return_bump_allocates_longlived_copy);
+
+  RUN(handle_retain_release_on_null_is_noop);
+  RUN(handle_retain_increments_refcount);
+  RUN(return_handle_increments_refcount);
 
   printf("\n%d/%d passed (%d failed)\n", tests_passed, tests_run, tests_failed);
   return tests_failed == 0 ? 0 : 1;

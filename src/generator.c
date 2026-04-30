@@ -90,10 +90,11 @@ static void emit_scope_cleanup(generator_t *g) {
               SV_Arg(v->name), v->is_string_array);
       break;
     case TRACK_RECORD:
-      /* ADR-0003 Phase D extension: aggregates live in longlived; free
-       * via the pool's freelist. The legacy deregister + free path is
-       * gone — these blocks were never on the compiler-stack tracker. */
-      fprintf(f, "rock_longlived_free(" SV_Fmt ");\n", SV_Arg(v->name));
+      /* ADR-0003 Phase F: refcount-aware release. Retained references
+       * (e.g. from __return_handle on the way out of a returning callee)
+       * survive past this dec; otherwise this is the only owner and the
+       * dec to zero returns the block to its size-class freelist. */
+      fprintf(f, "__handle_release(" SV_Fmt ");\n", SV_Arg(v->name));
       break;
     }
   }
@@ -114,17 +115,35 @@ static void pop_scope(generator_t *g) {
 }
 
 // Emit cleanup for ALL enclosing scopes (used before return).
-// Only frees strings — arrays/records may be aliased or returned.
-// Skips one named string variable (the return value).
+// Releases strings (paired __string_release + legacy __free_string) and
+// records (refcount-aware __handle_release). Arrays still skipped — they
+// may be aliased or returned and have no retain/release wired yet.
+// `skip_name` suppresses release of one variable, which the caller uses
+// when the return value is already captured into a typed temp by name.
 static void emit_return_cleanup(generator_t *g, string_view skip_name) {
   FILE *f = g->f;
   for (scope_t *s = g->scope; s; s = s->prev) {
     for (tracked_var_t *v = s->vars; v; v = v->next) {
-      if (v->kind != TRACK_STRING) continue;
       if (skip_name.length > 0 && svcmp(v->name, skip_name) == 0) continue;
-      /* Paired release + legacy free; see emit_scope_cleanup for rationale. */
-      fprintf(f, "__string_release(" SV_Fmt ");\n", SV_Arg(v->name));
-      fprintf(f, "__free_string(&" SV_Fmt ");\n", SV_Arg(v->name));
+      switch (v->kind) {
+      case TRACK_STRING:
+        /* Paired release + legacy free; see emit_scope_cleanup for rationale. */
+        fprintf(f, "__string_release(" SV_Fmt ");\n", SV_Arg(v->name));
+        fprintf(f, "__free_string(&" SV_Fmt ");\n", SV_Arg(v->name));
+        break;
+      case TRACK_RECORD:
+        /* ADR-0003 §10.3: dec the local's owned reference. If the value
+         * is being returned, generate_return has already called
+         * __return_handle to bump the refcount, so this dec leaves the
+         * caller with an owned reference. */
+        fprintf(f, "__handle_release(" SV_Fmt ");\n", SV_Arg(v->name));
+        break;
+      case TRACK_ARRAY:
+        /* Arrays: no retain/release wired yet (Phase E item is blocked
+         * on universal-header layout for arrays). Skip — current model
+         * leaves the caller responsible for cleanup, same as before. */
+        break;
+      }
     }
   }
 }
@@ -1989,6 +2008,19 @@ void generate_match(generator_t *g, ast_t match_ast) {
   fprintf(f, "}\n");
 }
 
+/* ADR-0003 §10.3 helper: returns 1 iff `ret_type` names a record, union,
+ * or module — the aggregate-handle types that allocate via
+ * rock_longlived_alloc and therefore route through __return_handle. */
+static int ret_type_is_handle_aggregate(ast_t ret_type, name_table_t table) {
+  if (!ret_type || ret_type->tag != type) return 0;
+  ast_type t = ret_type->data.type;
+  if (t.is_array) return 0;
+  ast_t ref = get_ref(t.name.lexeme, table);
+  if (!ref || ref->tag != tdef) return 0;
+  /* TDEF_REC, TDEF_PRO (union), TDEF_MODULE all allocate handles. */
+  return 1;
+}
+
 void generate_return(generator_t *g, ast_t ret_ast) {
   FILE *f = g->f;
   if (ret_ast->data.ret.expr != NULL) {
@@ -2023,23 +2055,23 @@ void generate_return(generator_t *g, ast_t ret_ast) {
      * computed from a string parameter would have the parameter freed
      * by emit_return_cleanup before the int expression evaluates.
      *
-     * Phase F step 3 will add __return_T for record/union/module/array
-     * returns; non-scalar non-string returns currently keep the legacy
-     * "skip the return value" path.
-     *
-     * For scalar returns we still want a typed local so the return
-     * expression is fully evaluated before any cleanup runs. */
-    /* For non-string returns: capture into a typed temp before cleanup so
-     * cleanup can release parameters/locals safely. The temp's C type
-     * comes from the enclosing function's declared return type, which
-     * generate_function_body sets on g->current_fundef. */
+     * For aggregate handle returns (record/union/module), the temp is
+     * initialised through __return_handle, which bumps the universal-
+     * header refcount so the subsequent cleanup pass can __handle_release
+     * the original local without freeing the value the caller is about
+     * to take ownership of. */
     if (g->current_fundef != NULL
         && g->current_fundef->data.fundef.ret_type != NULL) {
       ast_t ret_type_node = g->current_fundef->data.fundef.ret_type;
+      int is_aggregate = ret_type_is_handle_aggregate(ret_type_node, g->table);
       char retval[32];
       snprintf(retval, sizeof(retval), "__retval_%d", g->str_tmp_counter++);
       generate_type(f, ret_type_node);
-      fprintf(f, " %s = %s;\n", retval, expr_text);
+      if (is_aggregate) {
+        fprintf(f, " %s = __return_handle(%s);\n", retval, expr_text);
+      } else {
+        fprintf(f, " %s = %s;\n", retval, expr_text);
+      }
       emit_return_cleanup(g, sv_from_cstr(""));
       fprintf(f, "return %s;\n", retval);
       free(expr_text);

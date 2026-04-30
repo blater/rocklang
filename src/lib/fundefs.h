@@ -52,6 +52,24 @@ void __string_release(string s);
  * (no inc, no dec). */
 string __return_string(string s);
 
+/* ADR-0003 §7.6 — refcount on aggregate handles (records, unions, modules).
+ *
+ * All aggregate handles point at a payload preceded by a universal block
+ * header. Static aggregates (refcount == ROCK_RC_STATIC) are eternal and
+ * ignored. Otherwise:
+ *   - retain bumps refcount; returns the same payload pointer.
+ *   - release decrements refcount; frees on zero via rock_longlived_free.
+ *
+ * Both helpers tolerate NULL payloads as no-ops. */
+void *__handle_retain(void *payload);
+void  __handle_release(void *payload);
+
+/* ADR-0003 §10.3 — return materialisation for aggregate handles. Bumps
+ * the universal-header refcount so the caller has an owned reference
+ * independent of the callee's about-to-be-released local. NULL payloads
+ * pass through unchanged. */
+void *__return_handle(void *payload);
+
 // Configurable string index base (0 = zero-indexed, 1 = one-indexed)
 extern int __rock_substr_index_base;
 void set_string_index_base(int base);

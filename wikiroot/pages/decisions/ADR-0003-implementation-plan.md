@@ -157,8 +157,8 @@ Implementation note (2026-04-29): Phase D as scoped here is intentionally narrow
 
 - [x] Implement `__string_retain` and `__string_release`. — `src/lib/fundefs.{c,h}` with three-class discriminant; C-level tests in `test/string_refcount_test.c` cover NULL backing, static sentinel, and longlived inc/dec/free-on-zero/reuse.
 - [!] Implement array retain/release using universal headers. — Blocked on Phase D completion: `__internal_dynamic_array_t` does not yet sit inside a universal block header. Needed for the `array_retain/release` pair.
-- [!] Implement aggregate retain/release using universal headers. — Blocked on Phase D completion: records/unions/modules still allocated via `allocate_compiler_persistent`, no header.
-- [!] Generate `__retain_T` and `__release_T` for every used record, union, and module type. — Blocked on aggregate header layout.
+- [x] Implement aggregate retain/release using universal headers. — `__handle_retain` / `__handle_release` in `src/lib/fundefs.{c,h}`; Phase D extension already moved record/union/module allocations onto `rock_longlived_alloc`, so the universal header is in place. C-level tests in `test/string_refcount_test.c` cover NULL, retain inc, release-to-zero free.
+- [~] Generate `__retain_T` and `__release_T` for every used record, union, and module type. — All three aggregate kinds use the same header layout, so a single pair (`__handle_retain` / `__handle_release`) serves them all instead of per-type emission. Generator emits `__handle_release` at scope cleanup for every TRACK_RECORD slot. Per-type retain at assignment/overwrite sites still pending (same item as the string equivalent below).
 - [!] Generate `__release_array_T` for every used array element type. — Blocked on array header layout.
 - [!] Ensure bump-container dec-to-zero releases children but does not freelist-free physical storage. — Blocked on bump-allocated containers having headers (Phase H).
 - [!] Ensure longlived-container dec-to-zero releases children, then frees physical storage. — Blocked on the same.
@@ -177,15 +177,15 @@ Implementation note (2026-04-29): Phase E's foundational pieces (E.a runtime hel
 
 ## Phase F: Return materialisation
 
-- [ ] Implement `__return_string`.
-- [ ] Generate `__return_T` for every returned record, union, and module type.
-- [ ] Generate `__return_array_T` for every returned array element type.
-- [ ] Ensure static returns are unchanged.
-- [ ] Ensure longlived non-static returns retain once for the caller.
-- [ ] Ensure bump-backed returns allocate-copy into `longlived`.
-- [ ] Ensure callee unwind releases the original temp/local/parameter references after `__return_T`.
-- [ ] Ensure caller capture treats every non-scalar function result as a producer transfer.
-- [ ] Remove any hidden caller `__result_region` function ABI code path.
+- [x] Implement `__return_string`. — `src/lib/fundefs.c:235`. Three-class discriminant: static pass-through, longlived inc, bump→longlived copy. C-level coverage in `test/string_refcount_test.c`.
+- [x] Generate `__return_T` for every returned record, union, and module type. — Single `__return_handle` (universal-header retain) covers all three since Phase D extension routes them through `rock_longlived_alloc`. `generate_return` detects the aggregate case via `ret_type_is_handle_aggregate` and emits `T __retval = __return_handle(<expr>);` followed by cleanup + return.
+- [ ] Generate `__return_array_T` for every returned array element type. — Pending; arrays still use `__internal_dynamic_array_t` without a universal header (Phase D array work).
+- [x] Ensure static returns are unchanged. — `__return_string` and `__handle_retain` both detect `ROCK_RC_STATIC` and pass through.
+- [x] Ensure longlived non-static returns retain once for the caller. — Both `__return_string` and `__return_handle` increment refcount.
+- [x] Ensure bump-backed returns allocate-copy into `longlived`. — `__return_string` does this for `backing == NULL`. Aggregates have no bump path yet (always allocated longlived).
+- [x] Ensure callee unwind releases the original temp/local/parameter references after `__return_T`. — `emit_return_cleanup` runs after the `__retval` capture and now releases TRACK_STRING and TRACK_RECORD (arrays still skipped, blocked on array-header phase).
+- [x] Ensure caller capture treats every non-scalar function result as a producer transfer. — Caller's `T x := f()` is a plain handle/descriptor copy; no extra retain — caller now owns the rc=1 reference produced by the callee's `__return_T`.
+- [x] Remove any hidden caller `__result_region` function ABI code path. — `grep -rn __result_region src/` returns no live hits; the symbol never reached implementation.
 
 Phase exit checks:
 
