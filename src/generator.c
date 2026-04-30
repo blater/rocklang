@@ -484,6 +484,7 @@ generator_t new_generator(char *filename) {
   res.scope = NULL;
   res.auto_cast = 0;
   res.lit_counter = 0;
+  res.current_fundef = NULL;
 
   // Register C library builtin functions with their return types
   // Stdlib / I/O
@@ -2016,8 +2017,35 @@ void generate_return(generator_t *g, ast_t ret_ast) {
       return;
     }
 
-    /* Non-string returns keep the legacy skip-and-return path. Phase F
-     * step 3 will add __return_T for record/union/module/array returns. */
+    /* Non-string returns: capture into a typed temp BEFORE cleanup so the
+     * cleanup pass can safely release parameters/locals that the return
+     * expression references. Without this, a function returning an int
+     * computed from a string parameter would have the parameter freed
+     * by emit_return_cleanup before the int expression evaluates.
+     *
+     * Phase F step 3 will add __return_T for record/union/module/array
+     * returns; non-scalar non-string returns currently keep the legacy
+     * "skip the return value" path.
+     *
+     * For scalar returns we still want a typed local so the return
+     * expression is fully evaluated before any cleanup runs. */
+    /* For non-string returns: capture into a typed temp before cleanup so
+     * cleanup can release parameters/locals safely. The temp's C type
+     * comes from the enclosing function's declared return type, which
+     * generate_function_body sets on g->current_fundef. */
+    if (g->current_fundef != NULL
+        && g->current_fundef->data.fundef.ret_type != NULL) {
+      ast_t ret_type_node = g->current_fundef->data.fundef.ret_type;
+      char retval[32];
+      snprintf(retval, sizeof(retval), "__retval_%d", g->str_tmp_counter++);
+      generate_type(f, ret_type_node);
+      fprintf(f, " %s = %s;\n", retval, expr_text);
+      emit_return_cleanup(g, sv_from_cstr(""));
+      fprintf(f, "return %s;\n", retval);
+      free(expr_text);
+      return;
+    }
+
     string_view skip = sv_from_cstr("");
     if (ret_ast->data.ret.expr->tag == identifier) {
       string_view ret_name = ret_ast->data.ret.expr->data.identifier.id.lexeme;
@@ -2122,6 +2150,63 @@ void generate_compound(generator_t *g, ast_t comp) {
   fprintf(f, "}");
 }
 
+/* ADR-0003 §7.6 / §10.3: function body emission with parameter retain/release.
+ *
+ * Callee retains every refcounted parameter on entry (so the caller can
+ * release the only outside reference to the value during the call without
+ * dangling the callee's local view). Cleanup at function exit releases
+ * each parameter — handled automatically by tracking each as TRACK_STRING
+ * which emit_scope_cleanup picks up.
+ *
+ * Currently only string parameters are refcount-tracked; aggregate
+ * parameter ABI lands when records/unions/modules get per-type
+ * __retain_T / __release_T walkers in a future phase.
+ *
+ * Same structure as generate_compound but with the retain/track step
+ * inserted right after push_scope. */
+void generate_function_body(generator_t *g, ast_t fun) {
+  FILE *f = g->f;
+  ast_fundef fundef = fun->data.fundef;
+  fprintf(f, "{");
+  fprintf(f, "rock_bump_mark __bm = rock_bump_save();\n");
+  ast_compound compound = fundef.body->data.compound;
+  new_nt_scope(&g->table);
+  push_scope(g);
+
+  /* Make the enclosing fundef visible to generate_return so it can emit
+   * the correct return-value temp type. Saved/restored to support nested
+   * function definitions cleanly (defensive — Rock currently doesn't
+   * have nested functions, but the pattern is safe regardless). */
+  ast_t saved_fundef = g->current_fundef;
+  g->current_fundef = fun;
+
+  /* Parameter ABI: retain every refcounted parameter on entry. The
+   * track_string_var call ensures emit_scope_cleanup releases them on
+   * function exit (and on every return, via emit_return_cleanup). */
+  for (int i = 0; i < fundef.args.length; i++) {
+    if (i >= fundef.types.length) continue;
+    ast_t t = fundef.types.data[i];
+    if (t == NULL || t->tag != type) continue;
+    string_view tname = t->data.type.name.lexeme;
+    if (svcmp(tname, SV_STRING) != 0) continue;
+    /* Skip array-of-string: tracked separately (not yet wired). */
+    if (t->data.type.is_array) continue;
+    string_view pname = fundef.args.data[i].lexeme;
+    fprintf(f, "__string_retain(" SV_Fmt ");\n", SV_Arg(pname));
+    track_string_var(g, pname);
+  }
+
+  for (int i = 0; i < compound.stmts.length; i++)
+    generate_statement(g, compound.stmts.data[i]);
+
+  emit_scope_cleanup(g);
+  pop_scope(g);
+  end_nt_scope(&g->table);
+  g->current_fundef = saved_fundef;
+  fprintf(f, "rock_bump_restore(__bm);\n");
+  fprintf(f, "}");
+}
+
 void generate_fundef(generator_t *g, ast_t fun) {
   // add to name table
   FILE *f = g->f;
@@ -2162,7 +2247,7 @@ void generate_fundef(generator_t *g, ast_t fun) {
       g->current_module_type = fundef.type_name.lexeme;
     int saved_global = g->in_global_scope;
     g->in_global_scope = 0;
-    generate_compound(g, fundef.body);
+    generate_function_body(g, fun);
     g->in_global_scope = saved_global;
     g->current_module_type = saved_module_type;
     fprintf(f, "\n\n");

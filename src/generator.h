@@ -57,6 +57,7 @@ typedef struct generator_t {
   scope_t *scope;             // top of scope stack (NULL when empty)
   int auto_cast;             // when set, wrap int args with (byte)/(word)/(dword) for matching callee params
   int lit_counter;            // ADR-0003 §7.1: unique id for each emitted static __string_block
+  ast_t current_fundef;       // ADR-0003 §10.3: enclosing fundef during body emission (NULL otherwise)
 } generator_t;
 
 generator_t new_generator(char *filename);
