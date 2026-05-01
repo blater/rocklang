@@ -711,6 +711,32 @@ static int is_scalar_string_var(string_view name, name_table_t table) {
   return 0;
 }
 
+// Returns 1 if name resolves to a non-array vardef/parameter whose declared
+// type is a record/union/module — i.e. an aggregate handle subject to
+// __handle_retain / __handle_release. Mirrors is_scalar_string_var. Forward
+// declares is_heap_allocated_type below.
+static int is_heap_allocated_type(string_view type_name, name_table_t table);
+static int is_scalar_aggregate_var(string_view name, name_table_t table) {
+  ast_t ref = get_ref(name, table);
+  if (!ref) return 0;
+  if (ref->tag == vardef) {
+    ast_type t = ref->data.vardef.type->data.type;
+    if (t.is_array) return 0;
+    return is_heap_allocated_type(t.name.lexeme, table);
+  }
+  if (ref->tag == fundef) {
+    ast_fundef fd = ref->data.fundef;
+    for (int i = 0; i < fd.args.length; i++) {
+      if (svcmp(fd.args.data[i].lexeme, name) == 0) {
+        ast_type t = fd.types.data[i]->data.type;
+        if (t.is_array) return 0;
+        return is_heap_allocated_type(t.name.lexeme, table);
+      }
+    }
+  }
+  return 0;
+}
+
 // Helper: Build an array type name string_view, e.g. "int" → "int_array".
 static string_view make_array_type_sv(string_view base) {
   char *buf = allocate_compiler_persistent(base.length + 7);
@@ -761,6 +787,34 @@ static int is_sub_target_scalar_string(ast_t sub_expr, name_table_t table) {
     if (c.type && c.type->tag == type) {
       ast_type ft = c.type->data.type;
       return (!ft.is_array && svcmp(ft.name.lexeme, SV_STRING) == 0);
+    }
+  }
+  return 0;
+}
+
+// Returns 1 if the sub expression's terminal field is a scalar (non-array)
+// aggregate handle (record/union/module). Mirrors is_sub_target_scalar_string.
+static int is_sub_target_scalar_aggregate(ast_t sub_expr, name_table_t table) {
+  if (!sub_expr || sub_expr->tag != sub) return 0;
+  ast_sub s = sub_expr->data.sub;
+  string_view current_type = infer_expr_type(s.receiver, table);
+  if (current_type.length == 0) return 0;
+  for (int i = 0; i < s.path.length; i++) {
+    current_type = get_field_type(current_type, s.path.data[i].lexeme, table);
+    if (current_type.length == 0) return 0;
+  }
+  string_view field_name = s.expr->data.identifier.id.lexeme;
+  ast_t tdef_ref = get_ref(current_type, table);
+  if (!tdef_ref || tdef_ref->tag != tdef) return 0;
+  ast_tdef td = tdef_ref->data.tdef;
+  for (int i = 0; i < td.constructors.length; i++) {
+    ast_t cons_ast = td.constructors.data[i];
+    if (cons_ast->tag != cons) continue;
+    ast_cons c = cons_ast->data.cons;
+    if (svcmp(c.name.lexeme, field_name) != 0) continue;
+    if (c.type && c.type->tag == type) {
+      ast_type ft = c.type->data.type;
+      return (!ft.is_array && is_heap_allocated_type(ft.name.lexeme, table));
     }
   }
   return 0;
@@ -1643,6 +1697,41 @@ void generate_assignement(generator_t *g, ast_t assignment) {
         return;
       }
     }
+    // ADR-0003 §10.6: aggregate identifier reassignment. Release the old
+    // handle, then either descriptor-copy + retain (borrower RHS) or accept
+    // the producer's rc=1 reference (funcall RHS — already retained by
+    // __return_handle on the callee side).
+    if (assign.target->tag == identifier &&
+        is_scalar_aggregate_var(assign.target->data.identifier.id.lexeme, g->table)) {
+      char *rhs_text = capture_expression(g, assign.expr);
+      flush_pre_f(g, f);
+      string_view tname = assign.target->data.identifier.id.lexeme;
+      fprintf(f, "__handle_release(" SV_Fmt ");\n", SV_Arg(tname));
+      if (assign.expr->tag == identifier) {
+        fprintf(f, SV_Fmt " = %s; __handle_retain(" SV_Fmt ");\n",
+                SV_Arg(tname), rhs_text, SV_Arg(tname));
+      } else {
+        fprintf(f, SV_Fmt " = %s;\n", SV_Arg(tname), rhs_text);
+      }
+      free(rhs_text);
+      return;
+    }
+    // ADR-0003 §10.6: aggregate field reassignment (rec.field := other).
+    if (assign.target->tag == sub && is_sub_target_scalar_aggregate(assign.target, g->table)) {
+      char *rhs_text = capture_expression(g, assign.expr);
+      char *target_text = capture_expression(g, assign.target);
+      flush_pre_f(g, f);
+      fprintf(f, "__handle_release(%s);\n", target_text);
+      if (assign.expr->tag == identifier) {
+        fprintf(f, "%s = %s; __handle_retain(%s);\n",
+                target_text, rhs_text, target_text);
+      } else {
+        fprintf(f, "%s = %s;\n", target_text, rhs_text);
+      }
+      free(rhs_text);
+      free(target_text);
+      return;
+    }
     // For string record field assignment (p.name := "Bob"), free old + deep-copy new
     if (assign.target->tag == sub && is_sub_target_scalar_string(assign.target, g->table)) {
       {
@@ -1907,6 +1996,13 @@ void generate_vardef(generator_t *g, ast_t var) {
     flush_pre_f(g, f);
     generate_type(f, vardef.type);
     fprintf(f, " " SV_Fmt " = %s;\n", SV_Arg(vardef.name.lexeme), expr_text);
+    // ADR-0003 §10.6: borrower init aliases an existing handle, so retain
+    // to keep the source's slot+ours each at correct rc. Producer RHS
+    // (funcall) already comes with rc=1 via __return_handle on the callee.
+    if (!g->in_global_scope && is_heap_allocated_type(type_name, g->table)
+        && vardef.expr->tag == identifier) {
+      fprintf(f, "__handle_retain(" SV_Fmt ");\n", SV_Arg(vardef.name.lexeme));
+    }
     free(expr_text);
     // Track heap-allocated variable (module/union) for scope cleanup
     if (!g->in_global_scope && is_heap_allocated_type(type_name, g->table)) {

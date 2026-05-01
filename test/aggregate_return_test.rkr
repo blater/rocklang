@@ -65,4 +65,17 @@ sub main() {
   as.AssertEQ("identity preserves y", 11, passed.y);
   as.AssertEQ("source still readable x", 7, original.x);
   as.AssertEQ("source still readable y", 11, original.y);
+
+  // Borrower init: alias retains source. Both slots release at scope exit;
+  // without retain, the second release would hit a freed block.
+  Point alias := original;
+  as.AssertEQ("alias x matches", 7, alias.x);
+  as.AssertEQ("alias y matches", 11, alias.y);
+
+  // Borrower reassignment: target's old handle must be released, new source
+  // retained. Otherwise either the old block leaks or the source double-frees.
+  Point reslot := makePoint(1, 2);
+  reslot := original;
+  as.AssertEQ("reassigned alias x", 7, reslot.x);
+  as.AssertEQ("reassigned alias y", 11, reslot.y);
 }
