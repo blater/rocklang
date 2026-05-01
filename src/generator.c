@@ -711,6 +711,17 @@ static int is_scalar_string_var(string_view name, name_table_t table) {
   return 0;
 }
 
+// An RHS expression "borrows" from existing storage rather than allocating
+// fresh. Borrowers (identifier, field read, array index) need a retain at
+// the destination so source and destination each carry an rc share.
+// Producers (funcall via __return_T, record literals) come pre-retained.
+static int rhs_is_borrower(ast_t expr) {
+  if (!expr) return 0;
+  return expr->tag == identifier
+      || expr->tag == sub
+      || expr->tag == arr_index;
+}
+
 // Returns 1 if the type is a pointer-allocated user type (module, record, or union).
 static int is_heap_allocated_type(string_view type_name, name_table_t table) {
   if (is_builtin_typename(string_of_sv(type_name))) return 0;
@@ -1683,9 +1694,9 @@ void generate_assignement(generator_t *g, ast_t assignment) {
                 SV_Arg(assign.target->data.identifier.id.lexeme));
         fprintf(f, "__free_string(&" SV_Fmt ");\n",
                 SV_Arg(assign.target->data.identifier.id.lexeme));
-        // ADR-0003 §10.6: descriptor copy + retain when RHS is a borrower
-        // (existing identifier). Replaces the legacy deep-copy via new_string.
-        if (assign.expr->tag == identifier) {
+        // Borrower RHS: descriptor copy + retain. Replaces the legacy
+        // deep-copy via new_string.
+        if (rhs_is_borrower(assign.expr)) {
           fprintf(f, SV_Fmt " = %s; __string_retain(" SV_Fmt ");\n",
                   SV_Arg(assign.target->data.identifier.id.lexeme),
                   rhs_text,
@@ -1717,7 +1728,7 @@ void generate_assignement(generator_t *g, ast_t assignment) {
       char *rhs_text = capture_expression(g, assign.expr);
       flush_pre_f(g, f);
       fprintf(f, "__handle_release(" SV_Fmt ");\n", SV_Arg(tname));
-      if (assign.expr->tag == identifier) {
+      if (rhs_is_borrower(assign.expr)) {
         fprintf(f, SV_Fmt " = %s; __handle_retain(" SV_Fmt ");\n",
                 SV_Arg(tname), rhs_text, SV_Arg(tname));
       } else {
@@ -1737,7 +1748,7 @@ void generate_assignement(generator_t *g, ast_t assignment) {
         return;
       }
       fprintf(f, "__handle_release(%s);\n", target_text);
-      if (assign.expr->tag == identifier) {
+      if (rhs_is_borrower(assign.expr)) {
         fprintf(f, "%s = %s; __handle_retain(%s);\n",
                 target_text, rhs_text, target_text);
       } else {
@@ -1756,9 +1767,9 @@ void generate_assignement(generator_t *g, ast_t assignment) {
         /* Paired release + legacy free; see scope-cleanup site for rationale. */
         fprintf(f, "__string_release(%s);\n", target_text);
         fprintf(f, "__free_string(&%s);\n", target_text);
-        // ADR-0003 §10.6: descriptor copy + retain for borrower RHS;
-        // transfer (copy + nullify) for producer RHS.
-        if (assign.expr->tag == identifier) {
+        // Borrower RHS: descriptor copy + retain. Producer RHS: copy +
+        // nullify the temp so scope cleanup doesn't double-free.
+        if (rhs_is_borrower(assign.expr)) {
           fprintf(f, "%s = %s; __string_retain(%s);\n",
                   target_text, rhs_text, target_text);
         } else {
@@ -1858,11 +1869,10 @@ void generate_vardef(generator_t *g, ast_t var) {
     // Constant expression (e.g. integer literal) or inside a function: emit normally
     flush_pre_f(g, f);
 
-    // For string-to-string variable init from a borrower (existing slot),
-    // ADR-0003 §10.6: descriptor copy + retain. Both alias share the same
-    // backing; refcount tracks the live aliases.
+    // String-to-string init from a borrower (identifier, field read, array
+    // index): descriptor copy + retain. Both alias share the same backing.
     if (!g->in_global_scope && svcmp(type_name, SV_STRING) == 0
-        && !vardef.type->data.type.is_array && vardef.expr->tag == identifier) {
+        && !vardef.type->data.type.is_array && rhs_is_borrower(vardef.expr)) {
       fprintf(f, "string " SV_Fmt " = %s; __string_retain(" SV_Fmt ");\n",
               SV_Arg(vardef.name.lexeme), expr_text, SV_Arg(vardef.name.lexeme));
     } else {
@@ -2006,7 +2016,7 @@ void generate_vardef(generator_t *g, ast_t var) {
     // Borrower init: alias of an existing handle needs a retain so source
     // and alias each carry an rc share. Producer RHS (funcall) already
     // brings rc=1 via __return_handle on the callee.
-    if (is_heap && vardef.expr->tag == identifier) {
+    if (is_heap && rhs_is_borrower(vardef.expr)) {
       fprintf(f, "__handle_retain(" SV_Fmt ");\n", SV_Arg(vardef.name.lexeme));
     }
     free(expr_text);
