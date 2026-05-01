@@ -711,11 +711,16 @@ static int is_scalar_string_var(string_view name, name_table_t table) {
   return 0;
 }
 
+// Returns 1 if the type is a pointer-allocated user type (module, record, or union).
+static int is_heap_allocated_type(string_view type_name, name_table_t table) {
+  if (is_builtin_typename(string_of_sv(type_name))) return 0;
+  ast_t ref = get_ref(type_name, table);
+  return ref && ref->tag == tdef;
+}
+
 // Returns 1 if name resolves to a non-array vardef/parameter whose declared
 // type is a record/union/module — i.e. an aggregate handle subject to
-// __handle_retain / __handle_release. Mirrors is_scalar_string_var. Forward
-// declares is_heap_allocated_type below.
-static int is_heap_allocated_type(string_view type_name, name_table_t table);
+// __handle_retain / __handle_release. Mirrors is_scalar_string_var.
 static int is_scalar_aggregate_var(string_view name, name_table_t table) {
   ast_t ref = get_ref(name, table);
   if (!ref) return 0;
@@ -1697,15 +1702,20 @@ void generate_assignement(generator_t *g, ast_t assignment) {
         return;
       }
     }
-    // ADR-0003 §10.6: aggregate identifier reassignment. Release the old
-    // handle, then either descriptor-copy + retain (borrower RHS) or accept
-    // the producer's rc=1 reference (funcall RHS — already retained by
-    // __return_handle on the callee side).
+    // Aggregate reassignment. Borrower RHS: descriptor-copy + retain.
+    // Producer RHS (funcall): accept the rc=1 reference __return_handle
+    // already supplied on the callee side.
     if (assign.target->tag == identifier &&
         is_scalar_aggregate_var(assign.target->data.identifier.id.lexeme, g->table)) {
+      string_view tname = assign.target->data.identifier.id.lexeme;
+      // Self-assignment (`x := x`): release-then-retain on rc=1 would free
+      // the block before the retain runs. Skip the no-op entirely.
+      if (assign.expr->tag == identifier &&
+          svcmp(assign.expr->data.identifier.id.lexeme, tname) == 0) {
+        return;
+      }
       char *rhs_text = capture_expression(g, assign.expr);
       flush_pre_f(g, f);
-      string_view tname = assign.target->data.identifier.id.lexeme;
       fprintf(f, "__handle_release(" SV_Fmt ");\n", SV_Arg(tname));
       if (assign.expr->tag == identifier) {
         fprintf(f, SV_Fmt " = %s; __handle_retain(" SV_Fmt ");\n",
@@ -1716,11 +1726,16 @@ void generate_assignement(generator_t *g, ast_t assignment) {
       free(rhs_text);
       return;
     }
-    // ADR-0003 §10.6: aggregate field reassignment (rec.field := other).
     if (assign.target->tag == sub && is_sub_target_scalar_aggregate(assign.target, g->table)) {
       char *rhs_text = capture_expression(g, assign.expr);
       char *target_text = capture_expression(g, assign.target);
       flush_pre_f(g, f);
+      // Self-assignment (`p.f := p.f`) — same hazard as above.
+      if (strcmp(rhs_text, target_text) == 0) {
+        free(rhs_text);
+        free(target_text);
+        return;
+      }
       fprintf(f, "__handle_release(%s);\n", target_text);
       if (assign.expr->tag == identifier) {
         fprintf(f, "%s = %s; __handle_retain(%s);\n",
@@ -1770,15 +1785,6 @@ static int is_module_type(string_view type_name, name_table_t table) {
 }
 
 // Returns 1 if the type is a pointer-allocated user type (module, record, or union)
-static int is_heap_allocated_type(string_view type_name, name_table_t table) {
-  if (is_builtin_typename(string_of_sv(type_name))) return 0;
-  ast_t ref = get_ref(type_name, table);
-  if (!ref) return 0;
-  // Modules (TDEF_MODULE), records (TDEF_REC), unions (TDEF_PRO)
-  if (ref->tag == tdef) return 1;
-  return 0;
-}
-
 void generate_vardef(generator_t *g, ast_t var) {
   FILE *f = g->f;
   ast_vardef vardef = var->data.vardef;
@@ -1996,16 +2002,15 @@ void generate_vardef(generator_t *g, ast_t var) {
     flush_pre_f(g, f);
     generate_type(f, vardef.type);
     fprintf(f, " " SV_Fmt " = %s;\n", SV_Arg(vardef.name.lexeme), expr_text);
-    // ADR-0003 §10.6: borrower init aliases an existing handle, so retain
-    // to keep the source's slot+ours each at correct rc. Producer RHS
-    // (funcall) already comes with rc=1 via __return_handle on the callee.
-    if (!g->in_global_scope && is_heap_allocated_type(type_name, g->table)
-        && vardef.expr->tag == identifier) {
+    int is_heap = !g->in_global_scope && is_heap_allocated_type(type_name, g->table);
+    // Borrower init: alias of an existing handle needs a retain so source
+    // and alias each carry an rc share. Producer RHS (funcall) already
+    // brings rc=1 via __return_handle on the callee.
+    if (is_heap && vardef.expr->tag == identifier) {
       fprintf(f, "__handle_retain(" SV_Fmt ");\n", SV_Arg(vardef.name.lexeme));
     }
     free(expr_text);
-    // Track heap-allocated variable (module/union) for scope cleanup
-    if (!g->in_global_scope && is_heap_allocated_type(type_name, g->table)) {
+    if (is_heap) {
       track_handle_var(g, vardef.name.lexeme);
     }
   }
