@@ -15,6 +15,10 @@ Living checklist of planned work. Add items here instead of scattering them acro
 - [ ] **Type parameter info for the rest of the builtins.** Many builtins still register only their return type via `register_builtin`. To make `--auto-cast` cover them, switch each to `register_builtin_typed` and supply param types. Low priority — only matters when `--auto-cast` is in use AND the user passes int literals to those builtins.
 - [ ] **Polymorphic integer literals in the typechecker.** The proper long-term fix: numeric literals should be untyped until context picks (`42` in a `byte` slot is a `byte`, no cast needed). Once Rock has a real typechecker, this becomes the right place to handle the int → byte/word/dword coercion. `--auto-cast` is a stop-gap until then.
 
+## Memory model
+
+- [ ] **Aggregate field aliasing leak.** Record-literal field-init (`Outer o := {i := ii, ...}`) is a raw pointer copy with no retain, and `__handle_release` does not walk a record's aggregate/string fields. Together these produce four distinct UAF/leak/double-free shapes — full breakdown plus root cause and fix sketch in [aggregate-field-aliasing-leak](wikiroot/pages/concepts/aggregate-field-aliasing-leak.md). Three pinning tests under `test/intentionalFail/aggregate_field_*_test.rkr` reproduce Shapes 1, 2, and 4 today (silent data corruption via freelist reuse) and should be moved to `test/` as each lands. Requires (a) retain on aggregate/string field-init in the `record_expr` arm of `generate_vardef`, and (b) per-type field-walking destructors invoked from `__handle_release` so freeing a record releases the rc shares its fields hold. Sequencing: do before Phase H deletes the legacy `new_string` deep-copy, since strings currently dodge most of this by deep-copying on field init.
+
 ## Conventions for this file
 
 - New items go under a section heading. Add new sections as needed (Compiler internals, RTL, Tooling, Docs, …).
